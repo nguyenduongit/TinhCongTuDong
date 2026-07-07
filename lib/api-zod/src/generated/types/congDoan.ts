@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface CongDoan {
+  id: number;
+  ma_cong_doan: string;
+  ten_cong_doan: string;
+  dinh_muc: number;
+  quy_cach: string;
+  created_at?: string;
 }

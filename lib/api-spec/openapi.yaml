@@ -3,20 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Tính Công Tự Động
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: cong-doan
+    description: Công đoạn (work stages) management
+  - name: san-luong
+    description: Sản lượng (daily output) management
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +27,218 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /cong-doan:
+    get:
+      operationId: listCongDoan
+      tags: [cong-doan]
+      summary: Lấy danh sách công đoạn
+      responses:
+        "200":
+          description: Danh sách công đoạn
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CongDoan"
+    post:
+      operationId: createCongDoan
+      tags: [cong-doan]
+      summary: Thêm công đoạn mới
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CongDoanInput"
+      responses:
+        "201":
+          description: Công đoạn đã tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CongDoan"
+        "400":
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cong-doan/{id}:
+    patch:
+      operationId: updateCongDoan
+      tags: [cong-doan]
+      summary: Cập nhật công đoạn
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CongDoanUpdate"
+      responses:
+        "200":
+          description: Công đoạn đã cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CongDoan"
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCongDoan
+      tags: [cong-doan]
+      summary: Xóa công đoạn
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Đã xóa
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /san-luong:
+    get:
+      operationId: listSanLuong
+      tags: [san-luong]
+      summary: Lấy danh sách sản lượng (lọc theo ngày)
+      parameters:
+        - name: ngay
+          in: query
+          required: false
+          schema:
+            type: string
+            description: "Ngày theo định dạng YYYY-MM-DD"
+      responses:
+        "200":
+          description: Danh sách sản lượng
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SanLuong"
+    post:
+      operationId: createSanLuong
+      tags: [san-luong]
+      summary: Thêm bản ghi sản lượng
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SanLuongInput"
+      responses:
+        "201":
+          description: Sản lượng đã tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SanLuong"
+        "400":
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /san-luong/today:
+    get:
+      operationId: getSanLuongToday
+      tags: [san-luong]
+      summary: Lấy sản lượng hôm nay
+      responses:
+        "200":
+          description: Sản lượng hôm nay
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SanLuong"
+
+  /san-luong/stats:
+    get:
+      operationId: getSanLuongStats
+      tags: [san-luong]
+      summary: Thống kê tổng hợp
+      responses:
+        "200":
+          description: Thống kê sản lượng
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SanLuongStats"
+
+  /san-luong/{id}:
+    patch:
+      operationId: updateSanLuong
+      tags: [san-luong]
+      summary: Cập nhật bản ghi sản lượng
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SanLuongUpdate"
+      responses:
+        "200":
+          description: Sản lượng đã cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SanLuong"
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteSanLuong
+      tags: [san-luong]
+      summary: Xóa bản ghi sản lượng
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Đã xóa
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +249,115 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    CongDoan:
+      type: object
+      required: [id, ma_cong_doan, ten_cong_doan, dinh_muc, quy_cach]
+      properties:
+        id:
+          type: integer
+        ma_cong_doan:
+          type: string
+        ten_cong_doan:
+          type: string
+        dinh_muc:
+          type: number
+        quy_cach:
+          type: string
+        created_at:
+          type: string
+
+    CongDoanInput:
+      type: object
+      required: [ma_cong_doan, ten_cong_doan, dinh_muc, quy_cach]
+      properties:
+        ma_cong_doan:
+          type: string
+          minLength: 1
+        ten_cong_doan:
+          type: string
+          minLength: 1
+        dinh_muc:
+          type: number
+        quy_cach:
+          type: string
+
+    CongDoanUpdate:
+      type: object
+      properties:
+        ma_cong_doan:
+          type: string
+          minLength: 1
+        ten_cong_doan:
+          type: string
+          minLength: 1
+        dinh_muc:
+          type: number
+        quy_cach:
+          type: string
+
+    SanLuong:
+      type: object
+      required: [id, ngay, cong_doan_id, so_luong, thoi_gian]
+      properties:
+        id:
+          type: integer
+        ngay:
+          type: string
+        cong_doan_id:
+          type: integer
+        so_luong:
+          type: number
+        thoi_gian:
+          type: integer
+        created_at:
+          type: string
+        cong_doan:
+          $ref: "#/components/schemas/CongDoan"
+
+    SanLuongInput:
+      type: object
+      required: [ngay, cong_doan_id, so_luong, thoi_gian]
+      properties:
+        ngay:
+          type: string
+          description: "YYYY-MM-DD"
+        cong_doan_id:
+          type: integer
+        so_luong:
+          type: number
+        thoi_gian:
+          type: integer
+          description: "Thời gian thực hiện (phút)"
+
+    SanLuongUpdate:
+      type: object
+      properties:
+        so_luong:
+          type: number
+        thoi_gian:
+          type: integer
+
+    SanLuongStats:
+      type: object
+      required: [today_count, today_total_time, today_total_sl, month_count, month_total_time, month_total_sl]
+      properties:
+        today_count:
+          type: integer
+        today_total_time:
+          type: integer
+        today_total_sl:
+          type: number
+        month_count:
+          type: integer
+        month_total_time:
+          type: integer
+        month_total_sl:
+          type: number
