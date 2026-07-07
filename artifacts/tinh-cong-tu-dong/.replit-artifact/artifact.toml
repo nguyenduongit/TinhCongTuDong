@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Tính Công Tự Động"
+version = "1.0.0"
+id = "artifacts/tinh-cong-tu-dong"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26170
+
+[services.development]
+run = "pnpm --filter @workspace/tinh-cong-tu-dong run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tinh-cong-tu-dong", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/tinh-cong-tu-dong/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26170"
+BASE_PATH = "/"
