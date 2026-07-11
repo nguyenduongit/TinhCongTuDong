@@ -102,18 +102,21 @@ export const ListSanLuongQueryParams = zod.object({
 export const ListSanLuongResponseItem = zod.object({
   "id": zod.number(),
   "ngay": zod.string(),
-  "cong_doan_id": zod.number(),
+  "chi_tiet": zod.array(zod.object({
+  "cong_doan": zod.string(),
   "so_luong": zod.number(),
-  "thoi_gian": zod.number(),
-  "created_at": zod.string().optional(),
-  "cong_doan": zod.object({
-  "id": zod.number(),
-  "ma_cong_doan": zod.string(),
-  "ten_cong_doan": zod.string(),
-  "dinh_muc": zod.number(),
-  "quy_cach": zod.string(),
+  "phan_tram_dinh_muc": zod.number(),
+  "cong_sp": zod.number().optional()
+})),
+  "thoi_gian_thuc_hien": zod.number().describe('Thời gian thực hiện (phút)'),
+  "thoi_gian_ho_tro": zod.number().optional().describe('Thời gian hỗ trợ (phút)'),
+  "thong_ke_ngay": zod.object({
+  "cong_nhat": zod.number().optional(),
+  "tong_cong_sp": zod.number().optional(),
+  "tong_cong_ho_tro": zod.number().optional(),
+  "chi_tiet_cong": zod.record(zod.string(), zod.number()).optional()
+}).optional(),
   "created_at": zod.string().optional()
-}).optional()
 })
 export const ListSanLuongResponse = zod.array(ListSanLuongResponseItem)
 
@@ -123,26 +126,34 @@ export const ListSanLuongResponse = zod.array(ListSanLuongResponseItem)
  */
 export const CreateSanLuongBody = zod.object({
   "ngay": zod.string().describe('YYYY-MM-DD'),
-  "cong_doan_id": zod.number(),
+  "chi_tiet": zod.array(zod.object({
+  "cong_doan": zod.string(),
   "so_luong": zod.number(),
-  "thoi_gian": zod.number().describe('Thời gian thực hiện (phút)')
+  "phan_tram_dinh_muc": zod.number(),
+  "cong_sp": zod.number().optional()
+})),
+  "thoi_gian_thuc_hien": zod.number().describe('Thời gian thực hiện (phút)'),
+  "thoi_gian_ho_tro": zod.number().optional().describe('Thời gian hỗ trợ (phút)')
 })
 
 export const CreateSanLuongResponse = zod.object({
   "id": zod.number(),
   "ngay": zod.string(),
-  "cong_doan_id": zod.number(),
+  "chi_tiet": zod.array(zod.object({
+  "cong_doan": zod.string(),
   "so_luong": zod.number(),
-  "thoi_gian": zod.number(),
-  "created_at": zod.string().optional(),
-  "cong_doan": zod.object({
-  "id": zod.number(),
-  "ma_cong_doan": zod.string(),
-  "ten_cong_doan": zod.string(),
-  "dinh_muc": zod.number(),
-  "quy_cach": zod.string(),
+  "phan_tram_dinh_muc": zod.number(),
+  "cong_sp": zod.number().optional()
+})),
+  "thoi_gian_thuc_hien": zod.number().describe('Thời gian thực hiện (phút)'),
+  "thoi_gian_ho_tro": zod.number().optional().describe('Thời gian hỗ trợ (phút)'),
+  "thong_ke_ngay": zod.object({
+  "cong_nhat": zod.number().optional(),
+  "tong_cong_sp": zod.number().optional(),
+  "tong_cong_ho_tro": zod.number().optional(),
+  "chi_tiet_cong": zod.record(zod.string(), zod.number()).optional()
+}).optional(),
   "created_at": zod.string().optional()
-}).optional()
 })
 
 
@@ -152,18 +163,21 @@ export const CreateSanLuongResponse = zod.object({
 export const GetSanLuongTodayResponseItem = zod.object({
   "id": zod.number(),
   "ngay": zod.string(),
-  "cong_doan_id": zod.number(),
+  "chi_tiet": zod.array(zod.object({
+  "cong_doan": zod.string(),
   "so_luong": zod.number(),
-  "thoi_gian": zod.number(),
-  "created_at": zod.string().optional(),
-  "cong_doan": zod.object({
-  "id": zod.number(),
-  "ma_cong_doan": zod.string(),
-  "ten_cong_doan": zod.string(),
-  "dinh_muc": zod.number(),
-  "quy_cach": zod.string(),
+  "phan_tram_dinh_muc": zod.number(),
+  "cong_sp": zod.number().optional()
+})),
+  "thoi_gian_thuc_hien": zod.number().describe('Thời gian thực hiện (phút)'),
+  "thoi_gian_ho_tro": zod.number().optional().describe('Thời gian hỗ trợ (phút)'),
+  "thong_ke_ngay": zod.object({
+  "cong_nhat": zod.number().optional(),
+  "tong_cong_sp": zod.number().optional(),
+  "tong_cong_ho_tro": zod.number().optional(),
+  "chi_tiet_cong": zod.record(zod.string(), zod.number()).optional()
+}).optional(),
   "created_at": zod.string().optional()
-}).optional()
 })
 export const GetSanLuongTodayResponse = zod.array(GetSanLuongTodayResponseItem)
 
@@ -177,7 +191,10 @@ export const GetSanLuongStatsResponse = zod.object({
   "today_total_sl": zod.number(),
   "month_count": zod.number(),
   "month_total_time": zod.number(),
-  "month_total_sl": zod.number()
+  "month_total_sl": zod.number(),
+  "week_count": zod.number(),
+  "week_total_time": zod.number(),
+  "week_total_sl": zod.number()
 })
 
 
@@ -189,25 +206,34 @@ export const UpdateSanLuongParams = zod.object({
 })
 
 export const UpdateSanLuongBody = zod.object({
-  "so_luong": zod.number().optional(),
-  "thoi_gian": zod.number().optional()
+  "chi_tiet": zod.array(zod.object({
+  "cong_doan": zod.string(),
+  "so_luong": zod.number(),
+  "phan_tram_dinh_muc": zod.number(),
+  "cong_sp": zod.number().optional()
+})).optional(),
+  "thoi_gian_thuc_hien": zod.number().optional(),
+  "thoi_gian_ho_tro": zod.number().optional()
 })
 
 export const UpdateSanLuongResponse = zod.object({
   "id": zod.number(),
   "ngay": zod.string(),
-  "cong_doan_id": zod.number(),
+  "chi_tiet": zod.array(zod.object({
+  "cong_doan": zod.string(),
   "so_luong": zod.number(),
-  "thoi_gian": zod.number(),
-  "created_at": zod.string().optional(),
-  "cong_doan": zod.object({
-  "id": zod.number(),
-  "ma_cong_doan": zod.string(),
-  "ten_cong_doan": zod.string(),
-  "dinh_muc": zod.number(),
-  "quy_cach": zod.string(),
+  "phan_tram_dinh_muc": zod.number(),
+  "cong_sp": zod.number().optional()
+})),
+  "thoi_gian_thuc_hien": zod.number().describe('Thời gian thực hiện (phút)'),
+  "thoi_gian_ho_tro": zod.number().optional().describe('Thời gian hỗ trợ (phút)'),
+  "thong_ke_ngay": zod.object({
+  "cong_nhat": zod.number().optional(),
+  "tong_cong_sp": zod.number().optional(),
+  "tong_cong_ho_tro": zod.number().optional(),
+  "chi_tiet_cong": zod.record(zod.string(), zod.number()).optional()
+}).optional(),
   "created_at": zod.string().optional()
-}).optional()
 })
 
 

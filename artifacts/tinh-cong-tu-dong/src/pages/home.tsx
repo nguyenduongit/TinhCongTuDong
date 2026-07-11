@@ -10,7 +10,6 @@ import { getGetSanLuongTodayQueryKey, getGetSanLuongStatsQueryKey, getListSanLuo
 import type { SanLuong } from '@workspace/api-client-react';
 
 import { BottomNav } from '@/components/BottomNav';
-import { StatsBar } from '@/components/StatsBar';
 import { SanLuongCard } from '@/components/SanLuongCard';
 import { AddEntryDrawer } from '@/components/AddEntryDrawer';
 import { EditEntryDrawer } from '@/components/EditEntryDrawer';
@@ -79,16 +78,30 @@ export default function Home() {
             </button>
           </motion.header>
 
-          {/* Stats */}
-          <motion.div variants={itemVariants}>
-            <StatsBar stats={stats} isLoading={isLoadingStats} />
+          {/* Tóm tắt tháng */}
+          <motion.div variants={itemVariants} className="grid grid-cols-3 gap-2">
+            <div className="bg-card border border-border/50 rounded-xl p-3 flex flex-col items-center shadow-sm">
+              <span className="text-xs text-muted-foreground mb-1">{(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'Dư' : 'Thiếu'}</span>
+              <span className={`text-lg font-bold ${(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {isLoadingStats ? '-' : Math.abs((stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="bg-card border border-border/50 rounded-xl p-3 flex flex-col items-center shadow-sm">
+              <span className="text-xs text-muted-foreground mb-1">Công SP</span>
+              <span className="text-lg font-bold text-primary">{isLoadingStats ? '-' : (stats?.month_total_sl || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="bg-card border border-border/50 rounded-xl p-3 flex flex-col items-center shadow-sm">
+              <span className="text-xs text-muted-foreground mb-1">Công nhật</span>
+              <span className="text-lg font-bold text-white">
+                {isLoadingStats ? '-' : ((stats?.month_total_time || 0) / 480).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+              </span>
+            </div>
           </motion.div>
 
           {/* Entries */}
           <motion.div variants={itemVariants} className="flex flex-col flex-1">
             <div className="flex justify-between items-end mb-4">
               <h3 className="text-lg font-bold text-white tracking-tight">Sản lượng hôm nay</h3>
-              <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md">{todayEntries.length} bản ghi</span>
             </div>
             
             <div className="flex flex-col relative flex-1">
@@ -124,7 +137,8 @@ export default function Home() {
         >
           <button 
             onClick={() => setIsAddOpen(true)}
-            className="relative group flex items-center justify-center outline-none"
+            disabled={todayEntries.length > 0}
+            className={`relative group flex items-center justify-center outline-none ${todayEntries.length > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
           >
             <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">

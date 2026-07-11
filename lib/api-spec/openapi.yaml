@@ -303,51 +303,86 @@ components:
         quy_cach:
           type: string
 
+    SanLuongChiTiet:
+      type: object
+      required: [cong_doan, so_luong, phan_tram_dinh_muc]
+      properties:
+        cong_doan:
+          type: string
+        so_luong:
+          type: number
+        phan_tram_dinh_muc:
+          type: integer
+        cong_sp:
+          type: number
+
     SanLuong:
       type: object
-      required: [id, ngay, cong_doan_id, so_luong, thoi_gian]
+      required: [id, ngay, chi_tiet, thoi_gian_thuc_hien]
       properties:
         id:
           type: integer
         ngay:
           type: string
-        cong_doan_id:
+        chi_tiet:
+          type: array
+          items:
+            $ref: "#/components/schemas/SanLuongChiTiet"
+        thoi_gian_thuc_hien:
           type: integer
-        so_luong:
-          type: number
-        thoi_gian:
+          description: "Thời gian thực hiện (phút)"
+        thoi_gian_ho_tro:
           type: integer
+          description: "Thời gian hỗ trợ (phút)"
+        thong_ke_ngay:
+          type: object
+          properties:
+            cong_nhat:
+              type: number
+            tong_cong_sp:
+              type: number
+            tong_cong_ho_tro:
+              type: number
+            chi_tiet_cong:
+              type: object
+              additionalProperties:
+                type: number
         created_at:
           type: string
-        cong_doan:
-          $ref: "#/components/schemas/CongDoan"
 
     SanLuongInput:
       type: object
-      required: [ngay, cong_doan_id, so_luong, thoi_gian]
+      required: [ngay, chi_tiet, thoi_gian_thuc_hien]
       properties:
         ngay:
           type: string
           description: "YYYY-MM-DD"
-        cong_doan_id:
-          type: integer
-        so_luong:
-          type: number
-        thoi_gian:
+        chi_tiet:
+          type: array
+          items:
+            $ref: "#/components/schemas/SanLuongChiTiet"
+        thoi_gian_thuc_hien:
           type: integer
           description: "Thời gian thực hiện (phút)"
+        thoi_gian_ho_tro:
+          type: integer
+          description: "Thời gian hỗ trợ (phút)"
 
     SanLuongUpdate:
       type: object
       properties:
-        so_luong:
-          type: number
-        thoi_gian:
+        chi_tiet:
+          type: array
+          items:
+            $ref: "#/components/schemas/SanLuongChiTiet"
+        thoi_gian_thuc_hien:
+          type: integer
+        thoi_gian_ho_tro:
           type: integer
 
     SanLuongStats:
       type: object
-      required: [today_count, today_total_time, today_total_sl, month_count, month_total_time, month_total_sl]
+      required: [today_count, today_total_time, today_total_sl, month_count, month_total_time, month_total_sl, week_count, week_total_time, week_total_sl]
       properties:
         today_count:
           type: integer
@@ -360,4 +395,10 @@ components:
         month_total_time:
           type: integer
         month_total_sl:
+          type: number
+        week_count:
+          type: integer
+        week_total_time:
+          type: integer
+        week_total_sl:
           type: number

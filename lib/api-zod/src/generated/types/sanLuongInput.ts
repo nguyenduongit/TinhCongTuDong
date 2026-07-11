@@ -5,12 +5,14 @@
  * API specification for Tính Công Tự Động
  * OpenAPI spec version: 0.1.0
  */
+import type { SanLuongChiTiet } from './sanLuongChiTiet';
 
 export interface SanLuongInput {
   /** YYYY-MM-DD */
   ngay: string;
-  cong_doan_id: number;
-  so_luong: number;
+  chi_tiet: SanLuongChiTiet[];
   /** Thời gian thực hiện (phút) */
-  thoi_gian: number;
+  thoi_gian_thuc_hien: number;
+  /** Thời gian hỗ trợ (phút) */
+  thoi_gian_ho_tro?: number;
 }

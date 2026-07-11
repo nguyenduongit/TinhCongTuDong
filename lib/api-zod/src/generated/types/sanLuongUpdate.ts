@@ -5,8 +5,10 @@
  * API specification for Tính Công Tự Động
  * OpenAPI spec version: 0.1.0
  */
+import type { SanLuongChiTiet } from './sanLuongChiTiet';
 
 export interface SanLuongUpdate {
-  so_luong?: number;
-  thoi_gian?: number;
+  chi_tiet?: SanLuongChiTiet[];
+  thoi_gian_thuc_hien?: number;
+  thoi_gian_ho_tro?: number;
 }

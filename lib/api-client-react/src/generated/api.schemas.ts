@@ -40,28 +40,48 @@ export interface CongDoanUpdate {
   quy_cach?: string;
 }
 
+export interface SanLuongChiTiet {
+  cong_doan: string;
+  so_luong: number;
+  phan_tram_dinh_muc: number;
+  cong_sp?: number;
+}
+
+export type SanLuongThongKeNgayChiTietCong = {[key: string]: number};
+
+export type SanLuongThongKeNgay = {
+  cong_nhat?: number;
+  tong_cong_sp?: number;
+  tong_cong_ho_tro?: number;
+  chi_tiet_cong?: SanLuongThongKeNgayChiTietCong;
+};
+
 export interface SanLuong {
   id: number;
   ngay: string;
-  cong_doan_id: number;
-  so_luong: number;
-  thoi_gian: number;
+  chi_tiet: SanLuongChiTiet[];
+  /** Thời gian thực hiện (phút) */
+  thoi_gian_thuc_hien: number;
+  /** Thời gian hỗ trợ (phút) */
+  thoi_gian_ho_tro?: number;
+  thong_ke_ngay?: SanLuongThongKeNgay;
   created_at?: string;
-  cong_doan?: CongDoan;
 }
 
 export interface SanLuongInput {
   /** YYYY-MM-DD */
   ngay: string;
-  cong_doan_id: number;
-  so_luong: number;
+  chi_tiet: SanLuongChiTiet[];
   /** Thời gian thực hiện (phút) */
-  thoi_gian: number;
+  thoi_gian_thuc_hien: number;
+  /** Thời gian hỗ trợ (phút) */
+  thoi_gian_ho_tro?: number;
 }
 
 export interface SanLuongUpdate {
-  so_luong?: number;
-  thoi_gian?: number;
+  chi_tiet?: SanLuongChiTiet[];
+  thoi_gian_thuc_hien?: number;
+  thoi_gian_ho_tro?: number;
 }
 
 export interface SanLuongStats {
@@ -71,6 +91,9 @@ export interface SanLuongStats {
   month_count: number;
   month_total_time: number;
   month_total_sl: number;
+  week_count: number;
+  week_total_time: number;
+  week_total_sl: number;
 }
 
 export type ListSanLuongParams = {

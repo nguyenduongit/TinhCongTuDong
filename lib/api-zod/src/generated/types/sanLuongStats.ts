@@ -13,4 +13,7 @@ export interface SanLuongStats {
   month_count: number;
   month_total_time: number;
   month_total_sl: number;
+  week_count: number;
+  week_total_time: number;
+  week_total_sl: number;
 }

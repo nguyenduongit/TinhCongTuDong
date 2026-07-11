@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, congDoanTable } from "@workspace/db";
 import {
   CreateCongDoanBody,
@@ -17,7 +17,7 @@ router.get("/cong-doan", async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(congDoanTable)
-    .orderBy(congDoanTable.ma_cong_doan);
+    .orderBy(desc(congDoanTable.order), desc(congDoanTable.created_at));
 
   const items = rows.map((r) => ({
     ...r,

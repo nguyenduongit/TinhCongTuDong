@@ -121,14 +121,14 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 relative z-0 pb-20">
+            <div className="flex-1 overflow-y-auto p-4 pb-20 flex flex-col gap-3 relative z-0">
               <AnimatePresence>
                 {isAdding && (
                   <motion.div 
-                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
-                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                    className="overflow-hidden mb-2"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mb-2 shrink-0"
                   >
                     <form onSubmit={handleCreate} className="bg-card border border-primary/30 rounded-2xl p-4 shadow-[0_0_15px_rgba(212,168,67,0.1)]">
                       <h4 className="text-sm font-semibold text-primary mb-3">Thêm công đoạn mới</h4>
