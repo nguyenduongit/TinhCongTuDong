@@ -20,7 +20,7 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
 
   useEffect(() => {
     if (congDoanList.length > 0 && !selectedCongDoan) {
-      const latestCd = [...congDoanList].sort((a, b) => (b.order || 0) - (a.order || 0))[0];
+      const latestCd = [...congDoanList].sort((a: any, b: any) => (b.order || 0) - (a.order || 0))[0];
       if (latestCd) {
         setSelectedCongDoan(latestCd.ma_cong_doan);
       }
