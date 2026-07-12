@@ -13,6 +13,7 @@ import type { SanLuong } from '@workspace/api-client-react';
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { HistoryDayCard } from '@/components/ui-parts/HistoryDayCard';
+import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
 // Nhóm mảng entries theo ngày
 function groupByDate(entries: SanLuong[]): { date: string; items: SanLuong[] }[] {
@@ -93,18 +94,23 @@ export default function LichSu() {
 
         <div className="absolute top-0 left-0 right-0 h-48 bg-primary/5 blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
-        <div className="px-5 pt-12 flex flex-col gap-5 relative z-10 flex-1">
+        <motion.div 
+          className="px-5 pt-12 flex flex-col gap-5 relative z-10 flex-1"
+          variants={pageContainerVariants}
+          initial="hidden"
+          animate="show"
+        >
 
           {/* Header */}
-          <header className="flex justify-between items-center">
+          <motion.header variants={pageItemVariants} className="flex justify-between items-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Lịch sử</h1>
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
               <CalendarIcon className="w-5 h-5" />
             </div>
-          </header>
+          </motion.header>
 
           {/* Month picker */}
-          <div className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
+          <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
             <button
               onClick={handlePrevMonth}
               className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors"
@@ -126,11 +132,11 @@ export default function LichSu() {
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-          </div>
+          </motion.div>
 
 
           {/* Danh sách theo ngày */}
-          <div className="flex flex-col flex-1">
+          <motion.div variants={pageItemVariants} className="flex flex-col flex-1">
             <AnimatePresence mode="wait">
               {isLoading ? (
                 <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-center p-8">
@@ -160,8 +166,8 @@ export default function LichSu() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <BottomNav />
       </div>

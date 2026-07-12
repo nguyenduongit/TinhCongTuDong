@@ -3,6 +3,8 @@ import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getCycleMonthFromDate } from '@/lib/date-utils';
 import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
 import { useGetSanLuongBaoCao, useListCongDoan } from '@workspace/api-client-react';
 import { getListCongDoanQueryKey } from '@workspace/api-client-react';
@@ -49,15 +51,20 @@ export default function BaoCao() {
         
         <div className="absolute top-0 left-0 right-0 h-48 bg-primary/5 blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
-        <div className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1">
-          <header className="flex justify-between items-center">
+        <motion.div 
+          className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1"
+          variants={pageContainerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.header variants={pageItemVariants} className="flex justify-between items-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Báo cáo</h1>
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
               <BarChart3 className="w-5 h-5" />
             </div>
-          </header>
+          </motion.header>
 
-          <div className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
+          <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
             <button 
               onClick={handlePrevMonth}
               className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors"
@@ -77,12 +84,12 @@ export default function BaoCao() {
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-          </div>
+          </motion.div>
 
           {/* Tóm tắt tháng */}
 
           {/* Danh sách các tuần */}
-          <div className="flex flex-col flex-1 mt-2">
+          <motion.div variants={pageItemVariants} className="flex flex-col flex-1 mt-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-1">Chi tiết các tuần</h3>
             
             {isLoadingEntries ? (
@@ -100,8 +107,8 @@ export default function BaoCao() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <BottomNav />
       </div>

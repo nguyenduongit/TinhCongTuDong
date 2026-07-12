@@ -1,4 +1,4 @@
-import { motion, type Variants, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -13,27 +13,9 @@ import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { MonthlyProgressCard } from '@/components/ui-parts/MonthlyProgressCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/animations';
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
-};
-
-const fabVariants: Variants = {
-  hidden: { opacity: 0, scale: 0 },
-  show: {
-    opacity: 1, scale: 1,
-    transition: { type: 'spring', stiffness: 400, damping: 25, delay: 0.4 }
-  }
-};
 
 export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -63,12 +45,12 @@ export default function Home() {
 
         <motion.div
           className="flex-1 px-5 pt-12 flex flex-col gap-8 relative z-10"
-          variants={containerVariants}
+          variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
           {/* Header */}
-          <motion.header variants={itemVariants} className="flex justify-between items-center">
+          <motion.header variants={pageItemVariants} className="flex justify-between items-center">
             <div>
               <p className="text-muted-foreground text-sm font-medium mb-1 capitalize">{currentDateStr}</p>
               <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary to-amber-200 bg-clip-text text-transparent">
@@ -78,7 +60,7 @@ export default function Home() {
           </motion.header>
 
           {/* Tóm tắt tháng */}
-          <motion.div variants={itemVariants} className="grid grid-cols-3 gap-2">
+          <motion.div variants={pageItemVariants} className="grid grid-cols-3 gap-2">
             <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">{(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'Dư' : 'Thiếu'}</span>
               <span className={`text-lg font-bold ${(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-400'}`}>
@@ -98,7 +80,7 @@ export default function Home() {
           </motion.div>
 
           {/* Progress Card */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={pageItemVariants}>
             <MonthlyProgressCard
               monthTotalSl={stats?.month_total_sl || 0}
               monthTotalTime={stats?.month_total_time || 0}

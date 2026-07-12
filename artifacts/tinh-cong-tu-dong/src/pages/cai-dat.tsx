@@ -7,6 +7,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { customFetch } from '@workspace/api-client-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
 export default function CaiDat() {
   const [showCongDoanModal, setShowCongDoanModal] = useState(false);
@@ -30,19 +32,24 @@ export default function CaiDat() {
         
         <div className="absolute top-0 left-0 right-0 h-48 bg-primary/5 blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
-        <div className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1">
-          <header className="flex justify-between items-center mb-2">
+        <motion.div 
+          className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1"
+          variants={pageContainerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Cài đặt</h1>
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
               <SettingsIcon className="w-5 h-5" />
             </div>
-          </header>
+          </motion.header>
 
           <div className="flex flex-col gap-6">
             
             {/* User Profile */}
             {user && (
-              <div className="bg-card border border-border/50 rounded-2xl squircle-xl p-4 flex items-center gap-4 shadow-sm">
+              <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-2xl squircle-xl p-4 flex items-center gap-4 shadow-sm">
                 {user.avatar ? (
                   <img src={user.avatar} alt="Avatar" className="w-14 h-14 rounded-full border-2 border-primary/20 object-cover" />
                 ) : (
@@ -54,11 +61,11 @@ export default function CaiDat() {
                   <h3 className="font-bold text-foreground text-lg truncate">{user.name}</h3>
                   <p className="text-muted-foreground text-sm truncate">{user.email}</p>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Section 1 */}
-            <div className="flex flex-col gap-2">
+            <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Dữ liệu</h3>
               <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
                 <button 
@@ -74,12 +81,12 @@ export default function CaiDat() {
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
-            </div>
+            </motion.div>
 
 
 
             {/* Section 2 */}
-            <div className="flex flex-col gap-2">
+            <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Lịch làm việc</h3>
               <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
                 <button 
@@ -95,10 +102,10 @@ export default function CaiDat() {
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Section 3 */}
-            <div className="flex flex-col gap-2">
+            <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Thông tin</h3>
               <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
                 <button 
@@ -123,10 +130,10 @@ export default function CaiDat() {
                   <span className="text-xs text-muted-foreground font-medium">1.0.0</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Logout */}
-            <div className="mt-4">
+            <motion.div variants={pageItemVariants} className="mt-4">
               <button 
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors rounded-2xl squircle-xl font-bold outline-none"
@@ -134,10 +141,10 @@ export default function CaiDat() {
                 <LogOut className="w-5 h-5" />
                 Đăng xuất
               </button>
-            </div>
+            </motion.div>
 
           </div>
-        </div>
+        </motion.div>
 
         <BottomNav />
       </div>
