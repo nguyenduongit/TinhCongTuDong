@@ -51,7 +51,7 @@ export function ScheduleManager({ onClose }: ScheduleManagerProps) {
 
   // Form State
   const [formType, setFormType] = useState<'tang_ca' | 'nghi_phep'>(currentSchedule?.loai as any || 'tang_ca');
-  const [soPhut, setSoPhut] = useState<number>(currentSchedule?.so_phut || 120);
+  const [soPhut, setSoPhut] = useState<number>(currentSchedule?.so_phut || 0);
 
   // Update form when selecting a new date
   React.useEffect(() => {
@@ -60,7 +60,7 @@ export function ScheduleManager({ onClose }: ScheduleManagerProps) {
       setSoPhut(currentSchedule.so_phut);
     } else {
       setFormType('tang_ca');
-      setSoPhut(120);
+      setSoPhut(0);
     }
   }, [selectedDateStr, currentSchedule?.ngay, currentSchedule?.loai, currentSchedule?.so_phut]);
 
@@ -162,13 +162,15 @@ export function ScheduleManager({ onClose }: ScheduleManagerProps) {
         <div className="flex bg-secondary/50 rounded-xl squircle-lg p-1 mb-4">
           <button 
             onClick={() => setFormType('tang_ca')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${formType === 'tang_ca' ? 'bg-blue-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`}
+            disabled={currentSchedule?.loai === 'nghi_phep'}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${formType === 'tang_ca' ? 'bg-blue-500 text-white' : 'text-muted-foreground hover:bg-secondary'} ${currentSchedule?.loai === 'nghi_phep' ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Clock className="w-4 h-4" /> Tăng ca
           </button>
           <button 
             onClick={() => setFormType('nghi_phep')}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${formType === 'nghi_phep' ? 'bg-rose-500 text-white' : 'text-muted-foreground hover:bg-secondary'}`}
+            disabled={currentSchedule?.loai === 'tang_ca'}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${formType === 'nghi_phep' ? 'bg-rose-500 text-white' : 'text-muted-foreground hover:bg-secondary'} ${currentSchedule?.loai === 'tang_ca' ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Coffee className="w-4 h-4" /> Nghỉ phép
           </button>
@@ -181,9 +183,9 @@ export function ScheduleManager({ onClose }: ScheduleManagerProps) {
           
           <input 
             type="number" 
-            value={soPhut}
-            onChange={(e) => setSoPhut(Number(e.target.value))}
-            className="w-full bg-background border border-border/50 rounded-xl squircle-lg px-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary/50"
+            value={soPhut.toString()}
+            onChange={(e) => setSoPhut(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-background border border-border/50 rounded-xl squircle-lg px-4 py-3 text-lg font-bold text-foreground outline-none focus:border-primary/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
 
           {/* Quick actions */}
@@ -217,9 +219,10 @@ export function ScheduleManager({ onClose }: ScheduleManagerProps) {
             <button 
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
-              className="px-5 bg-rose-500/10 text-rose-500 font-bold py-3.5 rounded-xl squircle-lg hover:bg-rose-500/20 transition-colors"
+              className="flex-1 bg-rose-500/10 text-rose-500 font-bold py-3.5 rounded-xl squircle-lg hover:bg-rose-500/20 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
             >
               <X className="w-5 h-5" />
+              <span>Xóa lịch trình</span>
             </button>
           )}
         </div>
