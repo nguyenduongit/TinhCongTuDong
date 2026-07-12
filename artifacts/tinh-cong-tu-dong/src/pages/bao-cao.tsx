@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, parseISO, differenceInCalendarWeeks, startOfWeek, endOfWeek } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getCycleMonthFromDate, getCycleRangeStrings, getCycleRange } from '@/lib/date-utils';
@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useGetSanLuongStats, useListSanLuong, useListCongDoan } from '@workspace/api-client-react';
 import { getListCongDoanQueryKey } from '@workspace/api-client-react';
 import { BottomNav } from '@/components/BottomNav';
+import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
 
 export default function BaoCao() {
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(new Date()));
@@ -17,18 +18,22 @@ export default function BaoCao() {
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
 
   const { startStr, endStr } = getCycleRangeStrings(currentMonth);
-  const { data: allEntries = [], isLoading: isLoadingEntries } = useListSanLuong();
-  const entries = allEntries.filter(e => e.ngay >= startStr && e.ngay <= endStr);
+  const { data: entries = [], isLoading: isLoadingEntries } = useListSanLuong({ startDate: startStr, endDate: endStr });
 
 
   const totalTimeMonth = isCurrentMonth 
     ? (stats?.month_total_time || 0) 
     : entries.reduce((sum, e) => sum + e.thoi_gian_thuc_hien + (e.thoi_gian_ho_tro ?? 0), 0);
 
-  const getCongDoanName = (ma: string) => {
-    const cd = congDoanList.find(c => c.ma_cong_doan === ma);
-    return cd ? cd.ten_cong_doan : ma;
-  };
+  const congDoanMap = useMemo(() => {
+    const map = new Map<string, string>();
+    congDoanList.forEach(c => map.set(c.ma_cong_doan, c.ten_cong_doan));
+    return map;
+  }, [congDoanList]);
+
+  const getCongDoanName = useCallback((ma: string) => {
+    return congDoanMap.get(ma) || ma;
+  }, [congDoanMap]);
 
 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
@@ -41,19 +46,7 @@ export default function BaoCao() {
     return `${h}h${m > 0 ? ` ${m}m` : ''}`;
   };
 
-  type WeekGroup = {
-    weekNum: number;
-    startDate: Date;
-    endDate: Date;
-    isCurrentWeek: boolean;
-    isLastWeek: boolean;
-    totalCongSp: number;
-    totalHoTroPhut: number;
-    totalTime: number;
-    congDoanStats: Record<string, { so_luong: number; cong_sp: number }>;
-  };
-
-  const getWeekGroups = () => {
+  const weekGroups = useMemo(() => {
     const { start: cycleStart, end: cycleEnd } = getCycleRange(currentMonth);
     const today = new Date();
     
@@ -108,9 +101,8 @@ export default function BaoCao() {
     });
 
     return Array.from(weekMap.values()).sort((a, b) => b.weekNum - a.weekNum);
-  };
+  }, [entries, currentMonth]);
 
-  const weekGroups = getWeekGroups();
   const totalCongMonth = weekGroups.reduce((sum, week) => sum + week.totalCongSp + (week.totalHoTroPhut / 480), 0);
 
   return (
@@ -121,16 +113,16 @@ export default function BaoCao() {
 
         <div className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1">
           <header className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold tracking-tight text-white">Báo cáo</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Báo cáo</h1>
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
               <BarChart3 className="w-5 h-5" />
             </div>
           </header>
 
-          <div className="bg-card border border-border/50 rounded-2xl p-2 flex items-center justify-between shadow-sm">
+          <div className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
             <button 
               onClick={handlePrevMonth}
-              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-secondary text-muted-foreground transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -138,12 +130,12 @@ export default function BaoCao() {
               <span className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">
                 Tháng
               </span>
-              <span className="text-[15px] font-bold text-white capitalize">{format(currentMonth, 'MM / yyyy')}</span>
+              <span className="text-[15px] font-bold text-foreground capitalize">{format(currentMonth, 'MM / yyyy')}</span>
             </div>
             <button 
               onClick={handleNextMonth}
               disabled={isCurrentMonth}
-              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-secondary text-muted-foreground transition-colors disabled:opacity-30"
+              className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors disabled:opacity-30"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -162,66 +154,11 @@ export default function BaoCao() {
             ) : (
               <div className="flex flex-col gap-6">
                 {weekGroups.map(week => (
-                  <div key={week.weekNum} className="flex flex-col">
-                    <div className="flex justify-between items-end mb-3 border-b border-border/50 pb-2">
-                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-primary"></span>
-                        {week.isCurrentWeek ? 'Tuần này' : week.isLastWeek ? 'Tuần trước' : `Tuần ${week.weekNum}`} ({format(week.startDate, 'dd/MM')} - {format(week.endDate, 'dd/MM')})
-                      </h4>
-                      <div className="flex text-xs font-medium text-muted-foreground gap-3">
-                        <span className="text-primary font-bold">
-                          {(week.totalCongSp + week.totalHoTroPhut / 480).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} công
-                          <span className="text-muted-foreground/60 font-normal mx-1.5">/</span>
-                          <span className="text-white">{(week.totalTime / 480).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}</span>
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col bg-card border border-border/50 rounded-xl px-2">
-                      {Object.entries(week.congDoanStats).map(([ma_cong_doan, stats], i, arr) => (
-                        <div key={ma_cong_doan} className={`flex justify-between items-center py-3 px-2 ${i !== arr.length - 1 || week.totalHoTroPhut > 0 ? 'border-b border-border/30' : ''}`}>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-primary font-bold text-[11px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 uppercase tracking-wider self-start">
-                              {ma_cong_doan}
-                            </span>
-                            <span className="text-xs font-medium text-white line-clamp-1">{getCongDoanName(ma_cong_doan)}</span>
-                          </div>
-                          <div className="flex gap-4 text-xs font-medium items-center">
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-muted-foreground uppercase mb-0.5">SL</span>
-                              <span className="text-amber-200/90 font-bold">{stats.so_luong.toLocaleString('vi-VN')}</span>
-                            </div>
-                            <div className="w-px h-6 bg-border/50"></div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-muted-foreground uppercase mb-0.5">Công SP</span>
-                              <span className="text-primary font-bold">{stats.cong_sp.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {week.totalHoTroPhut > 0 && (
-                        <div className="flex justify-between items-center py-3 px-2">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-purple-400 font-bold text-[11px] bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20 uppercase tracking-wider self-start">
-                              HỔ TRỢ
-                            </span>
-                            <span className="text-xs font-medium text-white line-clamp-1">Thời gian hỗ trợ</span>
-                          </div>
-                          <div className="flex gap-4 text-xs font-medium items-center">
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-muted-foreground uppercase mb-0.5">Tổng phút</span>
-                              <span className="text-purple-200/90 font-bold">{week.totalHoTroPhut} phút</span>
-                            </div>
-                            <div className="w-px h-6 bg-border/50"></div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-muted-foreground uppercase mb-0.5">Công HT</span>
-                              <span className="text-purple-400 font-bold">{(week.totalHoTroPhut / 480).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <WeekSummaryCard 
+                    key={week.weekNum} 
+                    week={week} 
+                    getCongDoanName={getCongDoanName} 
+                  />
                 ))}
               </div>
             )}

@@ -1,39 +1,52 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Search, Plus, X, Pencil, Trash2 } from 'lucide-react';
-import { 
-  useListCongDoan, 
-  useCreateCongDoan, 
-  useUpdateCongDoan, 
+import {
+  useListCongDoan,
+  useCreateCongDoan,
+  useUpdateCongDoan,
   useDeleteCongDoan,
-  type CongDoan 
+  type CongDoan
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListCongDoanQueryKey } from '@workspace/api-client-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CongDoanFormUI, parseQuyCach } from './ui-parts/CongDoanFormUI';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CongDoanModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect?: (congDoan: CongDoan) => void;
-  manageMode?: boolean; 
+  manageMode?: boolean;
 }
 
 export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false }: CongDoanModalProps) {
   const queryClient = useQueryClient();
   const { data: list = [], isLoading } = useListCongDoan({ query: { enabled: open, queryKey: getListCongDoanQueryKey() } });
-  
+
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const createMutation = useCreateCongDoan();
   const updateMutation = useUpdateCongDoan();
   const deleteMutation = useDeleteCongDoan();
 
-  const filteredList = list.filter(c => 
-    c.ten_cong_doan.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredList = list.filter(c =>
+    c.ten_cong_doan.toLowerCase().includes(search.toLowerCase()) ||
     c.ma_cong_doan.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -45,7 +58,7 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
         ma_cong_doan: formData.get('ma_cong_doan') as string,
         ten_cong_doan: formData.get('ten_cong_doan') as string,
         dinh_muc: Number(formData.get('dinh_muc')),
-        quy_cach: formData.get('quy_cach') as string,
+        quy_cach: formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '',
       }
     });
     queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
@@ -61,17 +74,18 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
         ma_cong_doan: formData.get('ma_cong_doan') as string,
         ten_cong_doan: formData.get('ten_cong_doan') as string,
         dinh_muc: Number(formData.get('dinh_muc')),
-        quy_cach: formData.get('quy_cach') as string,
+        quy_cach: formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '',
       }
     });
     queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
     setEditingId(null);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa công đoạn này?')) {
-      await deleteMutation.mutateAsync({ id });
+  const handleDelete = async () => {
+    if (deleteConfirmId !== null) {
+      await deleteMutation.mutateAsync({ id: deleteConfirmId });
       queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
+      setDeleteConfirmId(null);
     }
   };
 
@@ -88,20 +102,20 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
         <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60]" />
         <Dialog.Content className="fixed inset-0 z-[60] flex justify-center bg-background sm:p-4">
           <div className="w-full max-w-[430px] bg-background sm:rounded-[2rem] sm:border border-border/50 shadow-2xl flex flex-col overflow-hidden h-full sm:h-[90vh] relative sm:top-[5vh]">
-            
+
             <header className="flex items-center justify-between p-4 border-b border-border/50 bg-card z-10 shrink-0">
-              <Dialog.Title className="text-lg font-bold text-white tracking-tight">
+              <Dialog.Title className="text-lg font-bold text-foreground tracking-tight">
                 {manageMode ? 'Quản lý công đoạn' : 'Chọn công đoạn'}
               </Dialog.Title>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => setIsAdding(!isAdding)}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
                 <Dialog.Close asChild>
-                  <button className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-white transition-colors">
+                  <button className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </Dialog.Close>
@@ -111,12 +125,12 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
             <div className="p-4 bg-card border-b border-border/50 shrink-0 z-10">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input 
-                  type="text" 
-                  placeholder="Tìm kiếm mã hoặc tên..." 
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm mã hoặc tên..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-secondary border border-border/50 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-muted-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+                  className="w-full bg-secondary border border-border/50 rounded-xl squircle-lg pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
                 />
               </div>
             </div>
@@ -124,78 +138,57 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
             <div className="flex-1 overflow-y-auto p-4 pb-20 flex flex-col gap-3 relative z-0">
               <AnimatePresence>
                 {isAdding && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="mb-2 shrink-0"
                   >
-                    <form onSubmit={handleCreate} className="bg-card border border-primary/30 rounded-2xl p-4 shadow-[0_0_15px_rgba(212,168,67,0.1)]">
-                      <h4 className="text-sm font-semibold text-primary mb-3">Thêm công đoạn mới</h4>
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="col-span-1">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Mã (VD: CD01)</label>
-                          <input required name="ma_cong_doan" className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                        <div className="col-span-1">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Định mức (SL)</label>
-                          <input required type="number" name="dinh_muc" className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Tên công đoạn</label>
-                          <input required name="ten_cong_doan" className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Quy cách (Không bắt buộc)</label>
-                          <input name="quy_cach" className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">Hủy</button>
-                        <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50 transition-transform active:scale-95">Lưu</button>
-                      </div>
-                    </form>
+                    <CongDoanFormUI 
+                      onSubmit={handleCreate}
+                      onCancel={() => setIsAdding(false)}
+                      isPending={createMutation.isPending}
+                      isEditing={false}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {isLoading ? (
-                <div className="flex justify-center p-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+                <>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-card border border-border/50 rounded-2xl squircle-xl p-4 flex items-center justify-between mb-1">
+                      <div className="flex-1 min-w-0 pr-4 pl-1 space-y-2">
+                        <Skeleton className="h-5 w-3/4 rounded-md" />
+                        <Skeleton className="h-4 w-1/2 rounded-md" />
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Skeleton className="w-9 h-9 rounded-xl squircle-lg" />
+                        <Skeleton className="w-9 h-9 rounded-xl squircle-lg" />
+                      </div>
+                    </div>
+                  ))}
+                </>
               ) : filteredList.length === 0 ? (
                 <div className="text-center p-8 text-muted-foreground text-sm">Không tìm thấy công đoạn nào.</div>
               ) : (
                 filteredList.map(c => (
                   editingId === c.id ? (
-                    <form key={c.id} onSubmit={(e) => handleUpdate(c.id, e)} className="bg-card border border-primary/50 rounded-2xl p-4 shadow-sm mb-1">
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="col-span-1">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Mã</label>
-                          <input required name="ma_cong_doan" defaultValue={c.ma_cong_doan} className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                        <div className="col-span-1">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Định mức</label>
-                          <input required type="number" name="dinh_muc" defaultValue={c.dinh_muc} className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Tên</label>
-                          <input required name="ten_cong_doan" defaultValue={c.ten_cong_doan} className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                        <div className="col-span-2">
-                          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Quy cách</label>
-                          <input name="quy_cach" defaultValue={c.quy_cach} className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-primary" />
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setEditingId(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">Hủy</button>
-                        <button type="submit" disabled={updateMutation.isPending} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold transition-transform active:scale-95">Lưu</button>
-                      </div>
-                    </form>
+                    <div key={c.id} className="mb-1">
+                      <CongDoanFormUI 
+                        onSubmit={(e) => handleUpdate(c.id, e)}
+                        onCancel={() => setEditingId(null)}
+                        isPending={updateMutation.isPending}
+                        defaultValues={c}
+                        isEditing={true}
+                      />
+                    </div>
                   ) : (
-                    <div 
-                      key={c.id} 
+                    <div
+                      key={c.id}
                       onClick={() => handleRowClick(c)}
                       className={cn(
-                        "bg-card border border-border/50 rounded-2xl p-4 flex items-center justify-between group transition-colors relative overflow-hidden mb-1",
+                        "bg-card border border-border/50 rounded-2xl squircle-xl p-4 flex items-center justify-between group transition-colors relative overflow-hidden mb-1",
                         !manageMode && editingId === null && "cursor-pointer hover:border-primary/50 active:scale-[0.98]"
                       )}
                     >
@@ -205,7 +198,7 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 tracking-wider">
                             {c.ma_cong_doan}
                           </span>
-                          <h4 className="font-bold text-white truncate text-sm">{c.ten_cong_doan}</h4>
+                          <h4 className="font-bold text-foreground truncate text-sm">{c.ten_cong_doan}</h4>
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground font-medium">
                           <span>ĐM: <span className="text-foreground">{c.dinh_muc}</span></span>
@@ -217,12 +210,12 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-1 shrink-0 bg-card/80 backdrop-blur" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setEditingId(c.id)} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                        <button onClick={() => setEditingId(c.id)} className="w-9 h-9 flex items-center justify-center rounded-xl squircle-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(c.id)} disabled={deleteMutation.isPending} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                        <button onClick={() => setDeleteConfirmId(c.id)} disabled={deleteMutation.isPending} className="w-9 h-9 flex items-center justify-center rounded-xl squircle-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -234,6 +227,21 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+
+      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa công đoạn này không? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog.Root>
   );
 }

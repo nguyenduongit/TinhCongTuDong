@@ -11,4 +11,12 @@ export type ListSanLuongParams = {
  * Ngày theo định dạng YYYY-MM-DD
  */
 ngay?: string;
+/**
+ * Ngày bắt đầu (YYYY-MM-DD)
+ */
+startDate?: string;
+/**
+ * Ngày kết thúc (YYYY-MM-DD)
+ */
+endDate?: string;
 };

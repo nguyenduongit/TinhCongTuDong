@@ -10,9 +10,9 @@ import { getGetSanLuongTodayQueryKey, getGetSanLuongStatsQueryKey, getListSanLuo
 import type { SanLuong } from '@workspace/api-client-react';
 
 import { BottomNav } from '@/components/BottomNav';
-import { SanLuongCard } from '@/components/SanLuongCard';
-import { AddEntryDrawer } from '@/components/AddEntryDrawer';
-import { EditEntryDrawer } from '@/components/EditEntryDrawer';
+import { SanLuongDrawer } from '@/components/SanLuongDrawer';
+import { MonthlyProgressCard } from '@/components/ui-parts/MonthlyProgressCard';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -29,7 +29,7 @@ const itemVariants: Variants = {
 
 const fabVariants: Variants = {
   hidden: { opacity: 0, scale: 0 },
-  show: { 
+  show: {
     opacity: 1, scale: 1,
     transition: { type: 'spring', stiffness: 400, damping: 25, delay: 0.4 }
   }
@@ -37,7 +37,6 @@ const fabVariants: Variants = {
 
 export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editEntry, setEditEntry] = useState<SanLuong | null>(null);
 
   const queryClient = useQueryClient();
   const { data: todayEntries = [], isLoading: isLoadingEntries } = useGetSanLuongToday();
@@ -56,10 +55,10 @@ export default function Home() {
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">
       <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl">
-        
+
         <div className="absolute top-0 left-0 right-0 h-64 bg-primary/5 blur-[100px] pointer-events-none rounded-full transform -translate-y-1/2" />
-        
-        <motion.div 
+
+        <motion.div
           className="flex-1 px-5 pt-12 flex flex-col gap-8 relative z-10"
           variants={containerVariants}
           initial="hidden"
@@ -73,85 +72,75 @@ export default function Home() {
                 Tính Công Tự Động
               </h1>
             </div>
-            <button className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-            </button>
           </motion.header>
 
           {/* Tóm tắt tháng */}
           <motion.div variants={itemVariants} className="grid grid-cols-3 gap-2">
-            <div className="bg-card border border-border/50 rounded-xl p-3 flex flex-col items-center shadow-sm">
+            <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">{(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'Dư' : 'Thiếu'}</span>
-              <span className={`text-lg font-bold ${(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <span className={`text-lg font-bold ${(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-400'}`}>
                 {isLoadingStats ? '-' : Math.abs((stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="bg-card border border-border/50 rounded-xl p-3 flex flex-col items-center shadow-sm">
+            <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">Công SP</span>
               <span className="text-lg font-bold text-primary">{isLoadingStats ? '-' : (stats?.month_total_sl || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
             </div>
-            <div className="bg-card border border-border/50 rounded-xl p-3 flex flex-col items-center shadow-sm">
+            <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">Công nhật</span>
-              <span className="text-lg font-bold text-white">
+              <span className="text-lg font-bold text-foreground">
                 {isLoadingStats ? '-' : ((stats?.month_total_time || 0) / 480).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
             </div>
           </motion.div>
 
-          {/* Entries */}
-          <motion.div variants={itemVariants} className="flex flex-col flex-1">
-            <div className="flex justify-between items-end mb-4">
-              <h3 className="text-lg font-bold text-white tracking-tight">Sản lượng hôm nay</h3>
-            </div>
-            
-            <div className="flex flex-col relative flex-1">
-              {isLoadingEntries ? (
-                <div className="flex justify-center p-8"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
-              ) : todayEntries.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-24 h-24 rounded-full bg-secondary/50 flex items-center justify-center mb-4 border border-border">
-                    <Plus className="w-10 h-10 text-muted-foreground/30" />
-                  </div>
-                  <p className="text-muted-foreground text-sm font-medium">Chưa có sản lượng hôm nay.<br/>Nhấn + để thêm.</p>
-                </div>
-              ) : (
-                todayEntries.map(entry => (
-                  <SanLuongCard 
-                    key={entry.id} 
-                    entry={entry} 
-                    onEdit={setEditEntry} 
-                    onDelete={handleDelete} 
-                  />
-                ))
-              )}
-            </div>
+          {/* Progress Card */}
+          <motion.div variants={itemVariants}>
+            <MonthlyProgressCard
+              monthTotalSl={stats?.month_total_sl || 0}
+              monthTotalTime={stats?.month_total_time || 0}
+              hasLoggedToday={todayEntries.length > 0}
+              isLoading={isLoadingStats}
+            />
           </motion.div>
         </motion.div>
 
         {/* FAB */}
-        <motion.div 
+        <motion.div
           variants={fabVariants}
           initial="hidden"
           animate="show"
           className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20"
         >
-          <button 
-            onClick={() => setIsAddOpen(true)}
-            disabled={todayEntries.length > 0}
-            className={`relative group flex items-center justify-center outline-none ${todayEntries.length > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-          >
-            <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
-            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
-              <Plus className="w-8 h-8" strokeWidth={2.5} />
-            </div>
-          </button>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => setIsAddOpen(true)}
+                    disabled={todayEntries.length > 0}
+                    className={`relative group flex items-center justify-center outline-none ${todayEntries.length > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                  >
+                    <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
+                      <Plus className="w-8 h-8" strokeWidth={2.5} />
+                    </div>
+                  </button>
+                </div>
+              </TooltipTrigger>
+              {todayEntries.length > 0 && (
+                <TooltipContent side="top" sideOffset={10}>
+                  <p>Hôm nay bạn đã nhập sản lượng rồi!</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </motion.div>
 
         <BottomNav />
       </div>
 
-      <AddEntryDrawer open={isAddOpen} onOpenChange={setIsAddOpen} />
-      <EditEntryDrawer entry={editEntry} open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)} />
+      <SanLuongDrawer open={isAddOpen} onOpenChange={setIsAddOpen} />
     </div>
   );
 }

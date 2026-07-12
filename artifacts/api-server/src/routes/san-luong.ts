@@ -13,6 +13,8 @@ import {
   GetSanLuongTodayResponse,
   GetSanLuongStatsResponse,
 } from "@workspace/api-zod";
+import { requireAuth, AuthRequest } from "../middlewares/auth";
+import { truncate3, computeCongSp, computeCongNhat, computeCongHoTro } from "@workspace/business-logic";
 
 const router: IRouter = Router();
 
@@ -30,15 +32,6 @@ function getTodayVN(): string {
     .join("-"); // "dd/mm/yyyy" → "yyyy-mm-dd"
 }
 
-function truncate3(num: number): number {
-  if (typeof num !== 'number' || isNaN(num)) return 0;
-  const str = num.toFixed(10);
-  const dotIndex = str.indexOf('.');
-  if (dotIndex === -1) return num;
-  return Number(str.slice(0, dotIndex + 4));
-}
-
-
 function formatRow(sl: typeof sanLuongTable.$inferSelect) {
   return {
     ...sl,
@@ -50,7 +43,7 @@ function formatRow(sl: typeof sanLuongTable.$inferSelect) {
   };
 }
 
-router.get("/san-luong/today", async (req, res): Promise<void> => {
+router.get("/san-luong/today", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const today = getTodayVN();
 
   const rows = await db
@@ -61,16 +54,17 @@ router.get("/san-luong/today", async (req, res): Promise<void> => {
       thong_ke_ngay: sanLuongTable.thong_ke_ngay,
       thoi_gian_thuc_hien: sanLuongTable.thoi_gian_thuc_hien,
       thoi_gian_ho_tro: sanLuongTable.thoi_gian_ho_tro,
+      user_id: sanLuongTable.user_id,
       created_at: sanLuongTable.created_at,
     })
     .from(sanLuongTable)
-    .where(eq(sanLuongTable.ngay, today))
+    .where(and(eq(sanLuongTable.ngay, today), eq(sanLuongTable.user_id, req.user!.id)))
     .orderBy(sanLuongTable.created_at);
 
   res.json(GetSanLuongTodayResponse.parse(rows.map(formatRow)));
 });
 
-router.get("/san-luong/stats", async (req, res): Promise<void> => {
+router.get("/san-luong/stats", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const today = getTodayVN();
   const [yearStr, monthStr, dayStr] = today.split('-');
   const y = parseInt(yearStr, 10);
@@ -97,62 +91,72 @@ router.get("/san-luong/stats", async (req, res): Promise<void> => {
   const cycleStartStr = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-21`;
   const cycleEndStr = `${cycleYear}-${cycleMonth.toString().padStart(2, '0')}-20`;
 
-  const [todayStats] = await db
-    .select({
-      count: sql<number>`count(*)::int`,
-      total_time: sql<number>`coalesce(sum(${sanLuongTable.thoi_gian_thuc_hien} + coalesce(${sanLuongTable.thoi_gian_ho_tro}, 0)), 0)::int`,
-      total_sl: sql<number>`coalesce(sum(coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_sp')::numeric, 0) + coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_ho_tro')::numeric, 0)), 0)::float`,
-    })
-    .from(sanLuongTable)
-    .where(eq(sanLuongTable.ngay, today));
-
-  const [monthStats] = await db
-    .select({
-      count: sql<number>`count(*)::int`,
-      total_time: sql<number>`coalesce(sum(${sanLuongTable.thoi_gian_thuc_hien} + coalesce(${sanLuongTable.thoi_gian_ho_tro}, 0)), 0)::int`,
-      total_sl: sql<number>`coalesce(sum(coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_sp')::numeric, 0) + coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_ho_tro')::numeric, 0)), 0)::float`,
-    })
-    .from(sanLuongTable)
-    .where(sql`${sanLuongTable.ngay} >= ${cycleStartStr} AND ${sanLuongTable.ngay} <= ${cycleEndStr}`);
-
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + (weekStart.getDay() === 0 ? -6 : 1)); // Lấy thứ 2
+  const now = new Date();
+  const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+  vnTime.setUTCHours(0, 0, 0, 0);
+  const dayOfWeek = vnTime.getUTCDay();
+  const weekStart = new Date(vnTime);
+  weekStart.setUTCDate(vnTime.getUTCDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
   const weekStartStr = weekStart.toISOString().slice(0, 10);
 
-  const [weekStats] = await db
+  const minStartStr = cycleStartStr < weekStartStr ? cycleStartStr : weekStartStr;
+  const maxEndStr = cycleEndStr > today ? cycleEndStr : today;
+
+  const [stats] = await db
     .select({
-      count: sql<number>`count(*)::int`,
-      total_time: sql<number>`coalesce(sum(${sanLuongTable.thoi_gian_thuc_hien} + coalesce(${sanLuongTable.thoi_gian_ho_tro}, 0)), 0)::int`,
-      total_sl: sql<number>`coalesce(sum(coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_sp')::numeric, 0) + coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_ho_tro')::numeric, 0)), 0)::float`,
+      today_count: sql<number>`sum(case when ${sanLuongTable.ngay} = ${today} then 1 else 0 end)::int`,
+      today_time: sql<number>`coalesce(sum(case when ${sanLuongTable.ngay} = ${today} then ${sanLuongTable.thoi_gian_thuc_hien} + coalesce(${sanLuongTable.thoi_gian_ho_tro}, 0) else 0 end), 0)::int`,
+      today_sl: sql<number>`coalesce(sum(case when ${sanLuongTable.ngay} = ${today} then coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_sp')::numeric, 0) + coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_ho_tro')::numeric, 0) else 0 end), 0)::float`,
+
+      month_count: sql<number>`sum(case when ${sanLuongTable.ngay} >= ${cycleStartStr} AND ${sanLuongTable.ngay} <= ${cycleEndStr} then 1 else 0 end)::int`,
+      month_time: sql<number>`coalesce(sum(case when ${sanLuongTable.ngay} >= ${cycleStartStr} AND ${sanLuongTable.ngay} <= ${cycleEndStr} then ${sanLuongTable.thoi_gian_thuc_hien} + coalesce(${sanLuongTable.thoi_gian_ho_tro}, 0) else 0 end), 0)::int`,
+      month_sl: sql<number>`coalesce(sum(case when ${sanLuongTable.ngay} >= ${cycleStartStr} AND ${sanLuongTable.ngay} <= ${cycleEndStr} then coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_sp')::numeric, 0) + coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_ho_tro')::numeric, 0) else 0 end), 0)::float`,
+
+      week_count: sql<number>`sum(case when ${sanLuongTable.ngay} >= ${weekStartStr} then 1 else 0 end)::int`,
+      week_time: sql<number>`coalesce(sum(case when ${sanLuongTable.ngay} >= ${weekStartStr} then ${sanLuongTable.thoi_gian_thuc_hien} + coalesce(${sanLuongTable.thoi_gian_ho_tro}, 0) else 0 end), 0)::int`,
+      week_sl: sql<number>`coalesce(sum(case when ${sanLuongTable.ngay} >= ${weekStartStr} then coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_sp')::numeric, 0) + coalesce((${sanLuongTable.thong_ke_ngay}->>'tong_cong_ho_tro')::numeric, 0) else 0 end), 0)::float`,
     })
     .from(sanLuongTable)
-    .where(sql`${sanLuongTable.ngay} >= ${weekStartStr}`);
+    .where(and(
+      eq(sanLuongTable.user_id, req.user!.id),
+      sql`${sanLuongTable.ngay} >= ${minStartStr} AND ${sanLuongTable.ngay} <= ${maxEndStr}`
+    ));
 
   res.json(
     GetSanLuongStatsResponse.parse({
-      today_count: todayStats?.count ?? 0,
-      today_total_time: todayStats?.total_time ?? 0,
-      today_total_sl: todayStats?.total_sl ?? 0,
-      month_count: monthStats?.count ?? 0,
-      month_total_time: monthStats?.total_time ?? 0,
-      month_total_sl: monthStats?.total_sl ?? 0,
-      week_count: weekStats?.count ?? 0,
-      week_total_time: weekStats?.total_time ?? 0,
-      week_total_sl: weekStats?.total_sl ?? 0,
+      today_count: stats?.today_count ?? 0,
+      today_total_time: stats?.today_time ?? 0,
+      today_total_sl: stats?.today_sl ?? 0,
+      month_count: stats?.month_count ?? 0,
+      month_total_time: stats?.month_time ?? 0,
+      month_total_sl: stats?.month_sl ?? 0,
+      week_count: stats?.week_count ?? 0,
+      week_total_time: stats?.week_time ?? 0,
+      week_total_sl: stats?.week_sl ?? 0,
     })
   );
 });
 
-router.get("/san-luong", async (req, res): Promise<void> => {
+router.get("/san-luong", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const queryParsed = ListSanLuongQueryParams.safeParse(req.query);
   if (!queryParsed.success) {
     res.status(400).json({ error: queryParsed.error.message });
     return;
   }
 
-  const conditions = queryParsed.data.ngay
-    ? [eq(sanLuongTable.ngay, queryParsed.data.ngay)]
-    : [];
+  const conditions = [];
+  conditions.push(eq(sanLuongTable.user_id, req.user!.id));
+
+  if (queryParsed.data.ngay) {
+    conditions.push(eq(sanLuongTable.ngay, queryParsed.data.ngay));
+  } else {
+    if (queryParsed.data.startDate) {
+      conditions.push(sql`${sanLuongTable.ngay} >= ${queryParsed.data.startDate}`);
+    }
+    if (queryParsed.data.endDate) {
+      conditions.push(sql`${sanLuongTable.ngay} <= ${queryParsed.data.endDate}`);
+    }
+  }
 
   const rows = await db
     .select({
@@ -162,6 +166,7 @@ router.get("/san-luong", async (req, res): Promise<void> => {
       thong_ke_ngay: sanLuongTable.thong_ke_ngay,
       thoi_gian_thuc_hien: sanLuongTable.thoi_gian_thuc_hien,
       thoi_gian_ho_tro: sanLuongTable.thoi_gian_ho_tro,
+      user_id: sanLuongTable.user_id,
       created_at: sanLuongTable.created_at,
     })
     .from(sanLuongTable)
@@ -171,14 +176,14 @@ router.get("/san-luong", async (req, res): Promise<void> => {
   res.json(ListSanLuongResponse.parse(rows.map(formatRow)));
 });
 
-router.post("/san-luong", async (req, res): Promise<void> => {
+router.post("/san-luong", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const parsed = CreateSanLuongBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const existing = await db.select().from(sanLuongTable).where(eq(sanLuongTable.ngay, parsed.data.ngay));
+  const existing = await db.select().from(sanLuongTable).where(and(eq(sanLuongTable.ngay, parsed.data.ngay), eq(sanLuongTable.user_id, req.user!.id)));
   if (existing.length > 0) {
     res.status(400).json({ error: "Ngày này đã có sản lượng. Vui lòng thêm công đoạn vào dữ liệu có sẵn của ngày này." });
     return;
@@ -190,32 +195,19 @@ router.post("/san-luong", async (req, res): Promise<void> => {
     return;
   }
 
-  const allCongDoan = await db.select().from(congDoanTable);
+  const allCongDoan = await db.select().from(congDoanTable).where(eq(congDoanTable.user_id, req.user!.id));
   
   const chi_tiet_computed = parsed.data.chi_tiet.map(ct => {
     const cd = allCongDoan.find(c => c.ma_cong_doan === ct.cong_doan);
-    const cdDinhMuc = cd ? Number(cd.dinh_muc) : 0;
-    const dinh_muc = cdDinhMuc > 0 ? cdDinhMuc : 1;
-    const phan_tram = ct.phan_tram_dinh_muc > 0 ? ct.phan_tram_dinh_muc : 100;
-    const rate = dinh_muc * (phan_tram / 100);
-    
-    let cong_sp = 0;
-    if (ct.cong_doan.startsWith('9')) {
-      const fullBaskets = Math.floor(ct.so_luong / 32);
-      const remainder = ct.so_luong % 32;
-      const cong_sp_full = truncate3(32 / rate);
-      const cong_sp_remainder = remainder > 0 ? truncate3(remainder / rate) : 0;
-      cong_sp = (fullBaskets * cong_sp_full) + cong_sp_remainder;
-    } else {
-      cong_sp = truncate3(ct.so_luong / rate);
-    }
+    const dinh_muc = cd ? Number(cd.dinh_muc) : 1;
+    const cong_sp = computeCongSp(ct.so_luong, dinh_muc, ct.phan_tram_dinh_muc, ct.cong_doan.startsWith('9'));
     return { ...ct, cong_sp };
   });
 
   let tong_cong_sp = chi_tiet_computed.reduce((sum, ct) => sum + ct.cong_sp, 0);
   tong_cong_sp = truncate3(tong_cong_sp);
-  const cong_nhat = (parsed.data.thoi_gian_thuc_hien + (parsed.data.thoi_gian_ho_tro ?? 0)) / 480;
-  const tong_cong_ho_tro = (parsed.data.thoi_gian_ho_tro ?? 0) / 480;
+  const cong_nhat = computeCongNhat(parsed.data.thoi_gian_thuc_hien, parsed.data.thoi_gian_ho_tro ?? 0);
+  const tong_cong_ho_tro = computeCongHoTro(parsed.data.thoi_gian_ho_tro ?? 0);
   
   const chi_tiet_cong: Record<string, number> = {};
   chi_tiet_computed.forEach(ct => {
@@ -235,6 +227,7 @@ router.post("/san-luong", async (req, res): Promise<void> => {
       thong_ke_ngay: { tong_cong_sp, cong_nhat, tong_cong_ho_tro, chi_tiet_cong },
       thoi_gian_thuc_hien: parsed.data.thoi_gian_thuc_hien,
       thoi_gian_ho_tro: parsed.data.thoi_gian_ho_tro ?? 0,
+      user_id: req.user!.id,
     })
     .returning();
 
@@ -242,26 +235,13 @@ router.post("/san-luong", async (req, res): Promise<void> => {
   if (congDoanMAs.length > 0) {
     await db.update(congDoanTable)
       .set({ order: Date.now() })
-      .where(inArray(congDoanTable.ma_cong_doan, congDoanMAs));
+      .where(and(inArray(congDoanTable.ma_cong_doan, congDoanMAs), eq(congDoanTable.user_id, req.user!.id)));
   }
 
-  const [joined] = await db
-    .select({
-      id: sanLuongTable.id,
-      ngay: sanLuongTable.ngay,
-      chi_tiet: sanLuongTable.chi_tiet,
-      thong_ke_ngay: sanLuongTable.thong_ke_ngay,
-      thoi_gian_thuc_hien: sanLuongTable.thoi_gian_thuc_hien,
-      thoi_gian_ho_tro: sanLuongTable.thoi_gian_ho_tro,
-      created_at: sanLuongTable.created_at,
-    })
-    .from(sanLuongTable)
-    .where(eq(sanLuongTable.id, row.id));
-
-  res.status(201).json(CreateSanLuongResponse.parse(formatRow(joined)));
+  res.status(201).json(CreateSanLuongResponse.parse(formatRow(row)));
 });
 
-router.patch("/san-luong/:id", async (req, res): Promise<void> => {
+router.patch("/san-luong/:id", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const params = UpdateSanLuongParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -286,24 +266,11 @@ router.patch("/san-luong/:id", async (req, res): Promise<void> => {
       return;
     }
 
-    const allCongDoan = await db.select().from(congDoanTable);
+    const allCongDoan = await db.select().from(congDoanTable).where(eq(congDoanTable.user_id, req.user!.id));
     chi_tiet_computed = parsed.data.chi_tiet.map(ct => {
       const cd = allCongDoan.find(c => c.ma_cong_doan === ct.cong_doan);
-      const cdDinhMuc = cd ? Number(cd.dinh_muc) : 0;
-      const dinh_muc = cdDinhMuc > 0 ? cdDinhMuc : 1;
-      const phan_tram = ct.phan_tram_dinh_muc > 0 ? ct.phan_tram_dinh_muc : 100;
-      const rate = dinh_muc * (phan_tram / 100);
-      
-      let cong_sp = 0;
-      if (ct.cong_doan.startsWith('9')) {
-        const fullBaskets = Math.floor(ct.so_luong / 32);
-        const remainder = ct.so_luong % 32;
-        const cong_sp_full = truncate3(32 / rate);
-        const cong_sp_remainder = remainder > 0 ? truncate3(remainder / rate) : 0;
-        cong_sp = (fullBaskets * cong_sp_full) + cong_sp_remainder;
-      } else {
-        cong_sp = truncate3(ct.so_luong / rate);
-      }
+      const dinh_muc = cd ? Number(cd.dinh_muc) : 1;
+      const cong_sp = computeCongSp(ct.so_luong, dinh_muc, ct.phan_tram_dinh_muc, ct.cong_doan.startsWith('9'));
       return { ...ct, cong_sp };
     });
     tong_cong_sp = chi_tiet_computed.reduce((sum, ct) => sum + ct.cong_sp, 0);
@@ -318,7 +285,7 @@ router.patch("/san-luong/:id", async (req, res): Promise<void> => {
 
   // Need to compute thong_ke_ngay if either chi_tiet or thoi_gian_thuc_hien changed
   if (chi_tiet_computed !== undefined || parsed.data.thoi_gian_thuc_hien !== undefined || parsed.data.thoi_gian_ho_tro !== undefined) {
-    const existing = await db.select().from(sanLuongTable).where(eq(sanLuongTable.id, params.data.id));
+    const existing = await db.select().from(sanLuongTable).where(and(eq(sanLuongTable.id, params.data.id), eq(sanLuongTable.user_id, req.user!.id)));
     if (existing[0]) {
       let finalTongCongSp = chi_tiet_computed !== undefined ? tong_cong_sp : (existing[0].thong_ke_ngay as any)?.tong_cong_sp ?? 0;
       finalTongCongSp = truncate3(finalTongCongSp);
@@ -337,8 +304,8 @@ router.patch("/san-luong/:id", async (req, res): Promise<void> => {
 
       const finalThoiGian = parsed.data.thoi_gian_thuc_hien !== undefined ? parsed.data.thoi_gian_thuc_hien : existing[0].thoi_gian_thuc_hien;
       const finalThoiGianHoTro = parsed.data.thoi_gian_ho_tro !== undefined ? parsed.data.thoi_gian_ho_tro : (existing[0].thoi_gian_ho_tro ?? 0);
-      const finalCongNhat = (finalThoiGian + finalThoiGianHoTro) / 480;
-      const finalTongCongHoTro = finalThoiGianHoTro / 480;
+      const finalCongNhat = computeCongNhat(finalThoiGian, finalThoiGianHoTro);
+      const finalTongCongHoTro = computeCongHoTro(finalThoiGianHoTro);
       
       updateData.thong_ke_ngay = { 
         tong_cong_sp: finalTongCongSp, 
@@ -352,7 +319,7 @@ router.patch("/san-luong/:id", async (req, res): Promise<void> => {
   const [updated] = await db
     .update(sanLuongTable)
     .set(updateData)
-    .where(eq(sanLuongTable.id, params.data.id))
+    .where(and(eq(sanLuongTable.id, params.data.id), eq(sanLuongTable.user_id, req.user!.id)))
     .returning();
 
   if (!updated) {
@@ -365,27 +332,14 @@ router.patch("/san-luong/:id", async (req, res): Promise<void> => {
     if (congDoanMAs.length > 0) {
       await db.update(congDoanTable)
         .set({ order: Date.now() })
-        .where(inArray(congDoanTable.ma_cong_doan, congDoanMAs));
+        .where(and(inArray(congDoanTable.ma_cong_doan, congDoanMAs), eq(congDoanTable.user_id, req.user!.id)));
     }
   }
 
-  const [joined] = await db
-    .select({
-      id: sanLuongTable.id,
-      ngay: sanLuongTable.ngay,
-      chi_tiet: sanLuongTable.chi_tiet,
-      thong_ke_ngay: sanLuongTable.thong_ke_ngay,
-      thoi_gian_thuc_hien: sanLuongTable.thoi_gian_thuc_hien,
-      thoi_gian_ho_tro: sanLuongTable.thoi_gian_ho_tro,
-      created_at: sanLuongTable.created_at,
-    })
-    .from(sanLuongTable)
-    .where(eq(sanLuongTable.id, updated.id));
-
-  res.json(UpdateSanLuongResponse.parse(formatRow(joined)));
+  res.json(UpdateSanLuongResponse.parse(formatRow(updated)));
 });
 
-router.delete("/san-luong/:id", async (req, res): Promise<void> => {
+router.delete("/san-luong/:id", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const params = DeleteSanLuongParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -394,7 +348,7 @@ router.delete("/san-luong/:id", async (req, res): Promise<void> => {
 
   const [row] = await db
     .delete(sanLuongTable)
-    .where(eq(sanLuongTable.id, params.data.id))
+    .where(and(eq(sanLuongTable.id, params.data.id), eq(sanLuongTable.user_id, req.user!.id)))
     .returning();
 
   if (!row) {

@@ -128,6 +128,18 @@ paths:
           schema:
             type: string
             description: "Ngày theo định dạng YYYY-MM-DD"
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            description: "Ngày bắt đầu (YYYY-MM-DD)"
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            description: "Ngày kết thúc (YYYY-MM-DD)"
       responses:
         "200":
           description: Danh sách sản lượng

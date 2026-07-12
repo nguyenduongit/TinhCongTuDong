@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db, congDoanTable } from "@workspace/db";
 import {
   CreateCongDoanBody,
@@ -10,13 +10,15 @@ import {
   CreateCongDoanResponse,
   UpdateCongDoanResponse,
 } from "@workspace/api-zod";
+import { requireAuth, AuthRequest } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-router.get("/cong-doan", async (req, res): Promise<void> => {
+router.get("/cong-doan", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const rows = await db
     .select()
     .from(congDoanTable)
+    .where(eq(congDoanTable.user_id, req.user!.id))
     .orderBy(desc(congDoanTable.order), desc(congDoanTable.created_at));
 
   const items = rows.map((r) => ({
@@ -28,7 +30,7 @@ router.get("/cong-doan", async (req, res): Promise<void> => {
   res.json(ListCongDoanResponse.parse(items));
 });
 
-router.post("/cong-doan", async (req, res): Promise<void> => {
+router.post("/cong-doan", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const parsed = CreateCongDoanBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -42,6 +44,7 @@ router.post("/cong-doan", async (req, res): Promise<void> => {
       ten_cong_doan: parsed.data.ten_cong_doan,
       dinh_muc: String(parsed.data.dinh_muc),
       quy_cach: parsed.data.quy_cach,
+      user_id: req.user!.id,
     })
     .returning();
 
@@ -54,7 +57,7 @@ router.post("/cong-doan", async (req, res): Promise<void> => {
   );
 });
 
-router.patch("/cong-doan/:id", async (req, res): Promise<void> => {
+router.patch("/cong-doan/:id", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const params = UpdateCongDoanParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -76,7 +79,7 @@ router.patch("/cong-doan/:id", async (req, res): Promise<void> => {
   const [row] = await db
     .update(congDoanTable)
     .set(updateData)
-    .where(eq(congDoanTable.id, params.data.id))
+    .where(and(eq(congDoanTable.id, params.data.id), eq(congDoanTable.user_id, req.user!.id)))
     .returning();
 
   if (!row) {
@@ -93,7 +96,7 @@ router.patch("/cong-doan/:id", async (req, res): Promise<void> => {
   );
 });
 
-router.delete("/cong-doan/:id", async (req, res): Promise<void> => {
+router.delete("/cong-doan/:id", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   const params = DeleteCongDoanParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -102,7 +105,7 @@ router.delete("/cong-doan/:id", async (req, res): Promise<void> => {
 
   const [row] = await db
     .delete(congDoanTable)
-    .where(eq(congDoanTable.id, params.data.id))
+    .where(and(eq(congDoanTable.id, params.data.id), eq(congDoanTable.user_id, req.user!.id)))
     .returning();
 
   if (!row) {

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, addDays, eachDayOfInterval, getDay } from 'date-fns';
 
 /**
  * Lấy Tháng Công (Cycle Month) của một ngày.
@@ -42,4 +42,44 @@ export function getCycleRangeStrings(cycleMonth: Date): { startStr: string, endS
     startStr: format(start, 'yyyy-MM-dd'),
     endStr: format(end, 'yyyy-MM-dd')
   };
+}
+
+/**
+ * Tính số công chuẩn trong khoảng thời gian.
+ * Thứ 2 - Thứ 6: 1.0 công
+ * Thứ 7: 0.5 công
+ * Chủ Nhật: 0 công
+ */
+export function calculateRequiredCongForCycle(
+  start: Date, 
+  end: Date, 
+  schedules: Array<{ ngay: string; loai: string; so_phut: number }> = []
+): number {
+  const days = eachDayOfInterval({ start, end });
+  
+  let required = 0;
+  for (const date of days) {
+    const dayOfWeek = getDay(date);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const schedule = schedules.find(s => s.ngay === dateStr);
+    
+    let standardMins = 0;
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      standardMins = 480;
+    } else if (dayOfWeek === 6) {
+      standardMins = 240;
+    }
+    
+    if (schedule) {
+      if (schedule.loai === 'tang_ca') {
+        required += (standardMins + schedule.so_phut) / 480;
+      } else if (schedule.loai === 'nghi_phep') {
+        required += Math.max(0, standardMins - schedule.so_phut) / 480;
+      }
+    } else {
+      required += standardMins / 480;
+    }
+  }
+  
+  return required;
 }

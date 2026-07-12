@@ -75,5 +75,9 @@
     "workbox-window": "^7.4.1",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@react-oauth/google": "^0.13.5",
+    "@workspace/business-logic": "workspace:*"
   }
 }

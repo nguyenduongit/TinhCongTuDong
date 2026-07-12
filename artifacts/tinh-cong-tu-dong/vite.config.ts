@@ -29,6 +29,7 @@ if (!basePath) {
 }
 
 export default defineConfig({
+  envDir: '../../',
   base: basePath,
   plugins: [
     react(),

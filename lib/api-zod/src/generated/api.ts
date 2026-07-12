@@ -96,7 +96,9 @@ export const DeleteCongDoanResponse = zod.void()
  * @summary Lấy danh sách sản lượng (lọc theo ngày)
  */
 export const ListSanLuongQueryParams = zod.object({
-  "ngay": zod.coerce.string().optional()
+  "ngay": zod.coerce.string().optional(),
+  "startDate": zod.coerce.string().optional(),
+  "endDate": zod.coerce.string().optional()
 })
 
 export const ListSanLuongResponseItem = zod.object({
