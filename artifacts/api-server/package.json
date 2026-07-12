@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
-    "build": "node --env-file=../../.env ./build.mjs",
-    "start": "export PORT=3001 && node --env-file=../../.env --enable-source-maps ./dist/index.mjs",
+    "build": "node --env-file-if-exists=../../.env ./build.mjs",
+    "start": "export PORT=3001 && node --env-file-if-exists=../../.env --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
