@@ -6,9 +6,9 @@ import App from './App';
 
 import './index.css';
 
-// Khi chạy local, API server chạy ở cổng 3001
-// Khi deploy trên Replit, API và web cùng domain nên setBaseUrl không cần thiết
-if (import.meta.env.DEV) {
+if (import.meta.env.VITE_API_URL) {
+  setBaseUrl(import.meta.env.VITE_API_URL);
+} else if (import.meta.env.DEV) {
   setBaseUrl('http://localhost:3001');
 }
 
