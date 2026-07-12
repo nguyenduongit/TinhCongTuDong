@@ -6,9 +6,7 @@ import App from './App';
 
 import './index.css';
 
-if (import.meta.env.VITE_API_URL) {
-  setBaseUrl(import.meta.env.VITE_API_URL);
-} else if (import.meta.env.DEV) {
+if (import.meta.env.DEV) {
   setBaseUrl('http://localhost:3001');
 }
 
