@@ -11,11 +11,12 @@ export interface MonthlyProgressCardProps {
   monthTotalTime: number; // Tổng thời gian đã làm trong tháng (phút)
   hasLoggedToday: boolean;
   isLoading: boolean;
+  onExpandChange?: (isExpanded: boolean) => void;
 }
 
-export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedToday, isLoading }: MonthlyProgressCardProps) {
+export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedToday, isLoading, onExpandChange }: MonthlyProgressCardProps) {
   const [selectedCongDoan, setSelectedCongDoan] = useState<string>('');
-  
+
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
   // Tính toán các mốc ngày trong kỳ
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const currentMonth = getCycleMonthFromDate(today);
   const { start, end } = getCycleRange(currentMonth);
 
@@ -39,22 +40,22 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
     startDate: format(start, 'yyyy-MM-dd'),
     endDate: format(end, 'yyyy-MM-dd')
   });
-  
+
   // Mục tiêu công = (Thời gian đã làm / 480) + (Công chuẩn của các ngày chưa tới)
   let futureStart = new Date(today);
   if (hasLoggedToday) {
     futureStart = addDays(futureStart, 1);
   }
-  
+
   const requiredFutureCong = futureStart <= end ? calculateRequiredCongForCycle(futureStart, end, schedules) : 0;
   const requiredCong = (monthTotalTime / 480) + requiredFutureCong;
-  
+
   // Tính tổng công đã đạt được (bao gồm công SP + công Hỗ Trợ đã được API cộng sẵn)
   const totalAchievedCong = monthTotalSl;
   const missingCong = Math.max(0, requiredCong - totalAchievedCong);
 
   const selectedCdObj = congDoanList.find(c => c.ma_cong_doan === selectedCongDoan);
-  
+
   const parsedQc = selectedCdObj ? parseQuyCach(selectedCdObj.quy_cach) : { sl: '1', unit: 'Sản phẩm' };
   const pcsPerUnit = parseFloat(parsedQc.sl) || 1;
 
@@ -69,7 +70,7 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
   }
 
   const totalPcs = getReverseCalcPcs(missingCong, selectedCdObj);
-    
+
   const requiredUnits = Math.floor(totalPcs / pcsPerUnit);
   const remainderPcs = totalPcs % pcsPerUnit;
 
@@ -102,7 +103,7 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
           </span>
         </div>
         <div className="flex flex-col border-l border-border/50 pl-3">
-          <span className="text-[11px] text-muted-foreground uppercase font-semibold mb-1">Còn thiếu</span>
+          <span className="text-[11px] text-muted-foreground uppercase font-semibold mb-1">Còn lại</span>
           <span className={`text-base font-bold ${missingCong > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
             {isLoading ? '-' : missingCong > 0 ? missingCong.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : 'Đủ chỉ tiêu'}
           </span>
@@ -110,9 +111,13 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
       </div>
 
       {/* Calculator Toggle */}
-      <div 
+      <div
         className="px-4 py-3 bg-secondary/30 border-b border-border/50 flex items-center justify-between cursor-pointer hover:bg-secondary/50 transition-colors"
-        onClick={() => setIsCalculatorOpen(!isCalculatorOpen)}
+        onClick={() => {
+          const newState = !isCalculatorOpen;
+          setIsCalculatorOpen(newState);
+          onExpandChange?.(newState);
+        }}
       >
         <span className="text-sm font-semibold text-foreground flex items-center gap-2">
           <PackageOpen className="w-4 h-4 text-primary" />
@@ -157,7 +162,7 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
 
                   <AnimatePresence>
                     {selectedCongDoan && selectedCdObj && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, height: 0, marginTop: 0 }}
                         animate={{ opacity: 1, height: 'auto', marginTop: 4 }}
                         exit={{ opacity: 0, height: 0, marginTop: 0 }}

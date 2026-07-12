@@ -1,11 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format, addMonths, subMonths, parseISO, differenceInCalendarWeeks, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { getCycleMonthFromDate, getCycleRangeStrings, getCycleRange } from '@/lib/date-utils';
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp, Clock, Target } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { getCycleMonthFromDate } from '@/lib/date-utils';
+import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 
-import { useGetSanLuongStats, useListSanLuong, useListCongDoan } from '@workspace/api-client-react';
+import { useGetSanLuongBaoCao, useListCongDoan } from '@workspace/api-client-react';
 import { getListCongDoanQueryKey } from '@workspace/api-client-react';
 import { BottomNav } from '@/components/BottomNav';
 import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
@@ -14,16 +13,10 @@ export default function BaoCao() {
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(new Date()));
   const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(new Date()).getTime();
 
-  const { data: stats, isLoading: isLoadingStats } = useGetSanLuongStats();
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
 
-  const { startStr, endStr } = getCycleRangeStrings(currentMonth);
-  const { data: entries = [], isLoading: isLoadingEntries } = useListSanLuong({ startDate: startStr, endDate: endStr });
-
-
-  const totalTimeMonth = isCurrentMonth 
-    ? (stats?.month_total_time || 0) 
-    : entries.reduce((sum, e) => sum + e.thoi_gian_thuc_hien + (e.thoi_gian_ho_tro ?? 0), 0);
+  const monthStrForApi = format(currentMonth, 'yyyy-MM');
+  const { data: baoCaoData, isLoading: isLoadingEntries } = useGetSanLuongBaoCao({ month: monthStrForApi });
 
   const congDoanMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -39,71 +32,16 @@ export default function BaoCao() {
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
-  const formatTime = (mins: number) => {
-    if (!mins) return '0h';
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h}h${m > 0 ? ` ${m}m` : ''}`;
-  };
-
-  const weekGroups = useMemo(() => {
-    const { start: cycleStart, end: cycleEnd } = getCycleRange(currentMonth);
-    const today = new Date();
-    
-    const weekMap = new Map<number, WeekGroup>();
-
-    entries.forEach(entry => {
-      const date = parseISO(entry.ngay);
-      const weekNum = differenceInCalendarWeeks(date, cycleStart, { weekStartsOn: 1 }) + 1;
-      
-      if (!weekMap.has(weekNum)) {
-        let wStart = startOfWeek(date, { weekStartsOn: 1 });
-        let wEnd = endOfWeek(date, { weekStartsOn: 1 });
-        
-        if (wStart < cycleStart) wStart = cycleStart;
-        if (wEnd > cycleEnd) wEnd = cycleEnd;
-
-        const isCurrentWeek = differenceInCalendarWeeks(date, today, { weekStartsOn: 1 }) === 0;
-        const isLastWeek = differenceInCalendarWeeks(today, date, { weekStartsOn: 1 }) === 1;
-
-        weekMap.set(weekNum, {
-          weekNum,
-          startDate: wStart,
-          endDate: wEnd,
-          isCurrentWeek,
-          isLastWeek,
-          totalCongSp: 0,
-          totalHoTroPhut: 0,
-          totalTime: 0,
-          congDoanStats: {}
-        });
-      }
-
-      const weekGroup = weekMap.get(weekNum)!;
-      weekGroup.totalCongSp += (entry.thong_ke_ngay as any)?.tong_cong_sp || 0;
-      weekGroup.totalHoTroPhut += entry.thoi_gian_ho_tro || 0;
-      weekGroup.totalTime += (entry.thoi_gian_thuc_hien || 0) + (entry.thoi_gian_ho_tro || 0);
-      
-      entry.chi_tiet.forEach(ct => {
-        if (!weekGroup.congDoanStats[ct.cong_doan]) {
-          weekGroup.congDoanStats[ct.cong_doan] = { so_luong: 0, cong_sp: 0 };
-        }
-        weekGroup.congDoanStats[ct.cong_doan].so_luong += ct.so_luong;
-      });
-      
-      const chiTietCong = (entry.thong_ke_ngay as any)?.chi_tiet_cong || {};
-      Object.entries(chiTietCong).forEach(([cong_doan, cong_sp]: [string, any]) => {
-        if (!weekGroup.congDoanStats[cong_doan]) {
-          weekGroup.congDoanStats[cong_doan] = { so_luong: 0, cong_sp: 0 };
-        }
-        weekGroup.congDoanStats[cong_doan].cong_sp += (cong_sp as number);
-      });
-    });
-
-    return Array.from(weekMap.values()).sort((a, b) => b.weekNum - a.weekNum);
-  }, [entries, currentMonth]);
-
-  const totalCongMonth = weekGroups.reduce((sum, week) => sum + week.totalCongSp + (week.totalHoTroPhut / 480), 0);
+  const weekGroupsRaw = baoCaoData?.weekGroups || [];
+  
+  const weekGroups: WeekGroup[] = useMemo(() => {
+    return weekGroupsRaw.map(w => ({
+      ...w,
+      startDate: parseISO(w.startDate),
+      endDate: parseISO(w.endDate),
+      congDoanStats: w.congDoanStats as Record<string, { so_luong: number; cong_sp: number }>
+    }));
+  }, [weekGroupsRaw]);
 
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">

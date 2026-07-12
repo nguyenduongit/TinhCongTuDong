@@ -13,6 +13,15 @@ export function truncate3(num: number): number {
 }
 
 /**
+ * Làm tròn toán học 3 chữ số thập phân (làm tròn lên/xuống).
+ * VD: 1.1235 -> 1.124
+ */
+export function round3(num: number): number {
+  if (typeof num !== 'number' || isNaN(num)) return 0;
+  return Math.round(num * 1000) / 1000;
+}
+
+/**
  * Tính công sản phẩm (công SP) cho một công đoạn
  * @param soLuong Số lượng hoàn thành
  * @param dinhMuc Định mức của công đoạn
@@ -32,9 +41,9 @@ export function computeCongSp(
   if (isBasketLogic) {
     const fullBaskets = Math.floor(soLuong / BASKET_SIZE);
     const remainder = soLuong % BASKET_SIZE;
-    const cong_sp_full = truncate3(BASKET_SIZE / rate);
-    const cong_sp_remainder = remainder > 0 ? truncate3(remainder / rate) : 0;
-    return truncate3((fullBaskets * cong_sp_full) + cong_sp_remainder);
+    const cong_sp_full = truncate3(BASKET_SIZE / rate); // [32/định mức] cắt 3 số
+    const cong_sp_remainder = remainder > 0 ? (remainder * (cong_sp_full / BASKET_SIZE)) : 0; // lẻ tỷ lệ với rổ chẵn
+    return round3((fullBaskets * cong_sp_full) + cong_sp_remainder); // Cuối cùng cộng lại và làm tròn toán học 3 chữ số
   } else {
     return truncate3(soLuong / rate);
   }
@@ -70,25 +79,28 @@ export function reverseCalcPcs(
   const rate = dinhMuc * (safePhanTram / 100);
 
   if (isBasketLogic) {
-    // Dòng 9: tính theo rổ 32 pcs
+    // Dòng 9: tính theo rổ 32 pcs, rổ chẵn tính bằng [32/rate] cắt 3 số
     const congPerBasket = truncate3(BASKET_SIZE / rate);
-    if (congPerBasket <= 0) return 0;
     
-    const fullBaskets = Math.floor(targetCong / congPerBasket);
-    const congRemain = truncate3(targetCong - (fullBaskets * congPerBasket));
+    // Thêm delta nhỏ (1e-9) tránh sai số float gây hụt rổ, vd 2.9999999999 -> 2
+    const exactRatio = (targetCong / congPerBasket) + 1e-9;
+    const fullBaskets = Math.floor(exactRatio);
     
+    if (round3(fullBaskets * congPerBasket) >= targetCong) {
+      return fullBaskets * BASKET_SIZE;
+    }
+
     // Công dư cần bao nhiêu pcs lẻ?
     let extraPcs = 0;
-    if (congRemain > 0.0005) {
-      // Tìm pcs nhỏ nhất sao cho truncate3(pcs / rate) >= congRemain
-      for (let p = 1; p <= BASKET_SIZE; p++) {
-        if (truncate3(p / rate) >= congRemain) {
-          extraPcs = p;
-          break;
-        }
+    for (let p = 1; p <= BASKET_SIZE; p++) {
+      const cong_sp_remainder = p * (congPerBasket / BASKET_SIZE);
+      if (round3((fullBaskets * congPerBasket) + cong_sp_remainder) >= targetCong) {
+        extraPcs = p;
+        break;
       }
-      if (extraPcs === 0) extraPcs = BASKET_SIZE; // fallback
     }
+    
+    if (extraPcs === 0) extraPcs = BASKET_SIZE; // fallback
     
     return fullBaskets * BASKET_SIZE + extraPcs;
   } else {
@@ -102,4 +114,55 @@ export function reverseCalcPcs(
     }
     return pcs;
   }
+}
+
+export interface ChiTietItem {
+  ma_cong_doan: string;
+  so_luong: number;
+  dinh_muc: number;
+  phan_tram_dinh_muc: number;
+}
+
+/**
+ * Tính tổng công sản phẩm cho một tập hợp các chi tiết (thường là 1 tuần).
+ * Tự động gom nhóm số lượng của công đoạn rổ (dòng 9) trước khi tính.
+ */
+export function computeWeeklyCongSp(items: ChiTietItem[]): number {
+  let totalCong = 0;
+  
+  // Nhóm các công đoạn rổ theo mã công đoạn
+  const basketGroups: Record<string, { totalSoLuong: number, rate: number }> = {};
+  
+  for (const item of items) {
+    const isBasketLogic = item.ma_cong_doan.startsWith('9');
+    
+    if (isBasketLogic) {
+      if (!basketGroups[item.ma_cong_doan]) {
+        const safeDinhMuc = item.dinh_muc > 0 ? item.dinh_muc : 1;
+        const safePhanTram = item.phan_tram_dinh_muc > 0 ? item.phan_tram_dinh_muc : 100;
+        basketGroups[item.ma_cong_doan] = {
+          totalSoLuong: 0,
+          rate: safeDinhMuc * (safePhanTram / 100)
+        };
+      }
+      basketGroups[item.ma_cong_doan].totalSoLuong += item.so_luong;
+    } else {
+      // Công đoạn thường: tính độc lập và cộng dồn
+      totalCong += computeCongSp(item.so_luong, item.dinh_muc, item.phan_tram_dinh_muc, false);
+    }
+  }
+  
+  // Tính công cho các nhóm rổ (dòng 9) sau khi đã gom tổng số lượng
+  for (const key in basketGroups) {
+    const group = basketGroups[key];
+    const fullBaskets = Math.floor(group.totalSoLuong / BASKET_SIZE);
+    const remainder = group.totalSoLuong % BASKET_SIZE;
+    const cong_sp_full = truncate3(BASKET_SIZE / group.rate); // [32/rate] cắt 3 số
+    const cong_sp_remainder = remainder > 0 ? (remainder * (cong_sp_full / BASKET_SIZE)) : 0; // lẻ tỷ lệ với rổ chẵn
+    
+    // Cuối cùng cộng lại và làm tròn toán học 3 chữ số cho từng mã công đoạn
+    totalCong += round3((fullBaskets * cong_sp_full) + cong_sp_remainder);
+  }
+  
+  return totalCong;
 }

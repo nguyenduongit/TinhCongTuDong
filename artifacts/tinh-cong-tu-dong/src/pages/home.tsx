@@ -1,12 +1,12 @@
-import { motion, type Variants } from 'framer-motion';
+import { motion, type Variants, AnimatePresence } from 'framer-motion';
 import { Plus, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-import { useGetSanLuongToday, useGetSanLuongStats, useDeleteSanLuong } from '@workspace/api-client-react';
+import { useGetSanLuongDashboard, useDeleteSanLuong } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongTodayQueryKey, getGetSanLuongStatsQueryKey, getListSanLuongQueryKey } from '@workspace/api-client-react';
+import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@workspace/api-client-react';
 import type { SanLuong } from '@workspace/api-client-react';
 
 import { BottomNav } from '@/components/BottomNav';
@@ -37,16 +37,19 @@ const fabVariants: Variants = {
 
 export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isCalculatorExpanded, setIsCalculatorExpanded] = useState(false);
 
   const queryClient = useQueryClient();
-  const { data: todayEntries = [], isLoading: isLoadingEntries } = useGetSanLuongToday();
-  const { data: stats, isLoading: isLoadingStats } = useGetSanLuongStats();
+  const { data: dashboard, isLoading: isLoadingDashboard } = useGetSanLuongDashboard();
+  const todayEntries = dashboard?.todayEntries || [];
+  const stats = dashboard?.stats;
+  const isLoadingStats = isLoadingDashboard;
+  
   const deleteMutation = useDeleteSanLuong();
 
   const handleDelete = async (id: number) => {
     await deleteMutation.mutateAsync({ id });
-    queryClient.invalidateQueries({ queryKey: getGetSanLuongTodayQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetSanLuongStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
     queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
   };
 
@@ -101,41 +104,47 @@ export default function Home() {
               monthTotalTime={stats?.month_total_time || 0}
               hasLoggedToday={todayEntries.length > 0}
               isLoading={isLoadingStats}
+              onExpandChange={setIsCalculatorExpanded}
             />
           </motion.div>
         </motion.div>
 
         {/* FAB */}
-        <motion.div
-          variants={fabVariants}
-          initial="hidden"
-          animate="show"
-          className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20"
-        >
-          <TooltipProvider>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-center">
-                  <button
-                    onClick={() => setIsAddOpen(true)}
-                    disabled={todayEntries.length > 0}
-                    className={`relative group flex items-center justify-center outline-none ${todayEntries.length > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                  >
-                    <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
-                      <Plus className="w-8 h-8" strokeWidth={2.5} />
+        <AnimatePresence>
+          {!isCalculatorExpanded && (
+            <motion.div
+              variants={fabVariants}
+              initial="hidden"
+              animate="show"
+              exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
+              className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20"
+            >
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={() => setIsAddOpen(true)}
+                        disabled={todayEntries.length > 0}
+                        className={`relative group flex items-center justify-center outline-none ${todayEntries.length > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                      >
+                        <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
+                          <Plus className="w-8 h-8" strokeWidth={2.5} />
+                        </div>
+                      </button>
                     </div>
-                  </button>
-                </div>
-              </TooltipTrigger>
-              {todayEntries.length > 0 && (
-                <TooltipContent side="top" sideOffset={10}>
-                  <p>Hôm nay bạn đã nhập sản lượng rồi!</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        </motion.div>
+                  </TooltipTrigger>
+                  {todayEntries.length > 0 && (
+                    <TooltipContent side="top" sideOffset={10}>
+                      <p>Hôm nay bạn đã nhập sản lượng rồi!</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <BottomNav />
       </div>

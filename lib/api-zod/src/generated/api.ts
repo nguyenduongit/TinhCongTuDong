@@ -160,9 +160,21 @@ export const CreateSanLuongResponse = zod.object({
 
 
 /**
- * @summary Lấy sản lượng hôm nay
+ * @summary Lấy dữ liệu dashboard (stats + today)
  */
-export const GetSanLuongTodayResponseItem = zod.object({
+export const GetSanLuongDashboardResponse = zod.object({
+  "stats": zod.object({
+  "today_count": zod.number(),
+  "today_total_time": zod.number(),
+  "today_total_sl": zod.number(),
+  "month_count": zod.number(),
+  "month_total_time": zod.number(),
+  "month_total_sl": zod.number(),
+  "week_count": zod.number(),
+  "week_total_time": zod.number(),
+  "week_total_sl": zod.number()
+}),
+  "todayEntries": zod.array(zod.object({
   "id": zod.number(),
   "ngay": zod.string(),
   "chi_tiet": zod.array(zod.object({
@@ -180,23 +192,33 @@ export const GetSanLuongTodayResponseItem = zod.object({
   "chi_tiet_cong": zod.record(zod.string(), zod.number()).optional()
 }).optional(),
   "created_at": zod.string().optional()
+}))
 })
-export const GetSanLuongTodayResponse = zod.array(GetSanLuongTodayResponseItem)
 
 
 /**
- * @summary Thống kê tổng hợp
+ * @summary Lấy dữ liệu báo cáo theo tháng (đã gom nhóm theo tuần)
  */
-export const GetSanLuongStatsResponse = zod.object({
-  "today_count": zod.number(),
-  "today_total_time": zod.number(),
-  "today_total_sl": zod.number(),
-  "month_count": zod.number(),
-  "month_total_time": zod.number(),
-  "month_total_sl": zod.number(),
-  "week_count": zod.number(),
-  "week_total_time": zod.number(),
-  "week_total_sl": zod.number()
+export const GetSanLuongBaoCaoQueryParams = zod.object({
+  "month": zod.coerce.string()
+})
+
+export const GetSanLuongBaoCaoResponse = zod.object({
+  "weekGroups": zod.array(zod.object({
+  "weekNum": zod.number(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "isCurrentWeek": zod.boolean(),
+  "isLastWeek": zod.boolean(),
+  "totalCongSp": zod.number(),
+  "totalHoTroPhut": zod.number(),
+  "totalTime": zod.number(),
+  "congDoanStats": zod.record(zod.string(), zod.object({
+  "so_luong": zod.number(),
+  "cong_sp": zod.number()
+}))
+})),
+  "totalCongMonth": zod.number()
 })
 
 

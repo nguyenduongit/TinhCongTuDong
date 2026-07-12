@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useListSanLuong, useDeleteSanLuong, useListCongDoan } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongTodayQueryKey, getGetSanLuongStatsQueryKey, getListSanLuongQueryKey, getListCongDoanQueryKey } from '@workspace/api-client-react';
+import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey, getListCongDoanQueryKey } from '@workspace/api-client-react';
 import type { SanLuong } from '@workspace/api-client-react';
 
 import { BottomNav } from '@/components/BottomNav';
@@ -78,8 +78,7 @@ export default function LichSu() {
 
   const handleDelete = async (id: number) => {
     await deleteMutation.mutateAsync({ id });
-    queryClient.invalidateQueries({ queryKey: getGetSanLuongTodayQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetSanLuongStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
     queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
   };
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Drawer } from 'vaul';
 import { useCreateSanLuong, useUpdateSanLuong, useListCongDoan, type CongDoan, type SanLuong } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongTodayQueryKey, getGetSanLuongStatsQueryKey, getListSanLuongQueryKey } from '@workspace/api-client-react';
+import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@workspace/api-client-react';
 import { CongDoanModal } from './CongDoanModal';
 import { format, parseISO, getDay } from 'date-fns';
 import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
@@ -165,8 +165,7 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: getGetSanLuongTodayQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getGetSanLuongStatsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
       queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
       
       onOpenChange(false);
@@ -185,7 +184,7 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
         <Drawer.Portal>
           <Drawer.Overlay className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-40 ${showCongDoanModal ? 'pointer-events-none' : ''}`} />
           <Drawer.Content className="bg-background border-t border-border flex flex-col rounded-t-[2rem] h-[85vh] mt-24 fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[430px] outline-none before:absolute before:top-0 before:left-0 before:right-0 before:h-24 before:bg-gradient-to-b before:from-primary/5 before:to-transparent before:pointer-events-none">
-            <div className="p-4 bg-background rounded-t-[2rem] flex-1 flex flex-col relative">
+            <div className="p-4 bg-background rounded-t-[2rem] flex-1 flex flex-col relative min-h-0">
               <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-6" />
               
               <Drawer.Title className="text-2xl font-bold text-foreground mb-6 px-2 tracking-tight">

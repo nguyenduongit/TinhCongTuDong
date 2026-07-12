@@ -20,15 +20,17 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BaoCaoResponse,
   CongDoan,
   CongDoanInput,
   CongDoanUpdate,
+  DashboardResponse,
   ErrorResponse,
+  GetSanLuongBaoCaoParams,
   HealthStatus,
   ListSanLuongParams,
   SanLuong,
   SanLuongInput,
-  SanLuongStats,
   SanLuongUpdate
 } from './api.schemas';
 
@@ -578,20 +580,20 @@ export const useCreateSanLuong = <TError = ErrorType<ErrorResponse>,
       return useMutation(getCreateSanLuongMutationOptions(options));
     }
 
-export const getGetSanLuongTodayUrl = () => {
+export const getGetSanLuongDashboardUrl = () => {
 
 
 
 
-  return `/api/san-luong/today`
+  return `/api/san-luong/dashboard`
 }
 
 /**
- * @summary Lấy sản lượng hôm nay
+ * @summary Lấy dữ liệu dashboard (stats + today)
  */
-export const getSanLuongToday = async ( options?: RequestInit): Promise<SanLuong[]> => {
+export const getSanLuongDashboard = async ( options?: RequestInit): Promise<DashboardResponse> => {
 
-  return customFetch<SanLuong[]>(getGetSanLuongTodayUrl(),
+  return customFetch<DashboardResponse>(getGetSanLuongDashboardUrl(),
   {
     ...options,
     method: 'GET'
@@ -604,45 +606,45 @@ export const getSanLuongToday = async ( options?: RequestInit): Promise<SanLuong
 
 
 
-export const getGetSanLuongTodayQueryKey = () => {
+export const getGetSanLuongDashboardQueryKey = () => {
     return [
-    `/api/san-luong/today`
+    `/api/san-luong/dashboard`
     ] as const;
     }
 
 
-export const getGetSanLuongTodayQueryOptions = <TData = Awaited<ReturnType<typeof getSanLuongToday>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSanLuongDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getSanLuongDashboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetSanLuongTodayQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetSanLuongDashboardQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSanLuongToday>>> = ({ signal }) => getSanLuongToday({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSanLuongDashboard>>> = ({ signal }) => getSanLuongDashboard({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSanLuongToday>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSanLuongDashboard>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetSanLuongTodayQueryResult = NonNullable<Awaited<ReturnType<typeof getSanLuongToday>>>
-export type GetSanLuongTodayQueryError = ErrorType<unknown>
+export type GetSanLuongDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getSanLuongDashboard>>>
+export type GetSanLuongDashboardQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Lấy sản lượng hôm nay
+ * @summary Lấy dữ liệu dashboard (stats + today)
  */
 
-export function useGetSanLuongToday<TData = Awaited<ReturnType<typeof getSanLuongToday>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetSanLuongDashboard<TData = Awaited<ReturnType<typeof getSanLuongDashboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetSanLuongTodayQueryOptions(options)
+  const queryOptions = getGetSanLuongDashboardQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -655,20 +657,27 @@ export function useGetSanLuongToday<TData = Awaited<ReturnType<typeof getSanLuon
 
 
 
-export const getGetSanLuongStatsUrl = () => {
+export const getGetSanLuongBaoCaoUrl = (params: GetSanLuongBaoCaoParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/san-luong/stats`
+  return stringifiedParams.length > 0 ? `/api/san-luong/bao-cao?${stringifiedParams}` : `/api/san-luong/bao-cao`
 }
 
 /**
- * @summary Thống kê tổng hợp
+ * @summary Lấy dữ liệu báo cáo theo tháng (đã gom nhóm theo tuần)
  */
-export const getSanLuongStats = async ( options?: RequestInit): Promise<SanLuongStats> => {
+export const getSanLuongBaoCao = async (params: GetSanLuongBaoCaoParams, options?: RequestInit): Promise<BaoCaoResponse> => {
 
-  return customFetch<SanLuongStats>(getGetSanLuongStatsUrl(),
+  return customFetch<BaoCaoResponse>(getGetSanLuongBaoCaoUrl(params),
   {
     ...options,
     method: 'GET'
@@ -681,45 +690,45 @@ export const getSanLuongStats = async ( options?: RequestInit): Promise<SanLuong
 
 
 
-export const getGetSanLuongStatsQueryKey = () => {
+export const getGetSanLuongBaoCaoQueryKey = (params?: GetSanLuongBaoCaoParams,) => {
     return [
-    `/api/san-luong/stats`
+    `/api/san-luong/bao-cao`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetSanLuongStatsQueryOptions = <TData = Awaited<ReturnType<typeof getSanLuongStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetSanLuongBaoCaoQueryOptions = <TData = Awaited<ReturnType<typeof getSanLuongBaoCao>>, TError = ErrorType<unknown>>(params: GetSanLuongBaoCaoParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongBaoCao>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetSanLuongStatsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetSanLuongBaoCaoQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSanLuongStats>>> = ({ signal }) => getSanLuongStats({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSanLuongBaoCao>>> = ({ signal }) => getSanLuongBaoCao(params, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSanLuongStats>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSanLuongBaoCao>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetSanLuongStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getSanLuongStats>>>
-export type GetSanLuongStatsQueryError = ErrorType<unknown>
+export type GetSanLuongBaoCaoQueryResult = NonNullable<Awaited<ReturnType<typeof getSanLuongBaoCao>>>
+export type GetSanLuongBaoCaoQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Thống kê tổng hợp
+ * @summary Lấy dữ liệu báo cáo theo tháng (đã gom nhóm theo tuần)
  */
 
-export function useGetSanLuongStats<TData = Awaited<ReturnType<typeof getSanLuongStats>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetSanLuongBaoCao<TData = Awaited<ReturnType<typeof getSanLuongBaoCao>>, TError = ErrorType<unknown>>(
+ params: GetSanLuongBaoCaoParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSanLuongBaoCao>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetSanLuongStatsQueryOptions(options)
+  const queryOptions = getGetSanLuongBaoCaoQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

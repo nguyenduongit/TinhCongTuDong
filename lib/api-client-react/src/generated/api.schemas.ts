@@ -96,6 +96,33 @@ export interface SanLuongStats {
   week_total_sl: number;
 }
 
+export type WeekGroupCongDoanStats = {[key: string]: {
+  so_luong: number;
+  cong_sp: number;
+}};
+
+export interface WeekGroup {
+  weekNum: number;
+  startDate: string;
+  endDate: string;
+  isCurrentWeek: boolean;
+  isLastWeek: boolean;
+  totalCongSp: number;
+  totalHoTroPhut: number;
+  totalTime: number;
+  congDoanStats: WeekGroupCongDoanStats;
+}
+
+export interface BaoCaoResponse {
+  weekGroups: WeekGroup[];
+  totalCongMonth: number;
+}
+
+export interface DashboardResponse {
+  stats: SanLuongStats;
+  todayEntries: SanLuong[];
+}
+
 export type ListSanLuongParams = {
 /**
  * Ngày theo định dạng YYYY-MM-DD
@@ -109,5 +136,12 @@ startDate?: string;
  * Ngày kết thúc (YYYY-MM-DD)
  */
 endDate?: string;
+};
+
+export type GetSanLuongBaoCaoParams = {
+/**
+ * Tháng theo định dạng YYYY-MM
+ */
+month: string;
 };
 

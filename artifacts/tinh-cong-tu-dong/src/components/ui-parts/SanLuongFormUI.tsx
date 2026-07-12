@@ -58,8 +58,9 @@ export function SanLuongFormUI({
   return (
     <FormWrapper 
       onSubmit={!readOnly ? (onSubmit as any) : undefined} 
-      className={`flex flex-col gap-5 flex-1 overflow-y-auto pb-8 ${readOnly ? 'pointer-events-none' : ''}`}
+      className={`flex flex-col flex-1 min-h-0 ${readOnly ? 'pointer-events-none' : ''}`}
     >
+      <div className="flex flex-col gap-5 flex-1 overflow-y-auto pb-4 shrink [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Ngày</label>
         <input 
@@ -194,7 +195,9 @@ export function SanLuongFormUI({
         </div>
       )}
 
-      <div className="mt-auto pt-6">
+      </div>
+
+      <div className="shrink-0 pt-4 pb-8 bg-background">
         {readOnly ? (
           <div className="w-full h-14 rounded-xl squircle-lg bg-primary text-primary-foreground text-base font-bold shadow-[0_0_20px_rgba(212,168,67,0.3)] flex items-center justify-center">
             Lưu sản lượng

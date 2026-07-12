@@ -173,33 +173,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /san-luong/today:
+  /san-luong/dashboard:
     get:
-      operationId: getSanLuongToday
+      operationId: getSanLuongDashboard
       tags: [san-luong]
-      summary: Lấy sản lượng hôm nay
+      summary: Lấy dữ liệu dashboard (stats + today)
       responses:
         "200":
-          description: Sản lượng hôm nay
+          description: Dữ liệu dashboard
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SanLuong"
+                $ref: "#/components/schemas/DashboardResponse"
 
-  /san-luong/stats:
+  /san-luong/bao-cao:
     get:
-      operationId: getSanLuongStats
+      operationId: getSanLuongBaoCao
       tags: [san-luong]
-      summary: Thống kê tổng hợp
+      summary: Lấy dữ liệu báo cáo theo tháng (đã gom nhóm theo tuần)
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            description: "Tháng theo định dạng YYYY-MM"
       responses:
         "200":
-          description: Thống kê sản lượng
+          description: Dữ liệu báo cáo
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SanLuongStats"
+                $ref: "#/components/schemas/BaoCaoResponse"
 
   /san-luong/{id}:
     patch:
@@ -414,3 +419,56 @@ components:
           type: integer
         week_total_sl:
           type: number
+
+    BaoCaoResponse:
+      type: object
+      required: [weekGroups, totalCongMonth]
+      properties:
+        weekGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeekGroup"
+        totalCongMonth:
+          type: number
+
+    DashboardResponse:
+      type: object
+      required: [stats, todayEntries]
+      properties:
+        stats:
+          $ref: "#/components/schemas/SanLuongStats"
+        todayEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/SanLuong"
+
+    WeekGroup:
+      type: object
+      required: [weekNum, startDate, endDate, isCurrentWeek, isLastWeek, totalCongSp, totalHoTroPhut, totalTime, congDoanStats]
+      properties:
+        weekNum:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+        isCurrentWeek:
+          type: boolean
+        isLastWeek:
+          type: boolean
+        totalCongSp:
+          type: number
+        totalHoTroPhut:
+          type: integer
+        totalTime:
+          type: integer
+        congDoanStats:
+          type: object
+          additionalProperties:
+            type: object
+            required: [so_luong, cong_sp]
+            properties:
+              so_luong:
+                type: integer
+              cong_sp:
+                type: number

@@ -6,10 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './baoCaoResponse';
 export * from './congDoan';
 export * from './congDoanInput';
 export * from './congDoanUpdate';
+export * from './dashboardResponse';
 export * from './errorResponse';
+export * from './getSanLuongBaoCaoParams';
 export * from './healthStatus';
 export * from './listSanLuongParams';
 export * from './sanLuong';
@@ -19,3 +22,5 @@ export * from './sanLuongStats';
 export * from './sanLuongThongKeNgay';
 export * from './sanLuongThongKeNgayChiTietCong';
 export * from './sanLuongUpdate';
+export * from './weekGroup';
+export * from './weekGroupCongDoanStats';
