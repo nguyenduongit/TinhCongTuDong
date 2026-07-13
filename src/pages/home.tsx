@@ -107,8 +107,7 @@ export default function Home() {
                     <div className="flex items-center justify-center">
                       <button
                         onClick={() => setIsAddOpen(true)}
-                        disabled={todayEntries.length > 0}
-                        className={`relative group flex items-center justify-center outline-none ${todayEntries.length > 0 ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                        className="relative group flex items-center justify-center outline-none"
                       >
                         <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
                         <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
@@ -119,7 +118,7 @@ export default function Home() {
                   </TooltipTrigger>
                   {todayEntries.length > 0 && (
                     <TooltipContent side="top" sideOffset={10}>
-                      <p>Hôm nay bạn đã nhập sản lượng rồi!</p>
+                      <p>Sửa sản lượng hôm nay</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -131,7 +130,7 @@ export default function Home() {
         <BottomNav />
       </div>
 
-      <SanLuongDrawer open={isAddOpen} onOpenChange={setIsAddOpen} />
+      <SanLuongDrawer entry={todayEntries.length > 0 ? todayEntries[0] : null} open={isAddOpen} onOpenChange={setIsAddOpen} />
     </div>
   );
 }
