@@ -104,9 +104,12 @@ export function reverseCalcPcs(
     // Tìm so_luong nhỏ nhất sao cho truncate3(so_luong / rate) >= targetCong
     const rawPcs = targetCong * rate;
     let pcs = Math.ceil(rawPcs);
+    let iterations = 0;
+    const MAX_ITERATIONS = 10000;
     // Verify bằng truncate3 rồi điều chỉnh
-    while (truncate3(pcs / rate) < targetCong && pcs < rawPcs + rate) {
+    while (truncate3(pcs / rate) < targetCong && pcs < rawPcs + rate && iterations < MAX_ITERATIONS) {
       pcs++;
+      iterations++;
     }
     return pcs;
   }
