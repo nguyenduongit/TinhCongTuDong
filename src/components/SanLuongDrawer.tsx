@@ -193,6 +193,19 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
     }
   };
 
+  const deleteMutation = useDeleteSanLuong();
+  const handleDelete = async () => {
+    if (!isEditMode || !entry) return;
+    try {
+      await deleteMutation.mutateAsync({ id: entry.id });
+      queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
+      onOpenChange(false);
+    } catch (error: any) {
+      alert(error?.response?.data?.error || "Có lỗi xảy ra khi xóa.");
+    }
+  };
+
   return (
     <>
       <Drawer.Root open={open} onOpenChange={handleDrawerOpenChange} dismissible={!showCongDoanModal}>
@@ -210,6 +223,7 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
                 readOnly={false}
                 readOnlyNgay={isEditMode}
                 isPending={isPending}
+                isDeleting={deleteMutation.isPending}
                 submitText={isEditMode ? 'Cập nhật' : 'Lưu sản lượng'}
                 ngay={ngay}
                 congDoanBlocks={congDoanBlocks}
@@ -224,6 +238,7 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
                 handleRemoveBlock={handleRemoveBlock}
                 handleAddBlock={handleAddBlock}
                 onSubmit={handleSubmit}
+                onDelete={isEditMode ? handleDelete : undefined}
               />
             </div>
           </Drawer.Content>

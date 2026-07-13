@@ -32,6 +32,8 @@ export interface SanLuongFormUIProps {
   handleRemoveBlock?: (id: string) => void;
   handleAddBlock?: () => void;
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
+  isDeleting?: boolean;
+  onDelete?: () => void;
 }
 
 export function SanLuongFormUI({
@@ -51,7 +53,9 @@ export function SanLuongFormUI({
   handleBlockPhanTramChange,
   handleRemoveBlock,
   handleAddBlock,
-  onSubmit
+  onSubmit,
+  isDeleting,
+  onDelete
 }: SanLuongFormUIProps) {
   const FormWrapper = readOnly ? 'div' : 'form';
 
@@ -203,13 +207,29 @@ export function SanLuongFormUI({
             Lưu sản lượng
           </div>
         ) : (
-          <button 
-            type="submit" 
-            disabled={isPending}
-            className="w-full h-14 rounded-xl squircle-lg bg-primary text-primary-foreground text-base font-bold shadow-[0_0_20px_rgba(212,168,67,0.3)] disabled:opacity-50 disabled:shadow-none transition-transform active:scale-[0.98]"
-          >
-            {isPending ? 'Đang lưu...' : submitText}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button 
+              type="submit" 
+              disabled={isPending || isDeleting}
+              className="w-full h-14 rounded-xl squircle-lg bg-primary text-primary-foreground text-base font-bold shadow-[0_0_20px_rgba(212,168,67,0.3)] disabled:opacity-50 disabled:shadow-none transition-transform active:scale-[0.98]"
+            >
+              {isPending ? 'Đang lưu...' : submitText}
+            </button>
+            {onDelete && (
+              <button
+                type="button"
+                disabled={isDeleting || isPending}
+                onClick={() => {
+                  if (confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu của ngày này không? Hành động này không thể hoàn tác.")) {
+                    onDelete();
+                  }
+                }}
+                className="w-full h-14 rounded-xl squircle-lg bg-destructive/10 text-destructive text-base font-bold disabled:opacity-50 transition-transform active:scale-[0.98]"
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa dữ liệu ngày này'}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </FormWrapper>
