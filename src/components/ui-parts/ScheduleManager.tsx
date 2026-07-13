@@ -13,7 +13,7 @@ import {
   useDeleteLichTrinh,
   getListLichTrinhQueryKey
 } from '@/api';
-import { getCycleMonthFromDate, getCycleRangeStrings, getCycleRange } from '@/lib/date-utils';
+import { getCycleMonthFromDate, getCycleRange, getCycleRangeStrings, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { toast } from 'sonner';
 
 interface ScheduleManagerProps {
@@ -21,8 +21,8 @@ interface ScheduleManagerProps {
 }
 
 export function ScheduleManager({ onClose }: ScheduleManagerProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentDate, setCurrentDate] = useState(getNowVNDateLocal());
+  const [selectedDate, setSelectedDate] = useState<Date>(getNowVNDateLocal());
   
   // Lấy data lịch trình của kỳ công đang xem
   const cycleMonth = getCycleMonthFromDate(currentDate);

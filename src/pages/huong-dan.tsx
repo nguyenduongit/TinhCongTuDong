@@ -9,7 +9,7 @@ import { HistoryDayCard } from '@/components/ui-parts/HistoryDayCard';
 import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
 
 import { format, differenceInCalendarWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
-import { getCycleMonthFromDate, getCycleRange } from '@/lib/date-utils';
+import { getCycleMonthFromDate, getCycleRange, getNowVNDateLocal, getTodayVNString } from '@/lib/date-utils';
 
 export default function HuongDan() {
   const [, setLocation] = useLocation();
@@ -48,7 +48,8 @@ export default function HuongDan() {
   ];
 
   // 3. Prepare data for HistoryDayCard
-  const todayStr = latestEntry ? latestEntry.ngay : format(new Date(), 'yyyy-MM-dd');
+  const todayStr = latestEntry ? latestEntry.ngay : getTodayVNString();
+  const currentMonth = getCycleMonthFromDate(latestEntry ? new Date(latestEntry.ngay) : getNowVNDateLocal());
   const dayItems = latestEntry ? sanLuongList.filter(e => e.ngay === latestEntry.ngay) : [
     {
       id: 1,

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { addMonths, subMonths, format, parseISO, startOfDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { getCycleMonthFromDate, getCycleRangeStrings } from '@/lib/date-utils';
+import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getTodayVNString, getNowVNDateLocal, getCycleRangeStrings } from '@/lib/date-utils';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,11 +30,10 @@ function groupByDate(entries: SanLuong[]): { date: string; items: SanLuong[] }[]
 }
 
 function formatDateHeader(dateStr: string): string {
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const yesterday = format(subMonths(new Date(), 0), 'yyyy-MM-dd');
-  // Tính yesterday thực sự
+  const today = getTodayVNString();
+  
   const d = new Date(dateStr + 'T00:00:00');
-  const yest = new Date();
+  const yest = getNowVNDateLocal();
   yest.setDate(yest.getDate() - 1);
   const yesterdayStr = format(yest, 'yyyy-MM-dd');
 
@@ -44,10 +43,10 @@ function formatDateHeader(dateStr: string): string {
 }
 
 export default function LichSu() {
-  const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(new Date()));
+  const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
   const [editEntry, setEditEntry] = useState<SanLuong | null>(null);
 
-  const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(new Date()).getTime();
+  const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(getNowVNDateLocal()).getTime();
   const monthStr = format(currentMonth, 'yyyy-MM');
 
   const queryClient = useQueryClient();

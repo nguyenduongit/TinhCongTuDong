@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
 import { CongDoanModal } from './CongDoanModal';
 import { format, parseISO, getDay } from 'date-fns';
+import { getTodayVNString } from '@/lib/date-utils';
 import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
 
 export interface SanLuongDrawerProps {
@@ -49,7 +50,7 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
     onOpenChange(open);
   };
 
-  const [ngay, setNgay] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [ngay, setNgay] = useState(getTodayVNString());
   const [congDoanBlocks, setCongDoanBlocks] = useState<CongDoanBlock[]>([
     { id: '1', congDoan: null, soLuong: '', phanTram: '100%' }
   ]);
@@ -80,7 +81,7 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
       }));
     } else {
       // Create mode
-      setNgay(format(new Date(), 'yyyy-MM-dd'));
+      setNgay(getTodayVNString());
       setCongDoanBlocks([
         { id: Date.now().toString(), congDoan: list.length > 0 ? list[0] : null, soLuong: '', phanTram: '100%' }
       ]);

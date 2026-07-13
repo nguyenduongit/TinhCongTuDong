@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { getCycleMonthFromDate } from '@/lib/date-utils';
+import { getCycleMonthFromDate, getCycleRange, getNowVNDateLocal } from '@/lib/date-utils';
 import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
@@ -12,8 +12,8 @@ import { BottomNav } from '@/components/BottomNav';
 import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
 
 export default function BaoCao() {
-  const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(new Date()));
-  const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(new Date()).getTime();
+  const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
+  const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(getNowVNDateLocal()).getTime();
 
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
 

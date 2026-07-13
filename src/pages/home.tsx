@@ -8,6 +8,7 @@ import { useGetSanLuongDashboard, useDeleteSanLuong } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
 import type { SanLuong } from '@/api';
+import { getNowVNDateLocal } from '@/lib/date-utils';
 
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
@@ -35,7 +36,7 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
   };
 
-  const currentDateStr = format(new Date(), 'EEEE, dd MMMM', { locale: vi });
+  const currentDateStr = format(getNowVNDateLocal(), 'EEEE, dd MMMM', { locale: vi });
 
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">

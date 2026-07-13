@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, PackageOpen, Target, CalendarDays, Zap, Info } from 'lucide-react';
 import { useListCongDoan, getListCongDoanQueryKey, useListLichTrinh } from '@/api';
-import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle } from '@/lib/date-utils';
+import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { parseQuyCach } from '@/components/ui-parts/CongDoanFormUI';
 import { format, addDays } from 'date-fns';
 import { reverseCalcPcs } from '@/lib/business-logic';
@@ -29,11 +29,10 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
   }, [congDoanList, selectedCongDoan]);
 
   // Tính toán các mốc ngày trong kỳ
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const currentMonth = getCycleMonthFromDate(today);
-  const { start, end } = getCycleRange(currentMonth);
+  const today = getNowVNDateLocal();
+  const { start: cycleStart, end: cycleEnd } = getCycleRange(getCycleMonthFromDate(today));
+  const start = cycleStart;
+  const end = cycleEnd;
 
   // Fetch lịch trình của kỳ công
   const { data: schedules = [] } = useListLichTrinh({
