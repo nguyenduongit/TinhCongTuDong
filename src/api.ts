@@ -173,8 +173,18 @@ export const useCreateSanLuong = () => {
   return useMutation({
     mutationFn: async ({ data }: { data: any }) => {
       const { data: allCongDoan } = await supabase.from('cong_doan').select('*').eq('user_id', user?.id);
-      
-      const chi_tiet_computed = data.chi_tiet.map((ct: any) => {
+      const groupedChiTietMap = new Map<string, any>();
+      for (const ct of data.chi_tiet) {
+        const key = `${ct.cong_doan}_${ct.phan_tram_dinh_muc ?? 100}`;
+        if (groupedChiTietMap.has(key)) {
+          groupedChiTietMap.get(key).so_luong += Number(ct.so_luong);
+        } else {
+          groupedChiTietMap.set(key, { ...ct, so_luong: Number(ct.so_luong) });
+        }
+      }
+      const groupedChiTiet = Array.from(groupedChiTietMap.values());
+
+      const chi_tiet_computed = groupedChiTiet.map((ct: any) => {
         const cd = allCongDoan?.find(c => c.ma_cong_doan === ct.cong_doan);
         const dinh_muc_goc = cd ? Number(cd.dinh_muc) : 1;
         const dinh_muc = dinh_muc_goc * ((ct.phan_tram_dinh_muc ?? 100) / 100);
@@ -232,7 +242,18 @@ export const useUpdateSanLuong = () => {
       if (data.chi_tiet) {
         const { data: allCongDoan } = await supabase.from('cong_doan').select('*').eq('user_id', user?.id);
         
-        chi_tiet_computed = data.chi_tiet.map((ct: any) => {
+        const groupedChiTietMap = new Map<string, any>();
+        for (const ct of data.chi_tiet) {
+          const key = `${ct.cong_doan}_${ct.phan_tram_dinh_muc ?? 100}`;
+          if (groupedChiTietMap.has(key)) {
+            groupedChiTietMap.get(key).so_luong += Number(ct.so_luong);
+          } else {
+            groupedChiTietMap.set(key, { ...ct, so_luong: Number(ct.so_luong) });
+          }
+        }
+        const groupedChiTiet = Array.from(groupedChiTietMap.values());
+
+        chi_tiet_computed = groupedChiTiet.map((ct: any) => {
           const cd = allCongDoan?.find(c => c.ma_cong_doan === ct.cong_doan);
           const dinh_muc_goc = cd ? Number(cd.dinh_muc) : 1;
           const dinh_muc = dinh_muc_goc * ((ct.phan_tram_dinh_muc ?? 100) / 100);
