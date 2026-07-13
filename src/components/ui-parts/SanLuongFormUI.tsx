@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import type { CongDoan } from '@/api';
 
 export interface CongDoanBlock {
@@ -207,14 +207,7 @@ export function SanLuongFormUI({
             Lưu sản lượng
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <button 
-              type="submit" 
-              disabled={isPending || isDeleting}
-              className="w-full h-14 rounded-xl squircle-lg bg-primary text-primary-foreground text-base font-bold shadow-[0_0_20px_rgba(212,168,67,0.3)] disabled:opacity-50 disabled:shadow-none transition-transform active:scale-[0.98]"
-            >
-              {isPending ? 'Đang lưu...' : submitText}
-            </button>
+          <div className="flex gap-3">
             {onDelete && (
               <button
                 type="button"
@@ -224,11 +217,19 @@ export function SanLuongFormUI({
                     onDelete();
                   }
                 }}
-                className="w-full h-14 rounded-xl squircle-lg bg-destructive/10 text-destructive text-base font-bold disabled:opacity-50 transition-transform active:scale-[0.98]"
+                className="w-14 h-14 flex items-center justify-center rounded-xl squircle-lg bg-destructive/10 text-destructive disabled:opacity-50 transition-transform active:scale-[0.98] shrink-0"
+                title="Xóa dữ liệu ngày này"
               >
-                {isDeleting ? 'Đang xóa...' : 'Xóa dữ liệu ngày này'}
+                <Trash2 className="w-5 h-5" />
               </button>
             )}
+            <button 
+              type="submit" 
+              disabled={isPending || isDeleting}
+              className="flex-1 h-14 rounded-xl squircle-lg bg-primary text-primary-foreground text-base font-bold shadow-[0_0_20px_rgba(212,168,67,0.3)] disabled:opacity-50 disabled:shadow-none transition-transform active:scale-[0.98]"
+            >
+              {isPending ? 'Đang lưu...' : submitText}
+            </button>
           </div>
         )}
       </div>
