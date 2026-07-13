@@ -143,6 +143,16 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
     const validBlocks = congDoanBlocks.filter(block => block.congDoan && block.soLuong);
     if (validBlocks.length === 0) return;
 
+    const uniqueKeys = new Set();
+    for (const block of validBlocks) {
+      const key = `${block.congDoan!.ma_cong_doan}_${block.phanTram}`;
+      if (uniqueKeys.has(key)) {
+        alert(`Công đoạn "${block.congDoan!.ten_cong_doan}" bị trùng lặp (cùng mã và tỷ lệ). Vui lòng gộp chung số lượng lại thành 1 dòng để tiếp tục!`);
+        return;
+      }
+      uniqueKeys.add(key);
+    }
+
     const chiTiet = validBlocks.map(block => ({
       cong_doan: block.congDoan!.ma_cong_doan,
       so_luong: Number(block.soLuong),
