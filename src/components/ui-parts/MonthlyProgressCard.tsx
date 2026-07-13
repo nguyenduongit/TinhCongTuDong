@@ -5,7 +5,7 @@ import { useListCongDoan, getListCongDoanQueryKey, useListLichTrinh } from '@/ap
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle } from '@/lib/date-utils';
 import { parseQuyCach } from '@/components/ui-parts/CongDoanFormUI';
 import { format, addDays } from 'date-fns';
-import { reverseCalcPcs } from '@workspace/business-logic';
+import { reverseCalcPcs } from '@/lib/business-logic';
 export interface MonthlyProgressCardProps {
   monthTotalSl: number; // Tổng công SP + Công hỗ trợ
   monthTotalTime: number; // Tổng thời gian đã làm trong tháng (phút)

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
-import { computeCongSp, computeCongNhat, computeCongHoTro, computeWeeklyCongSp, truncate3, type ChiTietItem } from '@workspace/business-logic';
+import { computeCongSp, computeCongNhat, computeCongHoTro, computeWeeklyCongSp, truncate3, type ChiTietItem } from '@/lib/business-logic';
 
 export type CongDoan = {
   id: number;
