@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
@@ -8,8 +9,13 @@ export default function Login() {
   const { user, isLoading } = useAuth();
 
   // If already logged in, redirect to home
+  useEffect(() => {
+    if (user && !isLoading) {
+      setLocation('/');
+    }
+  }, [user, isLoading, setLocation]);
+
   if (user && !isLoading) {
-    setLocation('/');
     return null;
   }
 
