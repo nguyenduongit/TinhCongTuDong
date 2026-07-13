@@ -69,6 +69,7 @@ export function reverseCalcPcs(
   dinhMuc: number,
   isBasketLogic: boolean
 ): number {
+  targetCong = round3(targetCong); // Fix floating point inaccuracy from upstream subtraction
   if (targetCong <= 0 || dinhMuc <= 0) return 0;
   
   const rate = dinhMuc;
@@ -158,5 +159,5 @@ export function computeWeeklyCongSp(items: ChiTietItem[]): number {
     totalCong += round3((fullBaskets * cong_sp_full) + cong_sp_remainder);
   }
   
-  return totalCong;
+  return round3(totalCong);
 }
