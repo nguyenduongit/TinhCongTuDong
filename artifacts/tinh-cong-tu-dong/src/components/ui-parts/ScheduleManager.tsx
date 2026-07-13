@@ -12,7 +12,7 @@ import {
   useUpsertLichTrinh, 
   useDeleteLichTrinh,
   getListLichTrinhQueryKey
-} from '@workspace/api-client-react';
+} from '@/api';
 import { getCycleMonthFromDate, getCycleRangeStrings, getCycleRange } from '@/lib/date-utils';
 import { toast } from 'sonner';
 

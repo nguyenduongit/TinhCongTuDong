@@ -1,7 +1,7 @@
 import { ChevronLeft, Database, Info, LineChart, FileText } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { useListSanLuong, useListCongDoan } from '@workspace/api-client-react';
-import { getListCongDoanQueryKey } from '@workspace/api-client-react';
+import { useListSanLuong, useListCongDoan } from '@/api';
+import { getListCongDoanQueryKey } from '@/api';
 
 import { CongDoanFormUI } from '@/components/ui-parts/CongDoanFormUI';
 import { SanLuongFormUI } from '@/components/ui-parts/SanLuongFormUI';
@@ -33,12 +33,17 @@ export default function HuongDan() {
   const sampleCongDoan = congDoanList.length > 0 ? congDoanList[0] : fallbackCongDoan;
 
   // 2. Prepare data for SanLuongFormUI
-  const sampleSanLuongBlocks = latestEntry ? latestEntry.chi_tiet.map((ct, i) => ({
-    id: i.toString(),
-    congDoan: congDoanList.find(c => c.ma_cong_doan === ct.cong_doan) || { ma_cong_doan: ct.cong_doan } as any,
-    soLuong: ct.so_luong.toString(),
-    phanTram: ct.phan_tram_dinh_muc === 100 ? '' : ct.phan_tram_dinh_muc + '%'
-  })) : [
+  const sampleSanLuongBlocks = latestEntry ? latestEntry.chi_tiet.map((ct, i) => {
+    const cd = congDoanList.find(c => c.ma_cong_doan === ct.cong_doan);
+    const cdDinhMuc = cd?.dinh_muc || 1;
+    const p = Math.round((Number(ct.dinh_muc) / Number(cdDinhMuc)) * 100);
+    return {
+      id: i.toString(),
+      congDoan: cd || { ma_cong_doan: ct.cong_doan } as any,
+      soLuong: ct.so_luong.toString(),
+      phanTram: p === 100 ? '' : p + '%'
+    };
+  }) : [
     { id: '1', congDoan: sampleCongDoan as any, soLuong: '1500', phanTram: '' }
   ];
 
@@ -52,7 +57,7 @@ export default function HuongDan() {
       thoi_gian_ho_tro: 60,
       thong_ke_ngay: { tong_cong_sp: 1.5 },
       chi_tiet: [
-        { cong_doan: sampleCongDoan.ma_cong_doan, so_luong: 1500, phan_tram_dinh_muc: 100 }
+        { cong_doan: sampleCongDoan.ma_cong_doan, so_luong: 1500, dinh_muc: sampleCongDoan.dinh_muc }
       ]
     } as any
   ];
@@ -218,6 +223,10 @@ export default function HuongDan() {
               dateHeader={latestEntry ? "Ngày nhập gần nhất" : "Hôm nay"}
               items={dayItems}
               getCongDoanName={getCongDoanName}
+              getCongDoanDinhMuc={(ma) => {
+                const cd = congDoanList.find(c => c.ma_cong_doan === ma);
+                return cd ? Number(cd.dinh_muc) : 1;
+              }}
             />
           </section>
 

@@ -6,8 +6,8 @@ import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
-import { useGetSanLuongBaoCao, useListCongDoan } from '@workspace/api-client-react';
-import { getListCongDoanQueryKey } from '@workspace/api-client-react';
+import { useGetSanLuongBaoCao, useListCongDoan } from '@/api';
+import { getListCongDoanQueryKey } from '@/api';
 import { BottomNav } from '@/components/BottomNav';
 import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
 

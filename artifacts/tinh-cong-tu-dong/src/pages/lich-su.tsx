@@ -5,10 +5,10 @@ import { getCycleMonthFromDate, getCycleRangeStrings } from '@/lib/date-utils';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { useListSanLuong, useDeleteSanLuong, useListCongDoan } from '@workspace/api-client-react';
+import { useListSanLuong, useDeleteSanLuong, useListCongDoan } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey, getListCongDoanQueryKey } from '@workspace/api-client-react';
-import type { SanLuong } from '@workspace/api-client-react';
+import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey, getListCongDoanQueryKey } from '@/api';
+import type { SanLuong } from '@/api';
 
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
@@ -158,6 +158,10 @@ export default function LichSu() {
                           dateHeader={formatDateHeader(date)}
                           items={items}
                           getCongDoanName={getCongDoanName}
+                          getCongDoanDinhMuc={(ma) => {
+                            const cd = congDoanList.find(c => c.ma_cong_doan === ma);
+                            return cd ? Number(cd.dinh_muc) : 1;
+                          }}
                           onEdit={(entry) => setEditEntry(entry)}
                           onDelete={(id) => handleDelete(id)}
                         />

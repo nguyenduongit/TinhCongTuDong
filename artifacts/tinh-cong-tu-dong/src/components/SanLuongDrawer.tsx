@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Drawer } from 'vaul';
-import { useCreateSanLuong, useUpdateSanLuong, useListCongDoan, type CongDoan, type SanLuong } from '@workspace/api-client-react';
+import { useCreateSanLuong, useUpdateSanLuong, useListCongDoan, type CongDoan, type SanLuong } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@workspace/api-client-react';
+import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
 import { CongDoanModal } from './CongDoanModal';
 import { format, parseISO, getDay } from 'date-fns';
 import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
@@ -67,13 +67,17 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
       setNgay(entry.ngay);
       setThoiGian(entry.thoi_gian_thuc_hien.toString());
       setThoiGianHoTro((entry as any).thoi_gian_ho_tro?.toString() || '');
-      setCongDoanBlocks(entry.chi_tiet.map((ct, idx) => ({
-        id: idx.toString(),
-        // Ở form UI chỉ cần ma_cong_doan để hiển thị
-        congDoan: { ma_cong_doan: ct.cong_doan } as any,
-        soLuong: ct.so_luong.toString(),
-        phanTram: `${ct.phan_tram_dinh_muc}%`
-      })));
+      setCongDoanBlocks(entry.chi_tiet.map((ct: any, idx: number) => {
+        const cd = list.find(c => c.ma_cong_doan === ct.cong_doan);
+        const dinh_muc_goc = cd ? Number(cd.dinh_muc) : 1;
+        const phan_tram = Math.round((Number(ct.dinh_muc) / dinh_muc_goc) * 100);
+        return {
+          id: idx.toString(),
+          congDoan: cd || { ma_cong_doan: ct.cong_doan } as any,
+          soLuong: ct.so_luong.toString(),
+          phanTram: `${phan_tram}%`
+        };
+      }));
     } else {
       // Create mode
       setNgay(format(new Date(), 'yyyy-MM-dd'));

@@ -2,13 +2,14 @@ import React from 'react';
 import { MoreHorizontal, Pencil, Trash2, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import type { SanLuong } from '@workspace/api-client-react';
+import type { SanLuong } from '@/api';
 
 export interface HistoryDayCardProps {
   dateStr: string;
   dateHeader: string;
   items: SanLuong[];
   getCongDoanName: (ma: string) => string;
+  getCongDoanDinhMuc?: (ma: string) => number;
   onEdit?: (entry: SanLuong) => void;
   onDelete?: (id: number) => void;
   readOnly?: boolean;
@@ -19,6 +20,7 @@ export function HistoryDayCard({
   dateHeader,
   items,
   getCongDoanName,
+  getCongDoanDinhMuc,
   onEdit,
   onDelete,
   readOnly
@@ -84,11 +86,18 @@ export function HistoryDayCard({
                     <span className="text-sm font-medium text-foreground line-clamp-2">{getCongDoanName(item.cong_doan)}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    {item.phan_tram_dinh_muc !== 100 && (
-                      <span className="text-[10px] text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 font-bold">
-                        {item.phan_tram_dinh_muc}%
-                      </span>
-                    )}
+                    {(() => {
+                      const cdDinhMuc = getCongDoanDinhMuc?.(item.cong_doan) || 1;
+                      const percent = Math.round((Number(item.dinh_muc) / cdDinhMuc) * 100);
+                      if (percent !== 100 && percent > 0) {
+                        return (
+                          <span className="text-[10px] text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 font-bold">
+                            {percent}%
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                     <div className="flex flex-col items-end min-w-[3.5rem]">
                       <span className="text-[10px] text-muted-foreground font-semibold uppercase mb-0.5">Số lượng</span>
                       <span className="text-foreground font-bold">{item.so_luong.toLocaleString('vi-VN')}</span>

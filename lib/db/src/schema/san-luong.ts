@@ -9,7 +9,7 @@ export const sanLuongTable = pgTable("san_luong", {
   chi_tiet: jsonb("chi_tiet").notNull().$type<{
     cong_doan: string;
     so_luong: number;
-    phan_tram_dinh_muc: number;
+    dinh_muc: number;
     cong_sp?: number;
   }[]>(),
   thong_ke_ngay: jsonb("thong_ke_ngay").$type<{

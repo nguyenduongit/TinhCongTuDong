@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, PackageOpen, Target, CalendarDays, Zap, Info } from 'lucide-react';
-import { useListCongDoan, getListCongDoanQueryKey, useListLichTrinh } from '@workspace/api-client-react';
+import { useListCongDoan, getListCongDoanQueryKey, useListLichTrinh } from '@/api';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle } from '@/lib/date-utils';
 import { parseQuyCach } from '@/components/ui-parts/CongDoanFormUI';
 import { format, addDays } from 'date-fns';
@@ -66,7 +66,7 @@ export function MonthlyProgressCard({ monthTotalSl, monthTotalTime, hasLoggedTod
     if (!cd || targetCong <= 0) return 0;
     const dinhMuc = Number(cd.dinh_muc) > 0 ? Number(cd.dinh_muc) : 1;
     // MonthlyProgressCard assumes 100% phan_tram_dinh_muc for quota estimation
-    return reverseCalcPcs(targetCong, dinhMuc, 100, cd.ma_cong_doan.startsWith('9'));
+    return reverseCalcPcs(targetCong, dinhMuc, cd.ma_cong_doan.startsWith('9'));
   }
 
   const totalPcs = getReverseCalcPcs(missingCong, selectedCdObj);

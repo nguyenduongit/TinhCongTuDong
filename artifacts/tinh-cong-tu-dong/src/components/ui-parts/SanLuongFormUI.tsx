@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Plus } from 'lucide-react';
-import type { CongDoan } from '@workspace/api-client-react';
+import type { CongDoan } from '@/api';
 
 export interface CongDoanBlock {
   id: string;

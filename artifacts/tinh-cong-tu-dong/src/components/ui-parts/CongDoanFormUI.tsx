@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CongDoan } from '@workspace/api-client-react';
+import type { CongDoan } from '@/api';
 
 export interface CongDoanFormUIProps {
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;

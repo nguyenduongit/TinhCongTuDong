@@ -25,18 +25,15 @@ export function round3(num: number): number {
  * Tính công sản phẩm (công SP) cho một công đoạn
  * @param soLuong Số lượng hoàn thành
  * @param dinhMuc Định mức của công đoạn
- * @param phanTramDinhMuc Phần trăm định mức (100 = 100%)
  * @param isBasketLogic true nếu mã công đoạn bắt đầu bằng '9' (logic rổ 32)
  */
 export function computeCongSp(
   soLuong: number, 
   dinhMuc: number, 
-  phanTramDinhMuc: number, 
   isBasketLogic: boolean
 ): number {
-  const safeDinhMuc = dinhMuc > 0 ? dinhMuc : 1;
-  const safePhanTram = phanTramDinhMuc > 0 ? phanTramDinhMuc : 100;
-  const rate = safeDinhMuc * (safePhanTram / 100);
+  const rate = dinhMuc > 0 ? dinhMuc : 1;
+
 
   if (isBasketLogic) {
     const fullBaskets = Math.floor(soLuong / BASKET_SIZE);
@@ -70,13 +67,11 @@ export function computeCongNhat(thoiGianThucHienPhut: number, thoiGianHoTroPhut:
 export function reverseCalcPcs(
   targetCong: number,
   dinhMuc: number,
-  phanTram: number,
   isBasketLogic: boolean
 ): number {
   if (targetCong <= 0 || dinhMuc <= 0) return 0;
   
-  const safePhanTram = phanTram > 0 ? phanTram : 100;
-  const rate = dinhMuc * (safePhanTram / 100);
+  const rate = dinhMuc;
 
   if (isBasketLogic) {
     // Dòng 9: tính theo rổ 32 pcs, rổ chẵn tính bằng [32/rate] cắt 3 số
@@ -119,8 +114,7 @@ export function reverseCalcPcs(
 export interface ChiTietItem {
   ma_cong_doan: string;
   so_luong: number;
-  dinh_muc: number;
-  phan_tram_dinh_muc: number;
+  dinh_muc: number; // Effective quota
 }
 
 /**
@@ -137,18 +131,18 @@ export function computeWeeklyCongSp(items: ChiTietItem[]): number {
     const isBasketLogic = item.ma_cong_doan.startsWith('9');
     
     if (isBasketLogic) {
-      if (!basketGroups[item.ma_cong_doan]) {
-        const safeDinhMuc = item.dinh_muc > 0 ? item.dinh_muc : 1;
-        const safePhanTram = item.phan_tram_dinh_muc > 0 ? item.phan_tram_dinh_muc : 100;
-        basketGroups[item.ma_cong_doan] = {
+      const key = `${item.ma_cong_doan}_${item.dinh_muc}`;
+      if (!basketGroups[key]) {
+        const rate = item.dinh_muc > 0 ? item.dinh_muc : 1;
+        basketGroups[key] = {
           totalSoLuong: 0,
-          rate: safeDinhMuc * (safePhanTram / 100)
+          rate: rate
         };
       }
-      basketGroups[item.ma_cong_doan].totalSoLuong += item.so_luong;
+      basketGroups[key].totalSoLuong += item.so_luong;
     } else {
       // Công đoạn thường: tính độc lập và cộng dồn
-      totalCong += computeCongSp(item.so_luong, item.dinh_muc, item.phan_tram_dinh_muc, false);
+      totalCong += computeCongSp(item.so_luong, item.dinh_muc, false);
     }
   }
   

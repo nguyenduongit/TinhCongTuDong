@@ -4,7 +4,6 @@ import { BottomNav } from '@/components/BottomNav';
 import { CongDoanModal } from '@/components/CongDoanModal';
 import { ScheduleModal } from '@/components/ScheduleModal';
 import { useAuth } from '@/components/AuthProvider';
-import { customFetch } from '@workspace/api-client-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -13,13 +12,12 @@ import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 export default function CaiDat() {
   const [showCongDoanModal, setShowCongDoanModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const { user, refetchUser } = useAuth();
+  const { user, refetchUser, signOut } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleLogout = async () => {
     try {
-      await customFetch('/api/auth/logout', { method: 'POST' });
-      await refetchUser();
+      await signOut();
       setLocation('/login');
     } catch (err) {
       toast.error('Đăng xuất thất bại');

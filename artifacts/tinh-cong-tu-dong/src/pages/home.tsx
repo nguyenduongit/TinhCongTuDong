@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-import { useGetSanLuongDashboard, useDeleteSanLuong } from '@workspace/api-client-react';
+import { useGetSanLuongDashboard, useDeleteSanLuong } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@workspace/api-client-react';
-import type { SanLuong } from '@workspace/api-client-react';
+import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
+import type { SanLuong } from '@/api';
 
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';

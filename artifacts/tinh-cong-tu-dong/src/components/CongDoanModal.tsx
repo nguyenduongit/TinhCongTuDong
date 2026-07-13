@@ -7,9 +7,9 @@ import {
   useUpdateCongDoan,
   useDeleteCongDoan,
   type CongDoan
-} from '@workspace/api-client-react';
+} from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { getListCongDoanQueryKey } from '@workspace/api-client-react';
+import { getListCongDoanQueryKey } from '@/api';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';

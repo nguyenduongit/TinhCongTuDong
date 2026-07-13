@@ -1,7 +1,7 @@
 import { type Variants } from 'framer-motion';
 
 // A premium ease-out curve, similar to Apple's standard transitions
-export const premiumEase = [0.16, 1, 0.3, 1];
+export const premiumEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export const pageContainerVariants: Variants = {
   hidden: { opacity: 0 },
