@@ -300,7 +300,12 @@ router.get("/san-luong/bao-cao", requireAuth, async (req: AuthRequest, res): Pro
         if (!weekGroup.congDoanStats[ct.cong_doan]) {
           weekGroup.congDoanStats[ct.cong_doan] = { so_luong: 0, cong_sp: 0 };
         }
-        weekGroup.congDoanStats[ct.cong_doan].so_luong += (Number(ct.so_luong) || 0);
+        // Quy đổi so_luong về số pcs tương đương định mức 100%
+        // Ví dụ: định mức 1000, làm 800 pcs với % định mức 80% → 800 / 0.8 = 1000 pcs tương đương
+        const soLuong = Number(ct.so_luong) || 0;
+        const phanTram = Number(ct.phan_tram_dinh_muc) || 100;
+        const quyDoi = soLuong / (phanTram / 100);
+        weekGroup.congDoanStats[ct.cong_doan].so_luong += quyDoi;
       });
     }
   }
@@ -312,15 +317,15 @@ router.get("/san-luong/bao-cao", requireAuth, async (req: AuthRequest, res): Pro
     Object.entries(week.congDoanStats).forEach(([ma_cong_doan, stat]: [string, any]) => {
       const cd = allCongDoan.find(c => c.ma_cong_doan === ma_cong_doan);
       const dinh_muc = cd ? Number(cd.dinh_muc) : 1;
-      const phan_tram_dinh_muc = cd ? Number(cd.phan_tram_dinh_muc) : 100;
       
-      stat.cong_sp = computeCongSp(stat.so_luong, dinh_muc, phan_tram_dinh_muc, ma_cong_doan.startsWith('9'));
+      // so_luong đã được quy đổi về định mức 100%, nên dùng phan_tram_dinh_muc = 100
+      stat.cong_sp = computeCongSp(stat.so_luong, dinh_muc, 100, ma_cong_doan.startsWith('9'));
 
       items.push({
         ma_cong_doan,
         so_luong: stat.so_luong,
         dinh_muc,
-        phan_tram_dinh_muc
+        phan_tram_dinh_muc: 100
       });
     });
 
