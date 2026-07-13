@@ -61,23 +61,23 @@ export default function Home() {
           </motion.header>
 
           {/* Tóm tắt tháng */}
-          <motion.div variants={pageItemVariants} className="grid grid-cols-3 gap-2">
-            <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
+          <motion.div className="grid grid-cols-3 gap-2">
+            <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">{(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'Dư' : 'Thiếu'}</span>
               <span className={`text-lg font-bold ${(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-400'}`}>
                 {isLoadingStats ? '-' : Math.abs((stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
-            </div>
-            <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
+            </motion.div>
+            <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">Công SP</span>
               <span className="text-lg font-bold text-primary">{isLoadingStats ? '-' : (stats?.month_total_sl || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
+            </motion.div>
+            <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
               <span className="text-xs text-muted-foreground mb-1">Công nhật</span>
               <span className="text-lg font-bold text-foreground">
                 {isLoadingStats ? '-' : ((stats?.month_total_time || 0) / 480).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Progress Card */}

@@ -17,7 +17,7 @@ export const pageContainerVariants: Variants = {
 export const pageItemVariants: Variants = {
   hidden: { 
     opacity: 0, 
-    y: 20, 
+    y: 40, 
     filter: 'blur(4px)' 
   },
   show: { 
