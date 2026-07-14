@@ -99,7 +99,7 @@ export function SanLuongFormUI({
               <input 
                 type="number" 
                 required
-                min="1"
+                min={['240', '480'].includes(thoiGianHoTro) ? "0" : "1"}
                 value={block.soLuong}
                 onChange={e => handleBlockSoLuongChange?.(block.id, e.target.value)}
                 placeholder="SL"
