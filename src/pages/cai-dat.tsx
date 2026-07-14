@@ -155,6 +155,33 @@ export default function CaiDat() {
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
+                {user && (
+                <button 
+                  onClick={async () => {
+                    try {
+                      toast.loading("Đang gửi thử thông báo...", { id: "test-notify" });
+                      const { supabase } = await import('@/lib/supabase');
+                      const { error } = await supabase.functions.invoke('send-daily-reminder', {
+                        body: { testUserId: user.id }
+                      });
+                      if (error) throw error;
+                      toast.success("Đã gửi! Vui lòng kiểm tra màn hình của bạn.", { id: "test-notify" });
+                    } catch (err) {
+                      toast.error("Lỗi khi gửi thông báo test.", { id: "test-notify" });
+                      console.error(err);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors border-b border-border/50 outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">Test Gửi Thông Báo</span>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </button>
+                )}
                 <div className="w-full flex items-center justify-between p-4 bg-transparent">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">

@@ -19,25 +19,37 @@ function getTodayVNString(): string {
 
 Deno.serve(async (req) => {
   try {
-    const today = getTodayVNString();
+    let missingUserIds: string[] = [];
+    let isTest = false;
 
-    // 1. Lấy danh sách tất cả người dùng
-    const { data: users, error: userError } = await supabase.auth.admin.listUsers();
-    if (userError) throw userError;
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        if (body.testUserId) {
+          missingUserIds = [body.testUserId];
+          isTest = true;
+        }
+      } catch (e) {
+        // Not JSON or empty body, ignore
+      }
+    }
 
-    // 2. Lấy tất cả các bản ghi sản lượng của ngày hôm nay
-    const { data: logs, error: logError } = await supabase
-      .from('san_luong')
-      .select('user_id')
-      .eq('ngay', today);
-    if (logError) throw logError;
+    if (!isTest) {
+      const today = getTodayVNString();
+      const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+      if (userError) throw userError;
 
-    const usersWithLog = new Set(logs.map(log => log.user_id));
+      const { data: logs, error: logError } = await supabase
+        .from('san_luong')
+        .select('user_id')
+        .eq('ngay', today);
+      if (logError) throw logError;
 
-    // 3. Lọc ra những người dùng chưa nhập
-    const missingUserIds = users.users
-      .map(u => u.id)
-      .filter(id => !usersWithLog.has(id));
+      const usersWithLog = new Set(logs.map(log => log.user_id));
+      missingUserIds = users.users
+        .map(u => u.id)
+        .filter(id => !usersWithLog.has(id));
+    }
 
     if (missingUserIds.length === 0) {
       return new Response(JSON.stringify({ message: "Mọi người đều đã nhập đủ!" }), { headers: { "Content-Type": "application/json" } });
