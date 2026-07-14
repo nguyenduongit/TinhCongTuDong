@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { SanLuong } from '@/api';
 
-export interface HistoryDayCardProps {
+export interface SanLuongDayCardProps {
   dateStr: string;
   dateHeader: string;
   items: SanLuong[];
@@ -15,7 +15,7 @@ export interface HistoryDayCardProps {
   readOnly?: boolean;
 }
 
-export function HistoryDayCard({
+export function SanLuongDayCard({
   dateStr,
   dateHeader,
   items,
@@ -24,7 +24,7 @@ export function HistoryDayCard({
   onEdit,
   onDelete,
   readOnly
-}: HistoryDayCardProps) {
+}: SanLuongDayCardProps) {
   const dayCongSp = items.reduce((s, e) => s + ((e.thong_ke_ngay as any)?.tong_cong_sp || 0), 0);
   const dayCongHoTro = items.reduce((s, e) => s + ((e as any).thoi_gian_ho_tro || 0) / 480, 0);
   const dayTotalCong = dayCongSp + dayCongHoTro;
@@ -33,11 +33,11 @@ export function HistoryDayCard({
 
   const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
 
-  const startLongPress = () => {
+  const startLongPress = (entry: SanLuong) => {
     if (readOnly) return;
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     longPressTimer.current = setTimeout(() => {
-      onEdit?.(items[0]);
+      onEdit?.(entry);
       longPressTimer.current = null;
     }, 500);
   };
@@ -50,15 +50,19 @@ export function HistoryDayCard({
   };
 
   return (
-    <div className={readOnly ? 'pointer-events-none' : ''}>
+    <motion.div 
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`bg-card border border-border/50 rounded-2xl squircle-xl flex flex-col shadow-sm overflow-hidden ${readOnly ? 'pointer-events-none' : ''}`}
+    >
       {/* Ngày header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between px-4 py-3 bg-secondary/40 border-b border-border/50">
         <span className="text-sm font-bold text-foreground capitalize">
           {dateHeader}
         </span>
         <div className="flex items-center gap-2">
           {dayTime > 0 && (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border/50">
+            <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border/50">
               <Clock className="w-3 h-3" />
               {dayTime}p
             </span>
@@ -73,12 +77,12 @@ export function HistoryDayCard({
       </div>
 
       {/* Các card trong ngày */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
         {items.map((entry, idx) => {
           const content = (
             <div className="flex flex-col">
               {entry.chi_tiet.map((item, i) => (
-                <div key={i} className={`flex items-center justify-between py-3.5 px-3 ${i !== entry.chi_tiet.length - 1 || (entry as any).thoi_gian_ho_tro > 0 ? 'border-b border-border/30' : ''}`}>
+                <div key={i} className={`flex items-center justify-between py-3.5 px-4 ${i !== entry.chi_tiet.length - 1 || (entry as any).thoi_gian_ho_tro > 0 ? 'border-b border-border/30' : ''}`}>
                   <div className="flex flex-col gap-1.5 flex-1 pr-2">
                     <span className="text-primary font-bold text-[11px] bg-primary/10 px-2 py-0.5 rounded border border-primary/20 uppercase tracking-wider self-start">
                       {item.cong_doan}
@@ -106,7 +110,7 @@ export function HistoryDayCard({
                 </div>
               ))}
               {(entry as any).thoi_gian_ho_tro > 0 && (
-                <div className={`flex items-center justify-between py-3.5 px-3`}>
+                <div className={`flex items-center justify-between py-3.5 px-4`}>
                   <div className="flex flex-col gap-1.5 flex-1 pr-2">
                     <span className="text-purple-700 dark:text-purple-400 font-bold text-[11px] bg-purple-100 dark:bg-purple-500/10 px-2 py-0.5 rounded border border-purple-300 dark:border-purple-500/20 uppercase tracking-wider self-start">
                       HỖ TRỢ
@@ -124,37 +128,34 @@ export function HistoryDayCard({
 
           if (readOnly) {
             return (
-              <div key={entry.id} className="bg-card border border-border/50 rounded-xl squircle-lg flex flex-col shadow-sm">
+              <div key={entry.id} className={`flex flex-col ${idx !== items.length - 1 ? 'border-b border-border/50' : ''}`}>
                 {content}
               </div>
             );
           }
 
           return (
-            <motion.div
+            <div
               key={entry.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04 }}
-              className="bg-card border border-border/50 rounded-xl squircle-lg flex flex-col shadow-sm cursor-pointer select-none active:scale-[0.99] transition-transform"
-              onTouchStart={startLongPress}
+              className={`flex flex-col cursor-pointer select-none active:bg-secondary/30 transition-colors ${idx !== items.length - 1 ? 'border-b border-border/50' : ''}`}
+              onTouchStart={() => startLongPress(entry)}
               onTouchEnd={endLongPress}
               onTouchMove={endLongPress}
-              onMouseDown={startLongPress}
+              onMouseDown={() => startLongPress(entry)}
               onMouseUp={endLongPress}
               onMouseLeave={endLongPress}
               onContextMenu={(e) => {
                 e.preventDefault();
                 if (!readOnly && !longPressTimer.current) {
-                  onEdit?.(items[0]);
+                  onEdit?.(entry);
                 }
               }}
             >
               {content}
-            </motion.div>
+            </div>
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }

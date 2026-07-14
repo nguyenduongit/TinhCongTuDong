@@ -15,8 +15,8 @@ export function BottomNav() {
     >
       <div className="grid grid-cols-4 h-16 px-2">
         <NavItem href="/" icon={Home} label="Trang chủ" isActive={location === '/'} />
-        <NavItem href="/lich-su" icon={History} label="Lịch sử" isActive={location === '/lich-su'} />
-        <NavItem href="/bao-cao" icon={BarChart3} label="Báo cáo" isActive={location === '/bao-cao'} />
+        <NavItem href="/san-luong" icon={History} label="Sản lượng" isActive={location === '/san-luong'} />
+        <NavItem href="/cong-tuan" icon={BarChart3} label="Công tuần" isActive={location === '/cong-tuan'} />
         <NavItem href="/cai-dat" icon={Settings} label="Cài đặt" isActive={location === '/cai-dat'} />
       </div>
     </motion.div>

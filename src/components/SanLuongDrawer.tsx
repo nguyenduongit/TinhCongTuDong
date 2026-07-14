@@ -10,11 +10,12 @@ import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
 
 export interface SanLuongDrawerProps {
   entry?: SanLuong | null; // Nếu có truyền entry thì là chế độ Edit, ngược lại là Create
+  initialDate?: string; // Ngày mặc định khi thêm mới
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProps) {
+export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLuongDrawerProps) {
   const isEditMode = !!entry;
   
   const queryClient = useQueryClient();
@@ -80,14 +81,14 @@ export function SanLuongDrawer({ entry, open, onOpenChange }: SanLuongDrawerProp
         };
       }));
     } else {
-      // Create mode
-      setNgay(getTodayVNString());
+      setNgay(initialDate || getTodayVNString());
+      setThoiGian('');
+      setThoiGianHoTro('');
       setCongDoanBlocks([
         { id: Date.now().toString(), congDoan: list.length > 0 ? list[0] : null, soLuong: '', phanTram: '100%' }
       ]);
-      setThoiGianHoTro('');
     }
-  }, [entry, open, isEditMode, list]);
+  }, [open, isEditMode, entry, list, initialDate]);
 
   // Tự động set thời gian mặc định dựa trên ngày chỉ ở Create Mode
   useEffect(() => {

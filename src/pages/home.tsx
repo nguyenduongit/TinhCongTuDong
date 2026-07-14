@@ -1,18 +1,20 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Bell } from 'lucide-react';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 import { useGetSanLuongDashboard, useDeleteSanLuong } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
 import type { SanLuong } from '@/api';
-import { getNowVNDateLocal } from '@/lib/date-utils';
+import { getNowVNDateLocal, getCycleRange, getCycleMonthFromDate } from '@/lib/date-utils';
 
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
-import { MonthlyProgressCard } from '@/components/ui-parts/MonthlyProgressCard';
+import { MissingDaysModal } from '@/components/MissingDaysModal';
+import { HomeProgressCard } from '@/components/ui-parts/HomeProgressCard';
+import { EstimationModal } from '@/components/EstimationModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/animations';
 
@@ -20,13 +22,38 @@ import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/anim
 
 export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isCalculatorExpanded, setIsCalculatorExpanded] = useState(false);
+  const [showEstimationModal, setShowEstimationModal] = useState(false);
+  const [isMissingModalOpen, setIsMissingModalOpen] = useState(false);
+  const [missingModalInitialDate, setMissingModalInitialDate] = useState<string | undefined>();
 
   const queryClient = useQueryClient();
   const { data: dashboard, isLoading: isLoadingDashboard } = useGetSanLuongDashboard();
   const todayEntries = dashboard?.todayEntries || [];
+  const monthEntries = dashboard?.monthEntries || [];
   const stats = dashboard?.stats;
   const isLoadingStats = isLoadingDashboard;
+
+  const today = getNowVNDateLocal();
+  const { start: cycleStart, end: cycleEnd } = getCycleRange(getCycleMonthFromDate(today));
+  
+  let missingDays: Date[] = [];
+  if (!isLoadingDashboard) {
+    const endCalcDate = today > cycleEnd ? cycleEnd : (today < cycleStart ? cycleStart : today);
+    if (today >= cycleStart) {
+      const days = eachDayOfInterval({ start: cycleStart, end: endCalcDate });
+      for (const d of days) {
+        const dayOfWeek = getDay(d);
+        if (dayOfWeek === 0) continue; // Bỏ qua Chủ Nhật
+        
+        const dStr = format(d, 'yyyy-MM-dd');
+        const hasLog = monthEntries.some((e: any) => e.ngay === dStr);
+        if (!hasLog) {
+          missingDays.push(d);
+        }
+      }
+    }
+  }
+  missingDays = missingDays.sort((a, b) => b.getTime() - a.getTime());
   
   const deleteMutation = useDeleteSanLuong();
 
@@ -60,48 +87,35 @@ export default function Home() {
             </div>
           </motion.header>
 
-          {/* Tóm tắt tháng */}
-          <motion.div className="grid grid-cols-3 gap-2">
-            <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
-              <span className="text-xs text-muted-foreground mb-1">{(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'Dư' : 'Thiếu'}</span>
-              <span className={`text-lg font-bold ${(stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-400'}`}>
-                {isLoadingStats ? '-' : Math.abs((stats?.month_total_sl || 0) - ((stats?.month_total_time || 0) / 480)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
-              </span>
-            </motion.div>
-            <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
-              <span className="text-xs text-muted-foreground mb-1">Công SP</span>
-              <span className="text-lg font-bold text-primary">{isLoadingStats ? '-' : (stats?.month_total_sl || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
-            </motion.div>
-            <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-xl squircle-lg p-3 flex flex-col items-center shadow-sm">
-              <span className="text-xs text-muted-foreground mb-1">Công nhật</span>
-              <span className="text-lg font-bold text-foreground">
-                {isLoadingStats ? '-' : ((stats?.month_total_time || 0) / 480).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
-              </span>
-            </motion.div>
-          </motion.div>
-
           {/* Progress Card */}
           <motion.div variants={pageItemVariants}>
-            <MonthlyProgressCard
-              monthTotalSl={stats?.month_total_sl || 0}
-              monthTotalTime={stats?.month_total_time || 0}
-              hasLoggedToday={todayEntries.length > 0}
+            <HomeProgressCard
+              dashboardData={dashboard}
               isLoading={isLoadingStats}
-              onExpandChange={setIsCalculatorExpanded}
+              onOpenCalculator={() => setShowEstimationModal(true)}
             />
           </motion.div>
         </motion.div>
 
         {/* FAB */}
         <AnimatePresence>
-          {!isCalculatorExpanded && (
+          {true && (
             <motion.div
               variants={fabVariants}
               initial="hidden"
               animate="show"
               exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
-              className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20"
+              className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3"
             >
+              {missingDays.length > 0 && (
+                <button 
+                  onClick={() => setIsMissingModalOpen(true)}
+                  className="bg-amber-500 text-amber-950 border border-amber-400 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform"
+                >
+                  Bạn có {missingDays.length} ngày chưa nhập sản lượng !
+                </button>
+              )}
+
               <TooltipProvider>
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
@@ -131,7 +145,27 @@ export default function Home() {
         <BottomNav />
       </div>
 
-      <SanLuongDrawer entry={todayEntries.length > 0 ? todayEntries[0] : null} open={isAddOpen} onOpenChange={setIsAddOpen} />
+      <SanLuongDrawer 
+        entry={(!missingModalInitialDate && todayEntries.length > 0) ? todayEntries[0] : null}
+        open={isAddOpen} 
+        onOpenChange={(open) => {
+          setIsAddOpen(open);
+          if (!open) setTimeout(() => setMissingModalInitialDate(undefined), 300);
+        }} 
+        initialDate={missingModalInitialDate}
+      />
+      <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
+      <MissingDaysModal
+        open={isMissingModalOpen}
+        onOpenChange={setIsMissingModalOpen}
+        missingDays={missingDays}
+        onInputForDay={(dateStr) => {
+          setMissingModalInitialDate(dateStr);
+          setIsMissingModalOpen(false);
+          // Wait for modal to close before opening drawer
+          setTimeout(() => setIsAddOpen(true), 300);
+        }}
+      />
     </div>
   );
 }

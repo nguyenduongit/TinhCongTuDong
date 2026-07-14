@@ -5,8 +5,8 @@ import { getListCongDoanQueryKey } from '@/api';
 
 import { CongDoanFormUI } from '@/components/ui-parts/CongDoanFormUI';
 import { SanLuongFormUI } from '@/components/ui-parts/SanLuongFormUI';
-import { HistoryDayCard } from '@/components/ui-parts/HistoryDayCard';
-import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
+import { SanLuongDayCard } from '@/components/ui-parts/SanLuongDayCard';
+import { CongTuanCard, type WeekGroup } from '@/components/ui-parts/CongTuanCard';
 
 import { format, differenceInCalendarWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { getCycleMonthFromDate, getCycleRange, getNowVNDateLocal, getTodayVNString } from '@/lib/date-utils';
@@ -47,7 +47,7 @@ export default function HuongDan() {
     { id: '1', congDoan: sampleCongDoan as any, soLuong: '1500', phanTram: '' }
   ];
 
-  // 3. Prepare data for HistoryDayCard
+  // 3. Prepare data for SanLuongDayCard
   const todayStr = latestEntry ? latestEntry.ngay : getTodayVNString();
   const currentMonth = getCycleMonthFromDate(latestEntry ? new Date(latestEntry.ngay) : getNowVNDateLocal());
   const dayItems = latestEntry ? sanLuongList.filter(e => e.ngay === latestEntry.ngay) : [
@@ -63,7 +63,7 @@ export default function HuongDan() {
     } as any
   ];
 
-  // 4. Prepare data for WeekSummaryCard
+  // 4. Prepare data for CongTuanCard
   const getSampleWeek = (): WeekGroup => {
     if (sanLuongList.length > 0) {
       const currentMonth = getCycleMonthFromDate(new Date(latestEntry!.ngay));
@@ -211,20 +211,20 @@ export default function HuongDan() {
               <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 shrink-0">
                 <Info className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-foreground">3. Xem Lịch sử và Thống kê theo Ngày</h2>
+              <h2 className="text-lg font-bold text-foreground">3. Xem Sản lượng và Thống kê theo Ngày</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Toàn bộ dữ liệu bạn nhập trong ngày sẽ được tự động gộp lại thành một bảng tóm tắt nằm ở trang Lịch sử. 
+              Toàn bộ dữ liệu bạn nhập trong ngày sẽ được tự động gộp lại thành một bảng tóm tắt nằm ở trang Sản lượng. 
               Tại đây, bạn có thể nhanh chóng xem được <strong>Tổng số công đạt được</strong> và <strong>Tổng số phút thực hiện</strong> trong ngày đó. Bạn cũng có thể xem lại hoặc chỉnh sửa chi tiết từng mã công đoạn mình đã nhập.
             </p>
 
-            <HistoryDayCard 
+            <SanLuongDayCard 
               readOnly
               dateStr={todayStr}
               dateHeader={latestEntry ? "Ngày nhập gần nhất" : "Hôm nay"}
               items={dayItems}
               getCongDoanName={getCongDoanName}
-              getCongDoanDinhMuc={(ma) => {
+              getCongDoanDinhMuc={(ma: string) => {
                 const cd = congDoanList.find(c => c.ma_cong_doan === ma);
                 return cd ? Number(cd.dinh_muc) : 1;
               }}
@@ -237,14 +237,14 @@ export default function HuongDan() {
               <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
                 <LineChart className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-foreground">4. Theo dõi Báo cáo theo Tuần</h2>
+              <h2 className="text-lg font-bold text-foreground">4. Theo dõi Công Tuần</h2>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Tại trang Báo cáo, toàn bộ số lượng sản phẩm bạn làm được sẽ tự động cộng dồn lại theo từng Tuần <strong>(dựa trên chu kỳ tính công từ ngày 21 tháng này đến ngày 20 tháng sau)</strong>. 
+              Tại trang Công tuần, toàn bộ số lượng sản phẩm bạn làm được sẽ tự động cộng dồn lại theo từng Tuần <strong>(dựa trên chu kỳ tính công từ ngày 21 tháng này đến ngày 20 tháng sau)</strong>. 
               Bảng thống kê tuần giúp bạn nhìn lại trong tuần qua mình đã làm được tổng cộng bao nhiêu sản phẩm cho mỗi mã, và quy đổi ra được bao nhiêu <strong>Công Sản Phẩm (Công SP)</strong>.
             </p>
 
-            <WeekSummaryCard 
+            <CongTuanCard 
               readOnly
               week={sampleWeek}
               getCongDoanName={getCongDoanName}

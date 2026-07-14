@@ -6,19 +6,19 @@ import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
-import { useGetSanLuongBaoCao, useListCongDoan } from '@/api';
+import { useGetCongTuan, useListCongDoan } from '@/api';
 import { getListCongDoanQueryKey } from '@/api';
 import { BottomNav } from '@/components/BottomNav';
-import { WeekSummaryCard, type WeekGroup } from '@/components/ui-parts/WeekSummaryCard';
+import { CongTuanCard, type WeekGroup } from '@/components/ui-parts/CongTuanCard';
 
-export default function BaoCao() {
+export default function CongTuan() {
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
   const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(getNowVNDateLocal()).getTime();
 
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
 
   const monthStrForApi = format(currentMonth, 'yyyy-MM');
-  const { data: baoCaoData, isLoading: isLoadingEntries } = useGetSanLuongBaoCao({ month: monthStrForApi });
+  const { data: baoCaoData, isLoading: isLoadingEntries } = useGetCongTuan({ month: monthStrForApi });
 
   const congDoanMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -58,7 +58,7 @@ export default function BaoCao() {
           animate="show"
         >
           <motion.header variants={pageItemVariants} className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Báo cáo</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Công tuần</h1>
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
               <BarChart3 className="w-5 h-5" />
             </div>
@@ -99,7 +99,7 @@ export default function BaoCao() {
             ) : (
               <div className="flex flex-col gap-6">
                 {weekGroups.map(week => (
-                  <WeekSummaryCard 
+                  <CongTuanCard 
                     key={week.weekNum} 
                     week={week} 
                     getCongDoanName={getCongDoanName} 

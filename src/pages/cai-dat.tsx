@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
+import { Settings as SettingsIcon, ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, CalendarDays, Search } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { CongDoanModal } from '@/components/CongDoanModal';
-import { ScheduleModal } from '@/components/ScheduleModal';
+import { EstimationModal } from '@/components/EstimationModal';
+import { QuotaLookupModal } from '@/components/QuotaLookupModal';
 import { useAuth } from '@/components/AuthProvider';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
@@ -11,7 +12,8 @@ import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
 export default function CaiDat() {
   const [showCongDoanModal, setShowCongDoanModal] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showEstimationModal, setShowEstimationModal] = useState(false);
+  const [showQuotaLookupModal, setShowQuotaLookupModal] = useState(false);
   const { user, refetchUser, signOut } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -85,17 +87,30 @@ export default function CaiDat() {
 
             {/* Section 2 */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Lịch làm việc</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Công cụ</h3>
               <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
                 <button 
-                  onClick={() => setShowScheduleModal(true)}
+                  onClick={() => setShowEstimationModal(true)}
                   className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
                       <CalendarDays className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Lịch trình cá nhân</span>
+                    <span className="text-sm font-semibold text-foreground">Tính toán Dự tính</span>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <div className="h-[1px] w-full bg-border/50" />
+                <button 
+                  onClick={() => setShowQuotaLookupModal(true)}
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                      <Search className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">Tra cứu định mức</span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -115,6 +130,28 @@ export default function CaiDat() {
                       <HelpCircle className="w-4 h-4" />
                     </div>
                     <span className="text-sm font-semibold text-foreground">Hướng dẫn sử dụng</span>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <button 
+                  onClick={() => {
+                    import('@/lib/onesignal').then(({ requestOneSignalPermission }) => {
+                      requestOneSignalPermission().then((accepted) => {
+                        if (accepted) {
+                          toast.success("Đã bật thông báo thành công!");
+                        } else {
+                          toast.error("Bạn đã từ chối nhận thông báo.");
+                        }
+                      });
+                    });
+                  }}
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors border-b border-border/50 outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">Đăng ký nhận thông báo</span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -153,10 +190,8 @@ export default function CaiDat() {
         manageMode={true} 
       />
 
-      <ScheduleModal
-        open={showScheduleModal}
-        onOpenChange={setShowScheduleModal}
-      />
+      <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
+      <QuotaLookupModal open={showQuotaLookupModal} onOpenChange={setShowQuotaLookupModal} />
     </div>
   );
 }

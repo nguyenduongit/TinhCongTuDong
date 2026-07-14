@@ -21,19 +21,14 @@ export type SanLuong = {
   thoi_gian_ho_tro: number;
 };
 
-export type LichTrinh = {
-  id: number;
-  ngay: string;
-  loai: 'tang_ca' | 'nghi_phep';
-  so_phut: number;
-};
+
 
 // Query Keys
 export const getListCongDoanQueryKey = () => ['cong-doan', 'list'];
 export const getListSanLuongQueryKey = () => ['san-luong', 'list'];
 export const getGetSanLuongDashboardQueryKey = () => ['san-luong', 'dashboard'];
-export const getGetSanLuongBaoCaoQueryKey = (params: any) => ['san-luong', 'bao-cao', params];
-export const getListLichTrinhQueryKey = (params?: any) => ['lich-trinh', 'list', params];
+export const getGetCongTuanQueryKey = (params: any) => ['cong-tuan', 'list', params];
+
 
 function getTodayVN(): string {
   return new Intl.DateTimeFormat("vi-VN", {
@@ -101,51 +96,6 @@ export const useDeleteCongDoan = () => {
   });
 };
 
-// --- LICH TRINH ---
-export const useListLichTrinh = (params?: { startDate?: string, endDate?: string }, options: any = {}) => {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: getListLichTrinhQueryKey(params),
-    queryFn: async () => {
-      let query = supabase.from('lich_trinh').select('*').eq('user_id', user?.id);
-      if (params?.startDate) query = query.gte('ngay', params.startDate);
-      if (params?.endDate) query = query.lte('ngay', params.endDate);
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as LichTrinh[];
-    },
-    enabled: !!user?.id && (options.query?.enabled !== false),
-  });
-};
-
-export const useUpsertLichTrinh = () => {
-  const { user } = useAuth();
-  return useMutation({
-    mutationFn: async (data: { ngay: string; loai: 'tang_ca' | 'nghi_phep'; so_phut: number }) => {
-      const { data: existing } = await supabase.from('lich_trinh').select('id').eq('ngay', data.ngay).eq('user_id', user?.id).single();
-      
-      if (existing) {
-        const { data: result, error } = await supabase.from('lich_trinh').update(data).eq('id', existing.id).select().single();
-        if (error) throw error;
-        return result;
-      } else {
-        const { data: result, error } = await supabase.from('lich_trinh').insert({ ...data, user_id: user?.id }).select().single();
-        if (error) throw error;
-        return result;
-      }
-    }
-  });
-};
-
-export const useDeleteLichTrinh = () => {
-  const { user } = useAuth();
-  return useMutation({
-    mutationFn: async ({ ngay }: { ngay: string }) => {
-      const { error } = await supabase.from('lich_trinh').delete().eq('ngay', ngay).eq('user_id', user?.id);
-      if (error) throw error;
-    }
-  });
-};
 
 // --- SAN LUONG ---
 export const setBaseUrl = () => {}; 
@@ -317,6 +267,28 @@ export const useDeleteSanLuong = () => {
   });
 };
 
+export const useConfirmNgayNghi = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ngay: string) => {
+      const { data, error } = await supabase.from('san_luong').insert({
+        ngay,
+        chi_tiet: [],
+        thong_ke_ngay: { is_ngay_nghi: true },
+        thoi_gian_thuc_hien: 0,
+        thoi_gian_ho_tro: 0,
+        user_id: user?.id,
+      }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['san-luong'] });
+    }
+  });
+};
+
 // --- CALCULATIONS FOR DASHBOARD / BAO CAO ---
 
 function mapDbChiTiet(dbChiTietArray: any[]): ChiTietItem[] {
@@ -429,16 +401,17 @@ export const useGetSanLuongDashboard = (options: any = {}) => {
           week_count, week_total_time, week_total_sl,
         },
         todayEntries: todayRows,
+        monthEntries: monthRows,
       };
     },
     enabled: !!user?.id && (options.query?.enabled !== false),
   });
 };
 
-export const useGetSanLuongBaoCao = (params: { month: string }, options: any = {}) => {
+export const useGetCongTuan = (params: { month: string }, options: any = {}) => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: getGetSanLuongBaoCaoQueryKey(params),
+    queryKey: getGetCongTuanQueryKey(params),
     queryFn: async () => {
       const monthStr = params.month;
       const [yearStr, mStr] = monthStr.split('-');
@@ -556,5 +529,39 @@ export const useGetSanLuongBaoCao = (params: { month: string }, options: any = {
       return { weekGroups, totalCongMonth };
     },
     enabled: !!user?.id && (options.query?.enabled !== false),
+  });
+};
+
+// --- TRA CỨU ĐỊNH MỨC ---
+export type DinhMuc = {
+  product_code: string;
+  product_name: string;
+  level_0_9: number;
+  level_1_0: number;
+  level_1_1: number;
+  level_2_0: number;
+  level_2_1: number;
+  level_2_2: number;
+  level_2_5: number;
+  created_at: string;
+};
+
+export const useSearchDinhMuc = (keyword: string) => {
+  return useQuery({
+    queryKey: ['dinh-muc', 'search', keyword],
+    queryFn: async () => {
+      if (!keyword || keyword.trim() === '') return [] as DinhMuc[];
+      
+      const searchTerm = `%${keyword.trim()}%`;
+      const { data, error } = await supabase
+        .from('dinh_muc')
+        .select('*')
+        .or(`product_code.ilike.${searchTerm},product_name.ilike.${searchTerm}`)
+        .limit(50);
+        
+      if (error) throw error;
+      return data as DinhMuc[];
+    },
+    enabled: keyword.trim().length > 0,
   });
 };

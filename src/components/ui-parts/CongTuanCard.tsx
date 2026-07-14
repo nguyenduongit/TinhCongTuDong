@@ -13,21 +13,21 @@ export interface WeekGroup {
   congDoanStats: Record<string, { so_luong: number; cong_sp: number }>;
 }
 
-export interface WeekSummaryCardProps {
+export interface CongTuanCardProps {
   week: WeekGroup;
   getCongDoanName: (ma: string) => string;
   readOnly?: boolean;
 }
 
-export function WeekSummaryCard({ week, getCongDoanName, readOnly }: WeekSummaryCardProps) {
+export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardProps) {
   const totalCongDatDuoc = week.totalCongSp + week.totalHoTroPhut / 480;
   const congMucTieu = week.totalTime / 480;
   const hieuSoCong = totalCongDatDuoc - congMucTieu;
 
   return (
-    <div className={`flex flex-col ${readOnly ? 'pointer-events-none' : ''}`}>
+    <div className={`bg-card border border-border/50 rounded-2xl squircle-xl flex flex-col shadow-sm overflow-hidden ${readOnly ? 'pointer-events-none' : ''}`}>
       {/* Header */}
-      <div className="flex items-start justify-between mb-3 px-1">
+      <div className="flex items-center justify-between px-4 py-3 bg-secondary/40 border-b border-border/50">
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.6)]"></span>
@@ -64,9 +64,9 @@ export function WeekSummaryCard({ week, getCongDoanName, readOnly }: WeekSummary
       </div>
       
       {/* Content */}
-      <div className="flex flex-col bg-card border border-border/50 rounded-xl squircle-lg shadow-sm">
+      <div className="flex flex-col">
         {Object.entries(week.congDoanStats).map(([ma_cong_doan, stats], i, arr) => (
-          <div key={ma_cong_doan} className={`flex justify-between items-center py-3.5 px-3 ${i !== arr.length - 1 || week.totalHoTroPhut > 0 ? 'border-b border-border/30' : ''}`}>
+          <div key={ma_cong_doan} className={`flex justify-between items-center py-3.5 px-4 ${i !== arr.length - 1 || week.totalHoTroPhut > 0 ? 'border-b border-border/50' : ''}`}>
             <div className="flex flex-col gap-1.5 flex-1 pr-2">
               <span className="text-primary font-bold text-[11px] bg-primary/10 px-2 py-0.5 rounded border border-primary/20 uppercase tracking-wider self-start">
                 {ma_cong_doan}
@@ -87,7 +87,7 @@ export function WeekSummaryCard({ week, getCongDoanName, readOnly }: WeekSummary
           </div>
         ))}
         {week.totalHoTroPhut > 0 && (
-          <div className="flex justify-between items-center py-3.5 px-3">
+          <div className="flex justify-between items-center py-3.5 px-4">
             <div className="flex flex-col gap-1.5 flex-1 pr-2">
               <span className="text-purple-700 dark:text-purple-400 font-bold text-[11px] bg-purple-100 dark:bg-purple-500/10 px-2 py-0.5 rounded border border-purple-300 dark:border-purple-500/20 uppercase tracking-wider self-start">
                 HỖ TRỢ

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -7,8 +7,8 @@ import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { AuthProvider, useAuth } from '@/components/AuthProvider';
 
 const Home = lazy(() => import('@/pages/home'));
-const LichSu = lazy(() => import('@/pages/lich-su'));
-const BaoCao = lazy(() => import('@/pages/bao-cao'));
+const SanLuong = lazy(() => import('@/pages/san-luong'));
+const CongTuan = lazy(() => import('@/pages/cong-tuan'));
 const CaiDat = lazy(() => import('@/pages/cai-dat'));
 const Login = lazy(() => import('@/pages/login'));
 const HuongDan = lazy(() => import('@/pages/huong-dan'));
@@ -39,13 +39,19 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function Router() {
+  useEffect(() => {
+    import('@/lib/onesignal').then(({ initOneSignal }) => {
+      initOneSignal();
+    }).catch(console.error);
+  }, []);
+
   return (
     <Suspense fallback={<div className="min-h-[100dvh] flex items-center justify-center bg-background text-primary"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/"><ProtectedRoute component={Home} /></Route>
-        <Route path="/lich-su"><ProtectedRoute component={LichSu} /></Route>
-        <Route path="/bao-cao"><ProtectedRoute component={BaoCao} /></Route>
+        <Route path="/san-luong"><ProtectedRoute component={SanLuong} /></Route>
+        <Route path="/cong-tuan"><ProtectedRoute component={CongTuan} /></Route>
         <Route path="/cai-dat"><ProtectedRoute component={CaiDat} /></Route>
         <Route path="/huong-dan"><ProtectedRoute component={HuongDan} /></Route>
         <Route component={NotFound} />

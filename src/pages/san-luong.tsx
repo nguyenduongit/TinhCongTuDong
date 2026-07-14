@@ -12,7 +12,7 @@ import type { SanLuong } from '@/api';
 
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
-import { HistoryDayCard } from '@/components/ui-parts/HistoryDayCard';
+import { SanLuongDayCard } from '@/components/ui-parts/SanLuongDayCard';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
 // Nhóm mảng entries theo ngày
@@ -42,7 +42,7 @@ function formatDateHeader(dateStr: string): string {
   return format(d, 'EEEE, dd/MM', { locale: vi });
 }
 
-export default function LichSu() {
+export default function SanLuong() {
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
   const [editEntry, setEditEntry] = useState<SanLuong | null>(null);
 
@@ -102,7 +102,7 @@ export default function LichSu() {
 
           {/* Header */}
           <motion.header variants={pageItemVariants} className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Lịch sử</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Sản lượng</h1>
             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
               <CalendarIcon className="w-5 h-5" />
             </div>
@@ -152,7 +152,7 @@ export default function LichSu() {
                 <motion.div key={monthStr} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
                   {grouped.map(({ date, items }) => (
                       <div key={date}>
-                        <HistoryDayCard 
+                        <SanLuongDayCard 
                           dateStr={date}
                           dateHeader={formatDateHeader(date)}
                           items={items}

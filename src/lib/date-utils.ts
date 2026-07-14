@@ -83,16 +83,13 @@ export function getCycleRangeStrings(cycleMonth: Date): { startStr: string, endS
  */
 export function calculateRequiredCongForCycle(
   start: Date, 
-  end: Date, 
-  schedules: Array<{ ngay: string; loai: string; so_phut: number }> = []
+  end: Date
 ): number {
   const days = eachDayOfInterval({ start, end });
   
   let required = 0;
   for (const date of days) {
     const dayOfWeek = getDay(date);
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const schedule = schedules.find(s => s.ngay === dateStr);
     
     let standardMins = 0;
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
@@ -101,15 +98,7 @@ export function calculateRequiredCongForCycle(
       standardMins = 240;
     }
     
-    if (schedule) {
-      if (schedule.loai === 'tang_ca') {
-        required += (standardMins + schedule.so_phut) / 480;
-      } else if (schedule.loai === 'nghi_phep') {
-        required += Math.max(0, standardMins - schedule.so_phut) / 480;
-      }
-    } else {
-      required += standardMins / 480;
-    }
+    required += standardMins / 480;
   }
   
   return required;

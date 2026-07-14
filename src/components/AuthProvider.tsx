@@ -64,10 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Unknown',
           avatar: session.user.user_metadata?.avatar_url,
         });
+        import('@/lib/onesignal').then(({ loginOneSignal }) => {
+          loginOneSignal(session.user.id);
+        });
       } else {
         setUser(null);
+        import('@/lib/onesignal').then(({ logoutOneSignal }) => {
+          logoutOneSignal();
+        });
       }
-      setIsLoading(false);
     });
 
     return () => {
