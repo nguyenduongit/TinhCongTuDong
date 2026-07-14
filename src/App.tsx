@@ -40,8 +40,8 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
 function Router() {
   useEffect(() => {
-    import('@/lib/onesignal').then(({ initOneSignal }) => {
-      initOneSignal();
+    import('@/lib/onesignal').then(({ requestOneSignalPermission }) => {
+      requestOneSignalPermission().catch(console.error);
     }).catch(console.error);
   }, []);
 
