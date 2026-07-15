@@ -65,6 +65,17 @@ export default function Home() {
 
   const currentDateStr = format(getNowVNDateLocal(), 'EEEE, dd MMMM', { locale: vi });
 
+  const [isFabExpanded, setIsFabExpanded] = useState(false);
+  useEffect(() => {
+    if (missingDays.length > 0 && !isLoadingDashboard) {
+      const timer = setTimeout(() => {
+        setIsFabExpanded(true);
+        setTimeout(() => setIsFabExpanded(false), 4000); // 1s giãn + 3s giữ
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [missingDays.length, isLoadingDashboard]);
+
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">
       <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl">
@@ -99,47 +110,66 @@ export default function Home() {
 
         {/* FAB */}
         <AnimatePresence>
-          {true && (
-            <motion.div
-              variants={fabVariants}
-              initial="hidden"
-              animate="show"
-              exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
-              className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3"
-            >
-              {missingDays.length > 0 && (
-                <button 
-                  onClick={() => setIsMissingModalOpen(true)}
-                  className="bg-amber-500 text-amber-950 border border-amber-400/50 text-[11px] font-black px-4 py-2 rounded-full shadow-xl hover:scale-105 active:scale-95 transition-transform whitespace-nowrap"
-                >
-                  Bạn có {missingDays.length} ngày chưa nhập sản lượng !
-                </button>
-              )}
-
-              <TooltipProvider>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center justify-center">
-                      <button
-                        onClick={() => setIsAddOpen(true)}
-                        className="relative group flex items-center justify-center outline-none"
+          <motion.div
+            variants={fabVariants}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
+            className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20"
+          >
+            <div className="flex items-center justify-center relative">
+              {/* Glow effect */}
+              <motion.div 
+                animate={{ 
+                  scale: isFabExpanded ? [1, 1.05, 1] : 1,
+                  opacity: isFabExpanded ? [0.4, 0.6, 0.4] : 0.4 
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 bg-primary/40 rounded-full blur-md" 
+              />
+              
+              <motion.button
+                onClick={() => {
+                  if (isFabExpanded && missingDays.length > 0) {
+                    setIsMissingModalOpen(true);
+                  } else {
+                    setIsAddOpen(true);
+                  }
+                }}
+                animate={{ 
+                  width: isFabExpanded ? 280 : 64,
+                  height: 64,
+                  borderRadius: 32
+                }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 260, 
+                  damping: 20 
+                }}
+                className="relative overflow-hidden bg-gradient-to-tr from-amber-500 to-primary text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background flex items-center active:scale-95 transition-transform outline-none"
+              >
+                <div className="flex items-center w-full px-4">
+                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <Plus className="w-8 h-8" strokeWidth={2.5} />
+                  </div>
+                  
+                  <AnimatePresence>
+                    {isFabExpanded && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
+                        className="ml-3 text-[13px] font-black whitespace-nowrap overflow-hidden"
                       >
-                        <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
-                          <Plus className="w-8 h-8" strokeWidth={2.5} />
-                        </div>
-                      </button>
-                    </div>
-                  </TooltipTrigger>
-                  {todayEntries.length > 0 && (
-                    <TooltipContent side="top" sideOffset={10}>
-                      <p>Sửa sản lượng hôm nay</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            </motion.div>
-          )}
+                        Bạn có {missingDays.length} ngày chưa nhập sản lượng!
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.button>
+            </div>
+          </motion.div>
         </AnimatePresence>
 
         <BottomNav />
