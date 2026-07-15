@@ -124,29 +124,29 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
       <div className="grid grid-cols-3 gap-3 px-4 pb-5">
         
         {/* Công chuẩn */}
-        <div className="bg-secondary/20 border border-border/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+        <div className="bg-secondary/20 border border-border/50 rounded-xl py-3.5 px-2 flex flex-col items-center text-center overflow-hidden">
           <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center mb-2">
             <Calendar className="w-4 h-4 text-blue-400" />
           </div>
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Công chuẩn</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider whitespace-nowrap">Công chuẩn</span>
           <span className="text-xl font-black text-foreground">{isLoading ? '-' : congChuan}</span>
         </div>
 
         {/* Ngày nghỉ */}
-        <div className="bg-secondary/20 border border-border/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+        <div className="bg-secondary/20 border border-border/50 rounded-xl py-3.5 px-2 flex flex-col items-center text-center overflow-hidden">
           <div className="w-8 h-8 rounded-full bg-rose-500/15 flex items-center justify-center mb-2">
             <Palmtree className="w-4 h-4 text-rose-400" />
           </div>
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Ngày nghỉ</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider whitespace-nowrap">Ngày nghỉ</span>
           <span className="text-xl font-black text-foreground">{isLoading ? '-' : ngayNghi}</span>
         </div>
 
         {/* Tăng ca */}
-        <div className="bg-secondary/20 border border-border/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+        <div className="bg-secondary/20 border border-border/50 rounded-xl py-3.5 px-2 flex flex-col items-center text-center overflow-hidden">
           <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center mb-2">
             <Zap className="w-4 h-4 text-purple-400" />
           </div>
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Tăng ca</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider whitespace-nowrap">Tăng ca</span>
           <span className="text-xl font-black text-foreground">
             {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
           </span>
