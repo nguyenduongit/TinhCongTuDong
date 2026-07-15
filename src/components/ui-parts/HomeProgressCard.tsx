@@ -22,16 +22,33 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
   const congHanhChinh = calculateRequiredCongForCycle(cycleStart, endCalcDate);
   
   let ngayNghi = 0;
+  let tongPhutTangCa = 0;
+
   if (!isLoading) {
     if (today >= cycleStart) {
       const days = eachDayOfInterval({ start: cycleStart, end: endCalcDate });
       for (const d of days) {
         const dStr = format(d, 'yyyy-MM-dd');
         const log = monthEntries.find((e: any) => e.ngay === dStr);
+        
+        // Tính ngày nghỉ
         if (log && (log.thong_ke_ngay as any)?.is_ngay_nghi) {
           const dayOfWeek = getDay(d);
           if (dayOfWeek >= 1 && dayOfWeek <= 5) ngayNghi += 1;
           else if (dayOfWeek === 6) ngayNghi += 0.5;
+        }
+
+        // Tính tăng ca: ngày nào có tổng phút > phút hành chính quy định
+        if (log) {
+          const tongPhutThucTe = (log.thoi_gian_thuc_hien || 0) + (log.thoi_gian_ho_tro || 0);
+          const dayOfWeek = getDay(d);
+          let phutHanhChinhQuyDinh = 0;
+          if (dayOfWeek >= 1 && dayOfWeek <= 5) phutHanhChinhQuyDinh = 480;
+          else if (dayOfWeek === 6) phutHanhChinhQuyDinh = 240;
+
+          if (tongPhutThucTe > phutHanhChinhQuyDinh) {
+            tongPhutTangCa += (tongPhutThucTe - phutHanhChinhQuyDinh);
+          }
         }
       }
     }
@@ -39,13 +56,14 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
 
   const congNhat = (stats?.month_total_time || 0) / 480;
   const ngayCongConLai = congChuan - congHanhChinh;
-  const congMucTieu = congNhat + ngayCongConLai;
+  const congMucTieuCuoiThang = congNhat + ngayCongConLai; // Chỉ mang tính tham khảo
   
   const congSp = stats?.month_total_sl || 0;
-  const congSpConLai = congMucTieu - congSp;
-
-  const balance = congSp - congNhat;
+  const balance = congSp - congNhat; // So sánh thực tế Đã đạt vs Công nhật
   const isPositive = balance >= 0;
+
+  const gioTangCa = Math.floor(tongPhutTangCa / 60);
+  const phutTangCaLe = tongPhutTangCa % 60;
 
   return (
     <div className="bg-card border border-border/50 squircle-xl shadow-sm overflow-hidden flex flex-col mb-4">
@@ -60,7 +78,7 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         </div>
       </div>
 
-      {/* Main Stat: Dư / Thiếu (Thuộc nhóm Sản Phẩm) */}
+      {/* Main Stat: Dư / Thiếu (So sánh Đã đạt vs Công nhật) */}
       <div className="pt-8 pb-6 flex flex-col items-center justify-center relative overflow-hidden">
         <div className={`absolute inset-0 bg-gradient-to-br ${isPositive ? 'from-emerald-500/10' : 'from-rose-500/10'} to-transparent pointer-events-none`} />
         
@@ -79,11 +97,11 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         </div>
       </div>
 
-      {/* Nhóm Sản Phẩm - 3 thông tin chính hàng dưới số dư/thiếu */}
+      {/* Nhóm Thực Tế - 3 thông tin chính hàng dưới số dư/thiếu */}
       <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-between px-4 py-4 shadow-inner">
         <div className="flex flex-col items-center flex-1">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Mục tiêu</span>
-          <span className="text-sm font-black text-blue-500">{isLoading ? '-' : congMucTieu.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Công nhật</span>
+          <span className="text-sm font-black text-blue-500">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
         <div className="w-px h-8 bg-border/50" />
         <div className="flex flex-col items-center flex-1">
@@ -92,19 +110,19 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         </div>
         <div className="w-px h-8 bg-border/50" />
         <div className="flex flex-col items-center flex-1">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Còn lại</span>
-          <span className="text-sm font-bold text-rose-500">
-            {isLoading ? '-' : (congSpConLai > 0 ? congSpConLai.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '0')}
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Tăng ca</span>
+          <span className="text-sm font-bold text-purple-500">
+            {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
           </span>
         </div>
       </div>
 
-      {/* Nhóm Thời Gian - Thông tin nền tảng bên dưới */}
+      {/* Nhóm Tham Khảo & Nền tảng bên dưới */}
       <div className="grid grid-cols-2 gap-px bg-border/30 border-t border-border/50">
         <div className="bg-card/50 p-4 flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
             <Clock className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Thời gian</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Kế hoạch</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[11px] font-medium text-muted-foreground">Công chuẩn</span>
@@ -116,17 +134,17 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
           </div>
         </div>
         <div className="bg-card/50 p-4 flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-blue-500 mb-1">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Thực tế</span>
+          <div className="flex items-center gap-1.5 text-primary mb-1">
+            <Target className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Tham khảo</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-[11px] font-medium text-muted-foreground">Công nhật</span>
-            <span className="text-xs font-bold text-foreground">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+            <span className="text-[11px] font-medium text-muted-foreground">Mục tiêu</span>
+            <span className="text-xs font-bold text-foreground">{isLoading ? '-' : congMucTieuCuoiThang.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[11px] font-medium text-muted-foreground">Còn lại</span>
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+            <span className="text-xs font-bold text-muted-foreground">
               {isLoading ? '-' : ngayCongConLai.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
             </span>
           </div>
