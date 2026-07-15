@@ -82,18 +82,18 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
       {/* Nhóm Sản Phẩm - 3 thông tin chính hàng dưới số dư/thiếu */}
       <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-between px-4 py-4 shadow-inner">
         <div className="flex flex-col items-center flex-1">
-          <span className="text-[10px] uppercase font-bold text-primary mb-1">Mục tiêu</span>
-          <span className="text-sm font-black text-primary">{isLoading ? '-' : congMucTieu.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Mục tiêu</span>
+          <span className="text-sm font-black text-blue-500">{isLoading ? '-' : congMucTieu.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
         </div>
         <div className="w-px h-8 bg-border/50" />
         <div className="flex flex-col items-center flex-1">
           <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Đã đạt</span>
-          <span className="text-sm font-bold text-foreground">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+          <span className="text-sm font-bold text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
         <div className="w-px h-8 bg-border/50" />
         <div className="flex flex-col items-center flex-1">
           <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Còn lại</span>
-          <span className={`text-sm font-bold ${congSpConLai > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+          <span className="text-sm font-bold text-rose-500">
             {isLoading ? '-' : (congSpConLai > 0 ? congSpConLai.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '0')}
           </span>
         </div>
