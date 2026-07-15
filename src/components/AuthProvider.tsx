@@ -7,6 +7,8 @@ type User = {
   email: string;
   name: string;
   avatar?: string | null;
+  plan: 'free' | 'pro';
+  proExpiryDate?: string | null;
 };
 
 type AuthContextType = {
@@ -34,13 +36,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
-      
       if (session?.user) {
+        const plan = session.user.user_metadata?.plan || 'free';
+        const proExpiryDate = session.user.user_metadata?.pro_expires_at || null;
+        let finalPlan = plan;
+        if (plan === 'pro' && proExpiryDate) {
+          if (new Date(proExpiryDate) < new Date()) {
+            finalPlan = 'free'; // Hết hạn
+          }
+        }
+
         setUser({
           id: session.user.id,
           email: session.user.email || '',
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Unknown',
           avatar: session.user.user_metadata?.avatar_url,
+          plan: finalPlan,
+          proExpiryDate: proExpiryDate,
         });
       } else {
         setUser(null);
@@ -58,11 +70,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        const plan = session.user.user_metadata?.plan || 'free';
+        const proExpiryDate = session.user.user_metadata?.pro_expires_at || null;
+        let finalPlan = plan;
+        if (plan === 'pro' && proExpiryDate) {
+          if (new Date(proExpiryDate) < new Date()) {
+            finalPlan = 'free';
+          }
+        }
+
         setUser({
           id: session.user.id,
           email: session.user.email || '',
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Unknown',
           avatar: session.user.user_metadata?.avatar_url,
+          plan: finalPlan,
+          proExpiryDate: proExpiryDate,
         });
         import('@/lib/onesignal').then(({ loginOneSignal }) => {
           loginOneSignal(session.user.id);

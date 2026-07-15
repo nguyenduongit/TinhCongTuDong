@@ -60,6 +60,8 @@ function Router() {
   );
 }
 
+import { Toaster as SonnerToaster } from 'sonner';
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -69,6 +71,7 @@ function App() {
             <Router />
           </WouterRouter>
           <Toaster />
+          <SonnerToaster position="top-center" richColors />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

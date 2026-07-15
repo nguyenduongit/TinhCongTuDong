@@ -405,4 +405,10 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+
+  /* Kim cương màu tím (dành cho emoji 💎) */
+  .kim-cuong-tim {
+    display: inline-block;
+    filter: hue-rotate(65deg) saturate(1.5) contrast(1.1);
+  }
 }

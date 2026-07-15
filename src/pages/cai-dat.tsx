@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Settings as SettingsIcon, ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, CalendarDays, Search } from 'lucide-react';
+import { Settings as SettingsIcon, ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, CalendarDays, Search, Diamond } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { CongDoanModal } from '@/components/CongDoanModal';
 import { EstimationModal } from '@/components/EstimationModal';
 import { QuotaLookupModal } from '@/components/QuotaLookupModal';
+import { UpgradeModal } from '@/components/UpgradeModal';
 import { useAuth } from '@/components/AuthProvider';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ export default function CaiDat() {
   const [showCongDoanModal, setShowCongDoanModal] = useState(false);
   const [showEstimationModal, setShowEstimationModal] = useState(false);
   const [showQuotaLookupModal, setShowQuotaLookupModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { user, refetchUser, signOut } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -59,7 +61,28 @@ export default function CaiDat() {
                 )}
                 <div className="flex-col flex flex-1 overflow-hidden">
                   <h3 className="font-bold text-foreground text-lg truncate">{user.name}</h3>
-                  <p className="text-muted-foreground text-sm truncate">{user.email}</p>
+                  <p className="text-muted-foreground text-sm truncate mb-2">{user.email}</p>
+                  <div className="flex items-center gap-2">
+                    {user.plan === 'pro' ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="kim-cuong-tim text-[12px] leading-none">&#128142;</span>
+                        Pro: {user.proExpiryDate ? `${Math.max(0, Math.ceil((new Date(user.proExpiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))} ngày` : ''}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary border border-border/50 text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+                          Free
+                        </div>
+                        <button 
+                          onClick={() => setShowUpgradeModal(true)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-purple-600 transition-colors shadow-sm shadow-purple-500/20"
+                        >
+                          <span className="kim-cuong-tim text-[10px] leading-none">&#128142;</span>
+                          Nâng cấp Pro
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -90,27 +113,33 @@ export default function CaiDat() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Công cụ</h3>
               <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
                 <button 
-                  onClick={() => setShowEstimationModal(true)}
+                  onClick={() => user?.plan === 'pro' ? setShowEstimationModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
                   className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
                       <CalendarDays className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Tính toán Dự tính</span>
+                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      Tính toán Dự tính
+                      <span className="kim-cuong-tim text-[14px] leading-none drop-shadow-sm">&#128142;</span>
+                    </span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
                 <div className="h-[1px] w-full bg-border/50" />
                 <button 
-                  onClick={() => setShowQuotaLookupModal(true)}
+                  onClick={() => user?.plan === 'pro' ? setShowQuotaLookupModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
                   className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
                       <Search className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Tra cứu định mức</span>
+                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      Tra cứu định mức
+                      <span className="kim-cuong-tim text-[14px] leading-none drop-shadow-sm">&#128142;</span>
+                    </span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -219,6 +248,7 @@ export default function CaiDat() {
 
       <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
       <QuotaLookupModal open={showQuotaLookupModal} onOpenChange={setShowQuotaLookupModal} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
     </div>
   );
 }
