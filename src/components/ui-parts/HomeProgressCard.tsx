@@ -39,7 +39,7 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
 
   const congNhat = (stats?.month_total_time || 0) / 480;
   const ngayCongConLai = congChuan - congHanhChinh;
-  const congMucTieu = congNhat + ngayCongConLai;
+  const congMucTieu = congNhat + ngayCongConLai + 1;
   
   const congSp = stats?.month_total_sl || 0;
   const congSpConLai = congMucTieu - congSp;
