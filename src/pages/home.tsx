@@ -110,7 +110,7 @@ export default function Home() {
               {missingDays.length > 0 && (
                 <button 
                   onClick={() => setIsMissingModalOpen(true)}
-                  className="bg-amber-500 text-amber-950 border border-amber-400 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform"
+                  className="bg-amber-500 text-amber-950 border border-amber-400 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform whitespace-nowrap"
                 >
                   Bạn có {missingDays.length} ngày chưa nhập sản lượng !
                 </button>
