@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Bell } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
