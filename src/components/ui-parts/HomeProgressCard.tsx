@@ -18,10 +18,11 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
   const monthEntries = dashboardData?.monthEntries || [];
   
   const congChuan = calculateRequiredCongForCycle(cycleStart, cycleEnd);
+  const endCalcDate = today > cycleEnd ? cycleEnd : (today < cycleStart ? cycleStart : today);
+  const congHanhChinh = calculateRequiredCongForCycle(cycleStart, endCalcDate);
   
   let ngayNghi = 0;
   if (!isLoading) {
-    const endCalcDate = today > cycleEnd ? cycleEnd : (today < cycleStart ? cycleStart : today);
     if (today >= cycleStart) {
       const days = eachDayOfInterval({ start: cycleStart, end: endCalcDate });
       for (const d of days) {
@@ -36,12 +37,12 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
     }
   }
 
-  const congMucTieu = congChuan - ngayNghi;
-  const congSp = stats?.month_total_sl || 0;
   const congNhat = (stats?.month_total_time || 0) / 480;
-
+  const ngayCongConLai = congChuan - congHanhChinh;
+  const congMucTieu = congNhat + ngayCongConLai;
+  
+  const congSp = stats?.month_total_sl || 0;
   const congSpConLai = congMucTieu - congSp;
-  const ngayCongConLai = congMucTieu - congNhat;
 
   const balance = congSp - congNhat;
   const isPositive = balance >= 0;
@@ -84,12 +85,10 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
           <span className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Công chuẩn</span>
           <span className="text-sm font-bold text-foreground">{isLoading ? '-' : congChuan}</span>
         </div>
-        <Minus className="w-3.5 h-3.5 text-muted-foreground/50" />
         <div className="flex flex-col items-center">
           <span className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Ngày nghỉ</span>
           <span className="text-sm font-bold text-rose-500">{isLoading ? '-' : ngayNghi}</span>
         </div>
-        <Equal className="w-3.5 h-3.5 text-muted-foreground/50" />
         <div className="flex flex-col items-center">
           <span className="text-[10px] uppercase font-bold text-primary mb-0.5">Mục tiêu</span>
           <span className="text-base font-black text-primary">{isLoading ? '-' : congMucTieu.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
