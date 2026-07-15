@@ -11,7 +11,7 @@ export function BottomNav() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.2 }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[88px] bg-card/95 backdrop-blur-2xl border-t border-border/80 z-10 pb-safe shadow-[0_-8px_24px_rgba(0,0,0,0.3)]"
+      className="fixed bottom-0 w-full max-w-[430px] h-[88px] bg-card/95 backdrop-blur-2xl border-t border-border/80 z-10 pb-safe shadow-[0_-8px_24px_rgba(0,0,0,0.3)]"
     >
       <div className="grid grid-cols-4 h-16 px-2">
         <NavItem href="/" icon={Home} label="Trang chủ" isActive={location === '/'} />

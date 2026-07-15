@@ -98,8 +98,8 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
       </div>
 
       {/* Nhóm Thực Tế - 2 thông tin chính hàng dưới số dư/thiếu */}
-      <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-around px-4 py-4 shadow-inner">
-        <div className="flex flex-col items-center gap-1">
+      <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center py-4 shadow-inner">
+        <div className="flex-1 flex flex-col items-center gap-1">
           <div className="flex items-center gap-1.5">
             <Target className="w-3 h-3 text-muted-foreground/70" />
             <span className="text-[10px] uppercase font-bold text-muted-foreground/90">Mục tiêu</span>
@@ -107,12 +107,12 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
           <span className="text-sm font-black text-blue-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
         <div className="w-px h-8 bg-border/60" />
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex-1 flex flex-col items-center gap-1">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="w-3 h-3 text-muted-foreground/90" />
             <span className="text-[10px] uppercase font-bold text-muted-foreground/90">Đã đạt</span>
           </div>
-          <span className="text-sm font-bold text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+          <span className="text-sm font-black text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 

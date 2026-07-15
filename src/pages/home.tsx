@@ -115,9 +115,9 @@ export default function Home() {
             initial="hidden"
             animate="show"
             exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
-            className="fixed bottom-[104px] left-1/2 -translate-x-1/2 z-20"
+            className="fixed bottom-[104px] w-full max-w-[430px] z-20 flex justify-center pointer-events-none"
           >
-            <div className="flex items-center justify-center relative">
+            <div className="flex items-center justify-center relative pointer-events-auto">
               {/* Glow effect */}
               <motion.div 
                 animate={{ 
