@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, TrendingUp, TrendingDown, Calculator, ArrowRight, Minus, Equal, Package, Clock } from 'lucide-react';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
-import { format, eachDayOfInterval, getDay } from 'date-fns';
+import { format, eachDayOfInterval, getDay, addDays } from 'date-fns';
 
 export interface HomeProgressCardProps {
   dashboardData: any;
@@ -12,14 +12,20 @@ export interface HomeProgressCardProps {
 
 export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }: HomeProgressCardProps) {
   const today = getNowVNDateLocal();
+  const yesterday = addDays(today, -1);
   const { start: cycleStart, end: cycleEnd } = getCycleRange(getCycleMonthFromDate(today));
   
   const stats = dashboardData?.stats;
   const monthEntries = dashboardData?.monthEntries || [];
   
   const congChuan = calculateRequiredCongForCycle(cycleStart, cycleEnd);
+  
+  // Tính công hành chính từ đầu kỳ đến hết ngày hôm qua
+  const endCalcDateHC = yesterday > cycleEnd ? cycleEnd : (yesterday < cycleStart ? addDays(cycleStart, -1) : yesterday);
+  const congHanhChinh = yesterday < cycleStart ? 0 : calculateRequiredCongForCycle(cycleStart, endCalcDateHC);
+  
+  // endCalcDate cho việc hiển thị/vòng lặp (vẫn dùng today để check log)
   const endCalcDate = today > cycleEnd ? cycleEnd : (today < cycleStart ? cycleStart : today);
-  const congHanhChinh = calculateRequiredCongForCycle(cycleStart, endCalcDate);
   
   let ngayNghi = 0;
   if (!isLoading) {
