@@ -62,12 +62,12 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
 
       {/* Main Stat: Dư / Thiếu */}
       <div className="pt-6 pb-5 flex flex-col items-center justify-center relative overflow-hidden">
-        <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-[50px] opacity-20 pointer-events-none ${isPositive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${isPositive ? 'from-emerald-500/10' : 'from-rose-500/10'} to-transparent pointer-events-none`} />
         
-        <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
+        <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 relative z-10">
           {isPositive ? 'Đang dư công' : 'Đang thiếu công'}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative z-10">
           {isPositive ? (
             <TrendingUp className="w-8 h-8 text-emerald-500" strokeWidth={3} />
           ) : (
@@ -79,38 +79,42 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         </div>
       </div>
 
-      {/* Target Equation */}
-      <div className="mx-4 mb-4 bg-secondary/20 rounded-xl squircle-lg border border-border/50 flex items-center justify-between px-4 py-3">
+      {/* Target Equation - Khung bo góc riêng */}
+      <div className="mx-4 mb-6 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-between px-5 py-4 shadow-inner">
         <div className="flex flex-col items-center">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Công chuẩn</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Công chuẩn</span>
           <span className="text-sm font-bold text-foreground">{isLoading ? '-' : congChuan}</span>
         </div>
+        <div className="w-px h-8 bg-border/50" />
         <div className="flex flex-col items-center">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Ngày nghỉ</span>
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Ngày nghỉ</span>
           <span className="text-sm font-bold text-rose-500">{isLoading ? '-' : ngayNghi}</span>
         </div>
+        <div className="w-px h-8 bg-border/50" />
         <div className="flex flex-col items-center">
-          <span className="text-[10px] uppercase font-bold text-primary mb-0.5">Mục tiêu</span>
+          <span className="text-[10px] uppercase font-bold text-primary mb-1">Mục tiêu</span>
           <span className="text-base font-black text-primary">{isLoading ? '-' : congMucTieu.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
         </div>
       </div>
 
-      {/* Progress Grid */}
-      <div className="grid grid-cols-2 divide-x divide-border/50 border-t border-border/50 bg-secondary/5">
+      {/* Progress Grid - Tràn nền, dùng divider */}
+      <div className="grid grid-cols-2 divide-x divide-border/50 border-t border-border/50">
         
         {/* Cột Sản Phẩm */}
-        <div className="flex flex-col p-4 gap-3">
-          <div className="flex items-center gap-1.5 text-primary">
-            <Package className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Sản Phẩm</span>
+        <div className="flex flex-col p-5 gap-4">
+          <div className="flex items-center gap-2 text-primary">
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <Package className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-widest">Sản Phẩm</span>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             <div className="flex justify-between items-end">
-              <span className="text-xs font-semibold text-muted-foreground">Đã đạt:</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">Đã đạt</span>
               <span className="text-sm font-bold text-foreground">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-end">
-              <span className="text-xs font-semibold text-muted-foreground">Còn lại:</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">Còn lại</span>
               <span className={`text-sm font-bold ${congSpConLai > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
                 {isLoading ? '-' : (congSpConLai > 0 ? congSpConLai.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '0')}
               </span>
@@ -119,18 +123,20 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         </div>
 
         {/* Cột Thời Gian */}
-        <div className="flex flex-col p-4 gap-3">
-          <div className="flex items-center gap-1.5 text-blue-500">
-            <Clock className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Thời Gian</span>
+        <div className="flex flex-col p-5 gap-4">
+          <div className="flex items-center gap-2 text-blue-500">
+            <div className="p-1.5 rounded-lg bg-blue-500/10">
+              <Clock className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-widest">Thời Gian</span>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             <div className="flex justify-between items-end">
-              <span className="text-xs font-semibold text-muted-foreground">Công nhật:</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">Công nhật</span>
               <span className="text-sm font-bold text-foreground">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-end">
-              <span className="text-xs font-semibold text-muted-foreground">Còn lại:</span>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">Còn lại</span>
               <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                 {isLoading ? '-' : ngayCongConLai.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
