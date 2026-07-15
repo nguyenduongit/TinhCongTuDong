@@ -56,7 +56,7 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
     { id: '1', congDoan: null, soLuong: '', phanTram: '100%' }
   ]);
   const [thoiGian, setThoiGian] = useState('');
-  const [thoiGianHoTro, setThoiGianHoTro] = useState('');
+  const [thoiGianHoTro, setThoiGianHoTro] = useState('0');
 
   // Fetch list công đoạn để pre-select item đầu tiên (cho Create Mode)
   const { data: list = [] } = useListCongDoan();
@@ -68,7 +68,7 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
     if (isEditMode && entry) {
       setNgay(entry.ngay);
       setThoiGian(entry.thoi_gian_thuc_hien.toString());
-      setThoiGianHoTro((entry as any).thoi_gian_ho_tro?.toString() || '');
+      setThoiGianHoTro((entry as any).thoi_gian_ho_tro?.toString() || '0');
       setCongDoanBlocks(entry.chi_tiet.map((ct: any, idx: number) => {
         const cd = list.find(c => c.ma_cong_doan === ct.cong_doan);
         const dinh_muc_goc = cd ? Number(cd.dinh_muc) : 1;
@@ -83,7 +83,7 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
     } else {
       setNgay(initialDate || getTodayVNString());
       setThoiGian('');
-      setThoiGianHoTro('');
+      setThoiGianHoTro('0');
       setCongDoanBlocks([
         { id: Date.now().toString(), congDoan: list.length > 0 ? list[0] : null, soLuong: '', phanTram: '100%' }
       ]);

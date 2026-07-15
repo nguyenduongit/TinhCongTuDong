@@ -13,16 +13,14 @@ import { getNowVNDateLocal, getCycleRange, getCycleMonthFromDate } from '@/lib/d
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { HomeProgressCard } from '@/components/ui-parts/HomeProgressCard';
-import { EstimationModal } from '@/components/EstimationModal';
+import { MissingDaysModal } from '@/components/MissingDaysModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/animations';
 
-
-
 export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [showEstimationModal, setShowEstimationModal] = useState(false);
   const [missingModalInitialDate, setMissingModalInitialDate] = useState<string | undefined>();
+  const [isMissingModalOpen, setIsMissingModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { data: dashboard, isLoading: isLoadingDashboard } = useGetSanLuongDashboard();
@@ -33,7 +31,7 @@ export default function Home() {
 
   const today = getNowVNDateLocal();
   const { start: cycleStart, end: cycleEnd } = getCycleRange(getCycleMonthFromDate(today));
-  
+
   let missingDays: Date[] = [];
   if (!isLoadingDashboard) {
     const endCalcDate = today > cycleEnd ? cycleEnd : (today < cycleStart ? cycleStart : today);
@@ -42,7 +40,7 @@ export default function Home() {
       for (const d of days) {
         const dayOfWeek = getDay(d);
         if (dayOfWeek === 0) continue; // Bỏ qua Chủ Nhật
-        
+
         const dStr = format(d, 'yyyy-MM-dd');
         const hasLog = monthEntries.some((e: any) => e.ngay === dStr);
         if (!hasLog) {
@@ -52,7 +50,7 @@ export default function Home() {
     }
   }
   missingDays = missingDays.sort((a, b) => b.getTime() - a.getTime());
-  
+
   const deleteMutation = useDeleteSanLuong();
 
   const handleDelete = async (id: number) => {
@@ -92,75 +90,22 @@ export default function Home() {
             <div>
               <p className="text-muted-foreground/90 text-sm font-semibold mb-1 capitalize">{currentDateStr}</p>
               <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-primary to-amber-200 bg-clip-text text-transparent drop-shadow-sm">
-                Tính Công Tự Động
+                Quản lý năng suất cá nhân
               </h1>
             </div>
           </motion.header>
 
-          {/* Progress Card */}
-          <motion.div variants={pageItemVariants}>
-            <HomeProgressCard
-              dashboardData={dashboard}
-              isLoading={isLoadingStats}
-              onOpenCalculator={() => setShowEstimationModal(true)}
-            />
-          </motion.div>
-
-          {/* Missing Days List */}
-          {missingDays.length > 0 && (
-            <motion.div variants={pageItemVariants} className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <CalendarX className="w-3 h-3 text-amber-500" />
-                </div>
-                <h3 className="font-bold text-sm tracking-tight">Cần nhập sản lượng</h3>
-              </div>
-              <div className="flex flex-col gap-3">
-                {missingDays.map(date => {
-                  const dateStr = format(date, 'yyyy-MM-dd');
-                  const dayName = format(date, 'EEEE', { locale: vi });
-                  const isSaturday = getDay(date) === 6;
-                  const isLoading = loadingDays[dateStr];
-
-                  return (
-                    <div key={dateStr} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/50 bg-card shadow-sm">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-foreground">
-                          {format(date, 'dd/MM')}
-                        </span>
-                        <span className="text-xs text-muted-foreground capitalize">
-                          {dayName} {isSaturday ? '(0.5 công)' : ''}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleConfirmNgayNghi(dateStr)}
-                          disabled={isLoading}
-                          className="px-3 py-1.5 rounded-lg border border-border/50 bg-secondary/50 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                        >
-                          {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                          Nghỉ
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            setMissingModalInitialDate(dateStr);
-                            setIsAddOpen(true);
-                          }}
-                          disabled={isLoading}
-                          className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold uppercase tracking-wider hover:bg-primary/20 transition-colors flex items-center gap-1.5"
-                        >
-                          <Plus className="w-3 h-3" strokeWidth={3} />
-                          Nhập
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="flex flex-col gap-3">
+            {/* Progress Card */}
+            <motion.div variants={pageItemVariants}>
+              <HomeProgressCard
+                dashboardData={dashboard}
+                isLoading={isLoadingStats}
+              />
             </motion.div>
-          )}
+
+
+          </div>
         </motion.div>
 
         {/* FAB */}
@@ -172,6 +117,15 @@ export default function Home() {
             exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
             className="fixed bottom-[104px] w-full max-w-[430px] z-20 flex flex-col items-center gap-3 pointer-events-none"
           >
+            {missingDays.length > 0 && (
+              <button 
+                onClick={() => setIsMissingModalOpen(true)}
+                className="mb-2 bg-amber-500 text-amber-950 px-4 py-2 rounded-full font-bold text-xs shadow-lg backdrop-blur-md flex items-center gap-2 pointer-events-auto transition-transform hover:scale-105 active:scale-95"
+              >
+                <CalendarX className="w-4 h-4" />
+                Bạn có {missingDays.length} ngày chưa nhập sản lượng!
+              </button>
+            )}
             <TooltipProvider>
               <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
@@ -200,16 +154,27 @@ export default function Home() {
         <BottomNav />
       </div>
 
-      <SanLuongDrawer 
+      <SanLuongDrawer
         entry={(!missingModalInitialDate && todayEntries.length > 0) ? todayEntries[0] : null}
-        open={isAddOpen} 
+        open={isAddOpen}
         onOpenChange={(open) => {
           setIsAddOpen(open);
           if (!open) setTimeout(() => setMissingModalInitialDate(undefined), 300);
-        }} 
+        }}
         initialDate={missingModalInitialDate}
       />
-      <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
+
+      <MissingDaysModal 
+        open={isMissingModalOpen}
+        onOpenChange={setIsMissingModalOpen}
+        missingDays={missingDays}
+        loadingDays={loadingDays}
+        onConfirmNghi={handleConfirmNgayNghi}
+        onOpenAddSanLuong={(dateStr) => {
+          setMissingModalInitialDate(dateStr);
+          setIsAddOpen(true);
+        }}
+      />
     </div>
   );
 }
