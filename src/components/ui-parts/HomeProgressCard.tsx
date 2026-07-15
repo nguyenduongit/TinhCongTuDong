@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Target, TrendingUp, TrendingDown, Calculator, ArrowRight, Minus, Equal, Package, Clock } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, Calculator, ArrowRight, Package, Clock, CheckCircle2, Calendar, Palmtree, Zap } from 'lucide-react';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 
@@ -99,31 +99,46 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
 
       {/* Nhóm Thực Tế - 2 thông tin chính hàng dưới số dư/thiếu */}
       <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-around px-4 py-4 shadow-inner">
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Mục tiêu</span>
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <Target className="w-3 h-3 text-muted-foreground/70" />
+            <span className="text-[10px] uppercase font-bold text-muted-foreground">Mục tiêu</span>
+          </div>
           <span className="text-sm font-black text-blue-500">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
         <div className="w-px h-8 bg-border/50" />
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Đã đạt</span>
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3 h-3 text-muted-foreground/70" />
+            <span className="text-[10px] uppercase font-bold text-muted-foreground">Đã đạt</span>
+          </div>
           <span className="text-sm font-bold text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
       {/* Nhóm Thông tin phụ - 3 mục trên 1 dòng */}
       <div className="bg-secondary/10 border-t border-border/50 px-4 py-3 flex items-center justify-between">
-        <div className="flex flex-col items-center flex-1">
-          <span className="text-[9px] uppercase font-bold text-muted-foreground mb-0.5">Công chuẩn</span>
+        <div className="flex flex-col items-center flex-1 gap-0.5">
+          <div className="flex items-center gap-1">
+            <Calendar className="w-2.5 h-2.5 text-muted-foreground/60" />
+            <span className="text-[9px] uppercase font-bold text-muted-foreground">Công chuẩn</span>
+          </div>
           <span className="text-xs font-bold text-foreground">{isLoading ? '-' : congChuan}</span>
         </div>
         <div className="w-px h-6 bg-border/30" />
-        <div className="flex flex-col items-center flex-1">
-          <span className="text-[9px] uppercase font-bold text-muted-foreground mb-0.5">Ngày nghỉ</span>
+        <div className="flex flex-col items-center flex-1 gap-0.5">
+          <div className="flex items-center gap-1">
+            <Palmtree className="w-2.5 h-2.5 text-muted-foreground/60" />
+            <span className="text-[9px] uppercase font-bold text-muted-foreground">Ngày nghỉ</span>
+          </div>
           <span className="text-xs font-bold text-rose-500">{isLoading ? '-' : ngayNghi}</span>
         </div>
         <div className="w-px h-6 bg-border/30" />
-        <div className="flex flex-col items-center flex-1">
-          <span className="text-[9px] uppercase font-bold text-muted-foreground mb-0.5">Tăng ca</span>
+        <div className="flex flex-col items-center flex-1 gap-0.5">
+          <div className="flex items-center gap-1">
+            <Zap className="w-2.5 h-2.5 text-muted-foreground/60" />
+            <span className="text-[9px] uppercase font-bold text-muted-foreground">Tăng ca</span>
+          </div>
           <span className="text-xs font-bold text-purple-500">
             {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
           </span>
