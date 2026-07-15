@@ -11,7 +11,7 @@ export function BottomNav() {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.2 }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[88px] bg-card/90 backdrop-blur-xl border-t border-border z-10 pb-safe"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] h-[88px] bg-card/95 backdrop-blur-2xl border-t border-border/80 z-10 pb-safe shadow-[0_-8px_24px_rgba(0,0,0,0.3)]"
     >
       <div className="grid grid-cols-4 h-16 px-2">
         <NavItem href="/" icon={Home} label="Trang chủ" isActive={location === '/'} />
@@ -27,10 +27,10 @@ function NavItem({ href, icon: Icon, label, isActive }: { href: string, icon: an
   return (
     <Link href={href} className={cn(
       "flex flex-col items-center justify-center gap-1 transition-colors mt-2",
-      isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+      isActive ? "text-primary" : "text-muted-foreground/80 hover:text-foreground"
     )}>
-      <Icon className="w-6 h-6" />
-      <span className={cn("text-[10px]", isActive ? "font-semibold" : "font-medium")}>{label}</span>
+      <Icon className={cn("w-6 h-6", !isActive && "opacity-85")} />
+      <span className={cn("text-[10px]", isActive ? "font-bold tracking-tight" : "font-semibold opacity-90")}>{label}</span>
     </Link>
   );
 }

@@ -66,7 +66,7 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
   const phutTangCaLe = tongPhutTangCa % 60;
 
   return (
-    <div className="bg-card border border-border/50 squircle-xl shadow-sm overflow-hidden flex flex-col mb-4">
+    <div className="bg-card border border-border/60 squircle-xl shadow-xl overflow-hidden flex flex-col mb-4 relative before:absolute before:inset-0 before:rounded-[inherit] before:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] before:pointer-events-none">
       {/* Header */}
       <div className="bg-primary/10 px-4 py-3 flex items-center justify-between border-b border-primary/20">
         <div className="flex items-center gap-2">
@@ -102,22 +102,22 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-1.5">
             <Target className="w-3 h-3 text-muted-foreground/70" />
-            <span className="text-[10px] uppercase font-bold text-muted-foreground">Mục tiêu</span>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground/90">Mục tiêu</span>
           </div>
-          <span className="text-sm font-black text-blue-500">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+          <span className="text-sm font-black text-blue-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
-        <div className="w-px h-8 bg-border/50" />
+        <div className="w-px h-8 bg-border/60" />
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3 h-3 text-muted-foreground/70" />
-            <span className="text-[10px] uppercase font-bold text-muted-foreground">Đã đạt</span>
+            <CheckCircle2 className="w-3 h-3 text-muted-foreground/90" />
+            <span className="text-[10px] uppercase font-bold text-muted-foreground/90">Đã đạt</span>
           </div>
           <span className="text-sm font-bold text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
       {/* Nhóm Thông tin phụ - 3 mục trên 1 dòng */}
-      <div className="bg-secondary/10 border-t border-border/50 px-4 py-3 flex items-center justify-between">
+      <div className="bg-secondary/15 border-t border-border/60 px-4 py-3 flex items-center justify-between">
         <div className="flex flex-col items-center flex-1 gap-0.5">
           <div className="flex items-center gap-1">
             <Calendar className="w-2.5 h-2.5 text-muted-foreground/60" />

@@ -80,8 +80,8 @@ export default function Home() {
           {/* Header */}
           <motion.header variants={pageItemVariants} className="flex justify-between items-center">
             <div>
-              <p className="text-muted-foreground text-sm font-medium mb-1 capitalize">{currentDateStr}</p>
-              <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary to-amber-200 bg-clip-text text-transparent">
+              <p className="text-muted-foreground/90 text-sm font-semibold mb-1 capitalize">{currentDateStr}</p>
+              <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-primary to-amber-200 bg-clip-text text-transparent drop-shadow-sm">
                 Tính Công Tự Động
               </h1>
             </div>
@@ -110,7 +110,7 @@ export default function Home() {
               {missingDays.length > 0 && (
                 <button 
                   onClick={() => setIsMissingModalOpen(true)}
-                  className="bg-amber-500 text-amber-950 border border-amber-400 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform whitespace-nowrap"
+                  className="bg-amber-500 text-amber-950 border border-amber-400/50 text-[11px] font-black px-4 py-2 rounded-full shadow-xl hover:scale-105 active:scale-95 transition-transform whitespace-nowrap"
                 >
                   Bạn có {missingDays.length} ngày chưa nhập sản lượng !
                 </button>

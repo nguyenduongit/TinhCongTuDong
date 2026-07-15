@@ -53,7 +53,7 @@ export function SanLuongDayCard({
     <motion.div 
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-card border border-border/50 rounded-2xl squircle-xl flex flex-col shadow-sm overflow-hidden ${readOnly ? 'pointer-events-none' : ''}`}
+      className={`bg-card border border-border/60 rounded-2xl squircle-xl flex flex-col shadow-xl overflow-hidden relative before:absolute before:inset-0 before:rounded-[inherit] before:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] before:pointer-events-none ${readOnly ? 'pointer-events-none' : ''}`}
     >
       {/* Ngày header */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/40 border-b border-border/50">
@@ -67,8 +67,8 @@ export function SanLuongDayCard({
             </span>
           )}
           {dayTime > 0 && (
-            <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border/50">
-              <Clock className="w-3 h-3" />
+            <span className="flex items-center gap-1 text-[11px] font-bold text-[#B8C2D6] bg-[#151C29] px-2 py-0.5 rounded border border-border/60 shadow-sm">
+              <Clock className="w-3 h-3 opacity-90" />
               {dayTime}p
             </span>
           )}
@@ -87,7 +87,7 @@ export function SanLuongDayCard({
           const content = (
             <div className="flex flex-col">
               {entry.chi_tiet.map((item, i) => (
-                <div key={i} className={`flex items-center justify-between py-3.5 px-4 ${i !== entry.chi_tiet.length - 1 || (entry as any).thoi_gian_ho_tro > 0 ? 'border-b border-border/30' : ''}`}>
+                <div key={i} className={`flex items-center justify-between py-3.5 px-4 ${i !== entry.chi_tiet.length - 1 || (entry as any).thoi_gian_ho_tro > 0 ? 'border-b border-border/80' : ''}`}>
                   <div className="flex flex-col gap-1.5 flex-1 pr-2">
                     <span className="text-primary font-bold text-[11px] bg-primary/10 px-2 py-0.5 rounded border border-primary/20 uppercase tracking-wider self-start">
                       {item.cong_doan}
@@ -142,7 +142,7 @@ export function SanLuongDayCard({
           return (
             <div
               key={entry.id}
-              className={`flex flex-col cursor-pointer select-none active:bg-secondary/30 transition-colors ${idx !== items.length - 1 ? 'border-b border-border/50' : ''}`}
+              className={`flex flex-col cursor-pointer select-none active:bg-secondary/40 transition-colors ${idx !== items.length - 1 ? 'border-b border-border/70' : ''}`}
               onTouchStart={() => startLongPress(entry)}
               onTouchEnd={endLongPress}
               onTouchMove={endLongPress}

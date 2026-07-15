@@ -99,12 +99,12 @@
   --elevate-1: rgba(0, 0, 0, 0.03);
   --elevate-2: rgba(0, 0, 0, 0.08);
 
-  --background: 222 47% 5%;
+  --background: 222 37% 7%; /* #0B0F18 - Dark Navy Background */
   --foreground: 210 40% 96%;
-  --border: 222 37% 16%;
-  --card: 222 37% 9%;
+  --border: 222 22% 21%; /* #2A3242 - Clearer Border */
+  --card: 222 30% 14%; /* #181F2D - Elevated Card */
   --card-foreground: 210 40% 96%;
-  --card-border: 222 37% 16%;
+  --card-border: 222 22% 21%; /* #2A3242 */
   --sidebar: 222 37% 7%;
   --sidebar-foreground: 210 40% 96%;
   --sidebar-border: 222 37% 16%;
@@ -153,9 +153,9 @@
     0px 2px 0px 0px hsl(222 47% 5% / 0.5),
     0px 4px 6px -1px hsl(222 47% 5% / 0.5);
   --shadow-xl:
-    0px 2px 0px 0px hsl(222 47% 5% / 0.5),
-    0px 8px 10px -1px hsl(222 47% 5% / 0.5);
-  --shadow-2xl: 0px 2px 0px 0px hsl(222 47% 5% / 0.5);
+    0px 6px 24px 0px rgba(0, 0, 0, 0.35),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.03);
+  --shadow-2xl: 0px 6px 24px 0px rgba(0, 0, 0, 0.35);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -221,12 +221,12 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 222 47% 5%;
+  --background: 222 37% 7%; /* #0B0F18 - Dark Navy Background */
   --foreground: 210 40% 96%;
-  --border: 222 37% 16%;
-  --card: 222 37% 9%;
+  --border: 222 22% 21%; /* #2A3242 - Clearer Border */
+  --card: 222 30% 14%; /* #181F2D - Elevated Card */
   --card-foreground: 210 40% 96%;
-  --card-border: 222 37% 16%;
+  --card-border: 222 22% 21%; /* #2A3242 */
   --sidebar: 222 37% 7%;
   --sidebar-foreground: 210 40% 96%;
   --sidebar-border: 222 37% 16%;
@@ -271,9 +271,9 @@
     0px 2px 0px 0px hsl(222 47% 5% / 0.5),
     0px 4px 6px -1px hsl(222 47% 5% / 0.5);
   --shadow-xl:
-    0px 2px 0px 0px hsl(222 47% 5% / 0.5),
-    0px 8px 10px -1px hsl(222 47% 5% / 0.5);
-  --shadow-2xl: 0px 2px 0px 0px hsl(222 47% 5% / 0.5);
+    0px 6px 24px 0px rgba(0, 0, 0, 0.35),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.03);
+  --shadow-2xl: 0px 6px 24px 0px rgba(0, 0, 0, 0.35);
 }
 
 @layer base {

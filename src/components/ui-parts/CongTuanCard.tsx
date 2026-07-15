@@ -25,7 +25,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
   const hieuSoCong = totalCongDatDuoc - congMucTieu;
 
   return (
-    <div className={`bg-card border border-border/50 rounded-2xl squircle-xl flex flex-col shadow-sm overflow-hidden ${readOnly ? 'pointer-events-none' : ''}`}>
+    <div className={`bg-card border border-border/60 rounded-2xl squircle-xl flex flex-col shadow-xl overflow-hidden relative before:absolute before:inset-0 before:rounded-[inherit] before:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] before:pointer-events-none ${readOnly ? 'pointer-events-none' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/40 border-b border-border/50">
         <div className="flex flex-col gap-0.5">
@@ -50,12 +50,12 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
           
           <div className="flex items-center">
             {hieuSoCong > 0 && (
-              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
                 dư {hieuSoCong.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
               </span>
             )}
             {hieuSoCong < 0 && (
-              <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+              <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">
                 thiếu {Math.abs(hieuSoCong).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
               </span>
             )}
@@ -66,7 +66,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
       {/* Content */}
       <div className="flex flex-col">
         {Object.entries(week.congDoanStats).map(([ma_cong_doan, stats], i, arr) => (
-          <div key={ma_cong_doan} className={`flex justify-between items-center py-3.5 px-4 ${i !== arr.length - 1 || week.totalHoTroPhut > 0 ? 'border-b border-border/50' : ''}`}>
+          <div key={ma_cong_doan} className={`flex justify-between items-center py-3.5 px-4 ${i !== arr.length - 1 || week.totalHoTroPhut > 0 ? 'border-b border-border/80' : ''}`}>
             <div className="flex flex-col gap-1.5 flex-1 pr-2">
               <span className="text-primary font-bold text-[11px] bg-primary/10 px-2 py-0.5 rounded border border-primary/20 uppercase tracking-wider self-start">
                 {ma_cong_doan}
