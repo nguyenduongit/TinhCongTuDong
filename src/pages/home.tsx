@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Bell } from 'lucide-react';
+import { Plus, Bell, CalendarX, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-import { useGetSanLuongDashboard, useDeleteSanLuong } from '@/api';
+import { useGetSanLuongDashboard, useDeleteSanLuong, useConfirmNgayNghi } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
 import type { SanLuong } from '@/api';
@@ -12,7 +12,6 @@ import { getNowVNDateLocal, getCycleRange, getCycleMonthFromDate } from '@/lib/d
 
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
-import { MissingDaysModal } from '@/components/MissingDaysModal';
 import { HomeProgressCard } from '@/components/ui-parts/HomeProgressCard';
 import { EstimationModal } from '@/components/EstimationModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,7 +22,6 @@ import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/anim
 export default function Home() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [showEstimationModal, setShowEstimationModal] = useState(false);
-  const [isMissingModalOpen, setIsMissingModalOpen] = useState(false);
   const [missingModalInitialDate, setMissingModalInitialDate] = useState<string | undefined>();
 
   const queryClient = useQueryClient();
@@ -65,16 +63,17 @@ export default function Home() {
 
   const currentDateStr = format(getNowVNDateLocal(), 'EEEE, dd MMMM', { locale: vi });
 
-  const [isFabExpanded, setIsFabExpanded] = useState(false);
-  useEffect(() => {
-    if (missingDays.length > 0 && !isLoadingDashboard) {
-      const timer = setTimeout(() => {
-        setIsFabExpanded(true);
-        setTimeout(() => setIsFabExpanded(false), 4000); // 1s giãn + 3s giữ
-      }, 800);
-      return () => clearTimeout(timer);
+  const confirmMutation = useConfirmNgayNghi();
+  const [loadingDays, setLoadingDays] = useState<Record<string, boolean>>({});
+
+  const handleConfirmNgayNghi = async (dateStr: string) => {
+    setLoadingDays(prev => ({ ...prev, [dateStr]: true }));
+    try {
+      await confirmMutation.mutateAsync(dateStr);
+    } finally {
+      setLoadingDays(prev => ({ ...prev, [dateStr]: false }));
     }
-  }, [missingDays.length, isLoadingDashboard]);
+  };
 
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">
@@ -106,6 +105,62 @@ export default function Home() {
               onOpenCalculator={() => setShowEstimationModal(true)}
             />
           </motion.div>
+
+          {/* Missing Days List */}
+          {missingDays.length > 0 && (
+            <motion.div variants={pageItemVariants} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <CalendarX className="w-3 h-3 text-amber-500" />
+                </div>
+                <h3 className="font-bold text-sm tracking-tight">Cần nhập sản lượng</h3>
+              </div>
+              <div className="flex flex-col gap-3">
+                {missingDays.map(date => {
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const dayName = format(date, 'EEEE', { locale: vi });
+                  const isSaturday = getDay(date) === 6;
+                  const isLoading = loadingDays[dateStr];
+
+                  return (
+                    <div key={dateStr} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border/50 bg-card shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground">
+                          {format(date, 'dd/MM')}
+                        </span>
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {dayName} {isSaturday ? '(0.5 công)' : ''}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleConfirmNgayNghi(dateStr)}
+                          disabled={isLoading}
+                          className="px-3 py-1.5 rounded-lg border border-border/50 bg-secondary/50 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                          {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                          Nghỉ
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setMissingModalInitialDate(dateStr);
+                            setIsAddOpen(true);
+                          }}
+                          disabled={isLoading}
+                          className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-[11px] font-bold uppercase tracking-wider hover:bg-primary/20 transition-colors flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3 h-3" strokeWidth={3} />
+                          Nhập
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* FAB */}
@@ -115,60 +170,30 @@ export default function Home() {
             initial="hidden"
             animate="show"
             exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
-            className="fixed bottom-[104px] w-full max-w-[430px] z-20 flex justify-center pointer-events-none"
+            className="fixed bottom-[104px] w-full max-w-[430px] z-20 flex flex-col items-center gap-3 pointer-events-none"
           >
-            <div className="flex items-center justify-center relative pointer-events-auto">
-              {/* Glow effect */}
-              <motion.div 
-                animate={{ 
-                  scale: isFabExpanded ? [1, 1.05, 1] : 1,
-                  opacity: isFabExpanded ? [0.4, 0.6, 0.4] : 0.4 
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute inset-0 bg-primary/40 rounded-full blur-md" 
-              />
-              
-              <motion.button
-                onClick={() => {
-                  if (isFabExpanded && missingDays.length > 0) {
-                    setIsMissingModalOpen(true);
-                  } else {
-                    setIsAddOpen(true);
-                  }
-                }}
-                animate={{ 
-                  width: isFabExpanded ? 280 : 64,
-                  height: 64,
-                  borderRadius: 32
-                }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 260, 
-                  damping: 20 
-                }}
-                className="relative overflow-hidden bg-gradient-to-tr from-amber-500 to-primary text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background flex items-center active:scale-95 transition-transform outline-none"
-              >
-                <div className="flex items-center w-full px-4">
-                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
-                    <Plus className="w-8 h-8" strokeWidth={2.5} />
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-center pointer-events-auto">
+                    <button
+                      onClick={() => setIsAddOpen(true)}
+                      className="relative group flex items-center justify-center outline-none"
+                    >
+                      <div className="absolute inset-0 bg-primary/40 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-primary flex items-center justify-center text-primary-foreground shadow-[0_8px_32px_rgba(212,168,67,0.4)] border-4 border-background relative active:scale-95 transition-transform">
+                        <Plus className="w-8 h-8" strokeWidth={2.5} />
+                      </div>
+                    </button>
                   </div>
-                  
-                  <AnimatePresence>
-                    {isFabExpanded && (
-                      <motion.span
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        transition={{ duration: 0.2, delay: 0.1 }}
-                        className="ml-3 text-[13px] font-black whitespace-nowrap overflow-hidden"
-                      >
-                        Bạn có {missingDays.length} ngày chưa nhập sản lượng!
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.button>
-            </div>
+                </TooltipTrigger>
+                {todayEntries.length > 0 && (
+                  <TooltipContent side="top" sideOffset={10}>
+                    <p>Sửa sản lượng hôm nay</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </motion.div>
         </AnimatePresence>
 
@@ -185,17 +210,6 @@ export default function Home() {
         initialDate={missingModalInitialDate}
       />
       <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
-      <MissingDaysModal
-        open={isMissingModalOpen}
-        onOpenChange={setIsMissingModalOpen}
-        missingDays={missingDays}
-        onInputForDay={(dateStr) => {
-          setMissingModalInitialDate(dateStr);
-          setIsMissingModalOpen(false);
-          // Wait for modal to close before opening drawer
-          setTimeout(() => setIsAddOpen(true), 300);
-        }}
-      />
     </div>
   );
 }
