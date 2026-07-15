@@ -97,57 +97,36 @@ export function HomeProgressCard({ dashboardData, isLoading, onOpenCalculator }:
         </div>
       </div>
 
-      {/* Nhóm Thực Tế - 3 thông tin chính hàng dưới số dư/thiếu */}
-      <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-between px-4 py-4 shadow-inner">
-        <div className="flex flex-col items-center flex-1">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Công nhật</span>
+      {/* Nhóm Thực Tế - 2 thông tin chính hàng dưới số dư/thiếu */}
+      <div className="mx-4 mb-8 bg-secondary/30 rounded-2xl border border-border/50 flex items-center justify-around px-4 py-4 shadow-inner">
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Mục tiêu</span>
           <span className="text-sm font-black text-blue-500">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
         <div className="w-px h-8 bg-border/50" />
-        <div className="flex flex-col items-center flex-1">
+        <div className="flex flex-col items-center">
           <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Đã đạt</span>
           <span className="text-sm font-bold text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
         </div>
-        <div className="w-px h-8 bg-border/50" />
-        <div className="flex flex-col items-center flex-1">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Tăng ca</span>
-          <span className="text-sm font-bold text-purple-500">
-            {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
-          </span>
-        </div>
       </div>
 
-      {/* Nhóm Tham Khảo & Nền tảng bên dưới */}
-      <div className="grid grid-cols-2 gap-px bg-border/30 border-t border-border/50">
-        <div className="bg-card/50 p-4 flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Kế hoạch</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] font-medium text-muted-foreground">Công chuẩn</span>
-            <span className="text-xs font-bold text-foreground">{isLoading ? '-' : congChuan}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] font-medium text-muted-foreground">Ngày nghỉ</span>
-            <span className="text-xs font-bold text-rose-500">{isLoading ? '-' : ngayNghi}</span>
-          </div>
+      {/* Nhóm Thông tin phụ - 3 mục trên 1 dòng */}
+      <div className="bg-secondary/10 border-t border-border/50 px-4 py-3 flex items-center justify-between">
+        <div className="flex flex-col items-center flex-1">
+          <span className="text-[9px] uppercase font-bold text-muted-foreground mb-0.5">Công chuẩn</span>
+          <span className="text-xs font-bold text-foreground">{isLoading ? '-' : congChuan}</span>
         </div>
-        <div className="bg-card/50 p-4 flex flex-col gap-2">
-          <div className="flex items-center gap-1.5 text-primary mb-1">
-            <Target className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Tham khảo</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] font-medium text-muted-foreground">Mục tiêu</span>
-            <span className="text-xs font-bold text-foreground">{isLoading ? '-' : congMucTieuCuoiThang.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] font-medium text-muted-foreground">Còn lại</span>
-            <span className="text-xs font-bold text-muted-foreground">
-              {isLoading ? '-' : ngayCongConLai.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
-            </span>
-          </div>
+        <div className="w-px h-6 bg-border/30" />
+        <div className="flex flex-col items-center flex-1">
+          <span className="text-[9px] uppercase font-bold text-muted-foreground mb-0.5">Ngày nghỉ</span>
+          <span className="text-xs font-bold text-rose-500">{isLoading ? '-' : ngayNghi}</span>
+        </div>
+        <div className="w-px h-6 bg-border/30" />
+        <div className="flex flex-col items-center flex-1">
+          <span className="text-[9px] uppercase font-bold text-muted-foreground mb-0.5">Tăng ca</span>
+          <span className="text-xs font-bold text-purple-500">
+            {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
+          </span>
         </div>
       </div>
 
