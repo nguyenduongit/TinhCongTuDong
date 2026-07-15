@@ -66,7 +66,7 @@ export function UpgradeModal({ open, onOpenChange }: { open: boolean, onOpenChan
 
             <div className="bg-purple-500/5 border border-purple-500/20 rounded-2xl p-4 mb-6 text-center">
               <p className="text-sm text-muted-foreground mb-2">Giá siêu rẻ (chỉ để test)</p>
-              <p className="text-2xl font-black text-foreground mb-1">1.000đ <span className="text-sm font-normal text-muted-foreground">/ 90 ngày</span></p>
+              <p className="text-2xl font-black text-foreground mb-1">2.000đ <span className="text-sm font-normal text-muted-foreground">/ 90 ngày</span></p>
             </div>
 
             <button
