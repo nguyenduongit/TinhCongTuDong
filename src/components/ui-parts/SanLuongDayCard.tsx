@@ -61,6 +61,11 @@ export function SanLuongDayCard({
           {dateHeader}
         </span>
         <div className="flex items-center gap-2">
+          {dayTotalCong === 0 && (
+            <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 uppercase tracking-wider">
+              Ngày nghỉ
+            </span>
+          )}
           {dayTime > 0 && (
             <span className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border/50">
               <Clock className="w-3 h-3" />
