@@ -99,8 +99,8 @@ export function SanLuongFormUI({
               <input 
                 type="number" 
                 required
-                min={['240', '480'].includes(thoiGianHoTro) ? "0" : "1"}
-                value={block.soLuong}
+	                min="0"
+	                value={block.soLuong}
                 onChange={e => handleBlockSoLuongChange?.(block.id, e.target.value)}
                 placeholder="SL"
                 className="flex-1 min-w-0 bg-card border border-border/50 rounded-xl squircle-lg px-3 py-3.5 text-base font-bold text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all text-center [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -168,10 +168,10 @@ export function SanLuongFormUI({
           </div>
         ) : (
           <input 
-            type="number" 
-            required
-            min="1"
-            value={thoiGian}
+	            type="number" 
+	            required
+	            min="0"
+	            value={thoiGian}
             onChange={e => setThoiGian?.(e.target.value)}
             placeholder="0"
             className="w-full bg-card border border-border/50 rounded-xl squircle-lg px-4 py-3.5 text-xl font-bold text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all text-center [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"

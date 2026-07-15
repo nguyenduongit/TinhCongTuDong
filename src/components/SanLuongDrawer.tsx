@@ -138,11 +138,23 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!thoiGian) return;
+    if (thoiGian === '' || thoiGian === undefined) return;
     if (!isEditMode && !ngay) return;
 
-    const validBlocks = congDoanBlocks.filter(block => block.congDoan && block.soLuong);
-    if (validBlocks.length === 0) return;
+    const validBlocks = congDoanBlocks.filter(block => block.congDoan && Number(block.soLuong) > 0);
+    const hasHoTro = Number(thoiGianHoTro) > 0;
+    const hasThucHien = Number(thoiGian) > 0;
+
+    // Trường hợp đặc biệt: Không có sản lượng, không có TG thực hiện, nhưng có TG hỗ trợ thì vẫn cho phép
+    if (validBlocks.length === 0 && !hasHoTro) {
+      alert("Vui lòng nhập số lượng sản phẩm hoặc thời gian hỗ trợ.");
+      return;
+    }
+
+    if (!hasThucHien && !hasHoTro) {
+      alert("Vui lòng nhập thời gian thực hiện hoặc thời gian hỗ trợ.");
+      return;
+    }
 
     const uniqueKeys = new Set();
     for (const block of validBlocks) {
