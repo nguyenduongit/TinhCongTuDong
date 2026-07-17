@@ -32,45 +32,55 @@ export function CongDoanFormUI({
   return (
     <FormWrapper 
       onSubmit={!readOnly ? (onSubmit as any) : undefined} 
-      className={`bg-card border ${isEditing ? 'border-primary/50' : 'border-primary/30'} rounded-2xl squircle-xl p-4 shadow-[0_0_15px_rgba(212,168,67,0.1)] ${readOnly ? 'pointer-events-none' : ''}`}
+      className={`bg-black/40 backdrop-blur-md border ${isEditing ? 'border-blue-500/30' : 'border-primary/30'} rounded-3xl p-5 shadow-[0_0_20px_rgba(0,0,0,0.3)] relative overflow-hidden ${readOnly ? 'pointer-events-none' : ''}`}
     >
-      {!isEditing && <h4 className="text-sm font-semibold text-primary mb-3">Thêm công đoạn mới</h4>}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className={`absolute top-0 right-0 w-32 h-32 ${isEditing ? 'bg-blue-500/10' : 'bg-primary/10'} rounded-full blur-[30px] -mr-16 -mt-16 pointer-events-none`} />
+      
+      {!isEditing && <h4 className="text-sm font-bold text-primary mb-4 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+        Thêm công đoạn mới
+      </h4>}
+      {isEditing && <h4 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+        Sửa công đoạn
+      </h4>}
+      
+      <div className="grid grid-cols-2 gap-3.5 mb-5 relative z-10">
         <div className="col-span-1">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Mã</label>
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Mã</label>
           <input 
             required 
             readOnly={readOnly}
             name="ma_cong_doan" 
             defaultValue={defaultValues?.ma_cong_doan} 
             placeholder={readOnly ? "5.2" : undefined}
-            className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary" 
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner" 
           />
         </div>
         <div className="col-span-1">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Định mức</label>
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Định mức</label>
           <input 
             required 
             readOnly={readOnly}
             type={readOnly ? "text" : "number"} 
             name="dinh_muc" 
             defaultValue={defaultValues?.dinh_muc || (readOnly ? "1000" : undefined)} 
-            className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-medium shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
           />
         </div>
         <div className="col-span-2">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Tên công đoạn</label>
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Tên công đoạn</label>
           <input 
             required 
             readOnly={readOnly}
             name="ten_cong_doan" 
             defaultValue={defaultValues?.ten_cong_doan} 
             placeholder={readOnly ? "Kiểm tra chất lượng" : undefined}
-            className="w-full bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary" 
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner" 
           />
         </div>
         <div className="col-span-2">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 block font-medium">Quy cách</label>
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Quy cách</label>
           <div className="flex gap-2">
             <input 
               readOnly={readOnly}
@@ -78,39 +88,52 @@ export function CongDoanFormUI({
               name="quy_cach_sl" 
               defaultValue={isEditing || readOnly ? qcParsed.sl : "270"} 
               placeholder={readOnly ? "270" : "Số lượng"} 
-              className="w-2/3 bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+              className="w-2/3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
             />
             {readOnly ? (
-               <div className="w-1/3 bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground flex items-center justify-between">
+               <div className="w-1/3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground flex items-center justify-between font-medium">
                  <span className="capitalize">{qcParsed.unit}</span>
                </div>
             ) : (
-              <select 
-                name="quy_cach_unit" 
-                defaultValue={qcParsed.unit} 
-                className="w-1/3 bg-background border border-border/50 rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary appearance-none"
-              >
-                <option value="hộp">Hộp</option>
-                <option value="rổ">Rổ</option>
-              </select>
+              <div className="w-1/3 relative">
+                <select 
+                  name="quy_cach_unit" 
+                  defaultValue={qcParsed.unit} 
+                  className="w-full h-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-medium appearance-none shadow-inner cursor-pointer"
+                >
+                  <option value="hộp" className="bg-background">Hộp</option>
+                  <option value="rổ" className="bg-background">Rổ</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2.5 relative z-10">
         <button 
           type="button" 
           onClick={!readOnly ? onCancel : undefined} 
-          className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+          className="px-5 py-2.5 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
         >
           Hủy
         </button>
         <button 
           type={readOnly ? "button" : "submit"} 
           disabled={!readOnly && isPending} 
-          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold transition-transform active:scale-95"
+          className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.98] shadow-sm flex items-center justify-center min-w-[80px] ${
+            isEditing 
+              ? "bg-blue-500 text-white hover:bg-blue-600 shadow-blue-500/20" 
+              : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20"
+          }`}
         >
-          {isPending ? 'Lưu...' : 'Lưu'}
+          {isPending ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            'Lưu'
+          )}
         </button>
       </div>
     </FormWrapper>

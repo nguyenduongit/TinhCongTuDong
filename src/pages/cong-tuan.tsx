@@ -47,40 +47,47 @@ export default function CongTuan() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">
-      <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl">
+      <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl overflow-x-hidden">
         
-        <div className="absolute top-0 left-0 right-0 h-48 bg-primary/5 blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
+        {/* Nền Blur cực quang */}
+        <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-amber-500/10 via-primary/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1"
+          className="px-5 pt-8 flex flex-col gap-6 relative z-10 flex-1"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
-          <motion.header variants={pageItemVariants} className="flex justify-between items-center">
+          {/* Header */}
+          <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Công tuần</h1>
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground shadow-sm">
               <BarChart3 className="w-5 h-5" />
             </div>
           </motion.header>
 
-          <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
+          {/* Month picker dạng Pill */}
+          <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-full p-1.5 flex items-center justify-between shadow-sm mx-auto w-full max-w-[280px]">
             <button 
               onClick={handlePrevMonth}
-              className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="flex flex-col items-center">
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">
-                Tháng
+            <div className="flex flex-col items-center justify-center flex-1">
+              <span className="text-[13px] font-bold text-foreground capitalize tracking-wide">
+                Tháng {format(currentMonth, 'M, yyyy')}
               </span>
-              <span className="text-[15px] font-bold text-foreground capitalize">{format(currentMonth, 'MM / yyyy')}</span>
+              {isCurrentMonth && (
+                <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mt-0.5 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                  Hiện tại
+                </span>
+              )}
             </div>
             <button 
               onClick={handleNextMonth}
               disabled={isCurrentMonth}
-              className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors disabled:opacity-30"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

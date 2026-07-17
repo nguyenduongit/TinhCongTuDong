@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { addMonths, subMonths, format, parseISO, startOfDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getTodayVNString, getNowVNDateLocal, getCycleRangeStrings } from '@/lib/date-utils';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useListSanLuong, useDeleteSanLuong, useListCongDoan } from '@/api';
@@ -89,67 +89,72 @@ export default function SanLuong() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">
-      <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl">
+      <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl overflow-x-hidden">
 
-        <div className="absolute top-0 left-0 right-0 h-48 bg-primary/5 blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
+        {/* Nền Blur cực quang */}
+        <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-primary/10 via-amber-500/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-12 flex flex-col gap-5 relative z-10 flex-1"
+          className="px-5 pt-8 flex flex-col gap-6 relative z-10 flex-1"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
 
           {/* Header */}
-          <motion.header variants={pageItemVariants} className="flex justify-between items-center">
+          <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Sản lượng</h1>
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground shadow-sm">
               <CalendarIcon className="w-5 h-5" />
             </div>
           </motion.header>
 
-          {/* Month picker */}
-          <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-2xl squircle-xl p-2 flex items-center justify-between shadow-sm">
+          {/* Month picker dạng Pill */}
+          <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-full p-1.5 flex items-center justify-between shadow-sm mx-auto w-full max-w-[280px]">
             <button
               onClick={handlePrevMonth}
-              className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="flex flex-col items-center">
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">
-                {isCurrentMonth ? 'Tháng này' : 'Tháng'}
+            <div className="flex flex-col items-center justify-center flex-1">
+              <span className="text-[13px] font-bold text-foreground capitalize tracking-wide">
+                Tháng {format(currentMonth, 'M, yyyy')}
               </span>
-              <span className="text-[15px] font-bold text-foreground capitalize">
-                {format(currentMonth, 'MMMM yyyy', { locale: vi })}
-              </span>
+              {isCurrentMonth && (
+                <span className="text-[9px] font-bold text-primary uppercase tracking-widest mt-0.5 bg-primary/10 px-2 py-0.5 rounded-full">
+                  Hiện tại
+                </span>
+              )}
             </div>
             <button
               onClick={handleNextMonth}
               disabled={isCurrentMonth}
-              className="w-10 h-10 flex items-center justify-center rounded-xl squircle-lg hover:bg-secondary text-muted-foreground transition-colors disabled:opacity-30"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
           </motion.div>
 
 
-          {/* Danh sách theo ngày */}
-          <motion.div variants={pageItemVariants} className="flex flex-col flex-1">
+          {/* Danh sách theo ngày (Timeline) */}
+          <motion.div variants={pageItemVariants} className="flex flex-col flex-1 mt-2">
             <AnimatePresence mode="wait">
               {isLoading ? (
                 <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-center p-8">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-lg" />
                 </motion.div>
               ) : grouped.length === 0 ? (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="w-20 h-20 rounded-full bg-secondary/50 flex items-center justify-center mb-4 border border-border">
-                    <CalendarIcon className="w-8 h-8 text-muted-foreground/30" />
+                <motion.div key="empty" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-24 h-24 rounded-full bg-secondary/30 flex items-center justify-center mb-6 border border-white/5 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-primary/10 animate-pulse" />
+                    <CalendarIcon className="w-10 h-10 text-muted-foreground/40 relative z-10" />
                   </div>
-                  <p className="text-muted-foreground text-sm font-medium">Không có dữ liệu trong tháng này.</p>
+                  <h3 className="text-lg font-bold text-foreground mb-1">Chưa có dữ liệu</h3>
+                  <p className="text-muted-foreground text-sm font-medium">Bắt đầu chấm công để theo dõi tiến độ nhé.</p>
                 </motion.div>
               ) : (
-                <motion.div key={monthStr} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-4">
+                <motion.div key={monthStr} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col gap-5">
                   {grouped.map(({ date, items }) => (
                       <div key={date}>
                         <SanLuongDayCard 

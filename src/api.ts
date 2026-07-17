@@ -271,11 +271,11 @@ export const useConfirmNgayNghi = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (ngay: string) => {
-      const { data, error } = await supabase.from('san_luong').insert({
-        ngay,
+    mutationFn: async (data: { ngay: string, loai_nghi: string }) => {
+      const { data: result, error } = await supabase.from('san_luong').insert({
+        ngay: data.ngay,
         chi_tiet: [],
-        thong_ke_ngay: { is_ngay_nghi: true },
+        thong_ke_ngay: { is_ngay_nghi: true, loai_nghi: data.loai_nghi },
         thoi_gian_thuc_hien: 0,
         thoi_gian_ho_tro: 0,
         user_id: user?.id,
@@ -565,3 +565,66 @@ export const useSearchDinhMuc = (keyword: string) => {
     enabled: keyword.trim().length > 0,
   });
 };
+
+// --- THONG TIN LUONG ---
+export type ThongTinLuong = {
+  luong_co_ban: number;
+  ngay_vao_cong_ty: string | null;
+  ngay_ky_hop_dong: string | null;
+};
+
+export const useGetThongTinLuong = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['thong-tin-luong'],
+    queryFn: async () => {
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+      
+      if (error) throw error;
+      
+      const config = currentUser?.user_metadata?.salary_config || {};
+      return {
+        luong_co_ban: config['luong_co_ban'] || config['1_0'] || 0,
+        ngay_vao_cong_ty: config['ngay_vao'] || null,
+        ngay_ky_hop_dong: config['ngay_ky_hd'] || null,
+      } as ThongTinLuong;
+    },
+    enabled: !!user?.id,
+  });
+};
+
+export const useUpsertThongTinLuong = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: ThongTinLuong) => {
+      const { data: { user: currentUser }, error: fetchError } = await supabase.auth.getUser();
+      if (fetchError) throw fetchError;
+
+      const currentConfig = currentUser?.user_metadata?.salary_config || {};
+      
+      // Xóa các cấu hình cũ dư thừa, chỉ lưu lại 3 thông tin cơ bản
+      const newConfig = {
+        'luong_co_ban': data.luong_co_ban,
+        'ngay_vao': data.ngay_vao_cong_ty,
+        'ngay_ky_hd': data.ngay_ky_hop_dong,
+      };
+
+      const { data: updateData, error } = await supabase.auth.updateUser({
+        data: {
+          salary_config: newConfig
+        }
+      });
+
+      if (error) throw error;
+      return {
+        luong_co_ban: newConfig['luong_co_ban'] || 0,
+        ngay_vao_cong_ty: newConfig['ngay_vao'] || null,
+        ngay_ky_hop_dong: newConfig['ngay_ky_hd'] || null,
+      } as ThongTinLuong;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['thong-tin-luong'] });
+    }
+  });
+};
+

@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Target, TrendingUp, TrendingDown, Calculator, ArrowRight, Package, Clock, CheckCircle2, Calendar, Palmtree, Zap } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, CheckCircle2, Calendar, Palmtree, Zap, Star } from 'lucide-react';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export interface HomeProgressCardProps {
   dashboardData: any;
@@ -54,8 +55,8 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
   }
 
   const congNhat = (stats?.month_total_time || 0) / 480;
-  const ngayCongConLai = congChuan - congHanhChinh;
-  const congMucTieuCuoiThang = congNhat + ngayCongConLai; // Chỉ mang tính tham khảo
+  // const ngayCongConLai = congChuan - congHanhChinh;
+  // const congMucTieuCuoiThang = congNhat + ngayCongConLai; // Chỉ mang tính tham khảo
 
   const congSp = stats?.month_total_sl || 0;
   const balance = congSp - congNhat; // So sánh thực tế Đã đạt vs Công nhật
@@ -63,96 +64,100 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
 
   const gioTangCa = Math.floor(tongPhutTangCa / 60);
   const phutTangCaLe = tongPhutTangCa % 60;
+  
+  const progressPercent = congNhat > 0 ? Math.min((congSp / congNhat) * 100, 100) : 0;
 
   return (
-    <div className="bg-card border border-border/60 squircle-xl shadow-xl overflow-hidden flex flex-col relative before:absolute before:inset-0 before:rounded-[inherit] before:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] before:pointer-events-none">
-      {/* Header */}
-      <div className="bg-primary/10 px-4 py-3 flex items-center justify-between border-b border-primary/20">
-        <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-primary" />
-          <h3 className="font-bold text-foreground text-sm tracking-tight">Năng suất tháng</h3>
-        </div>
-        <div className="text-xs font-semibold text-primary/80 bg-primary/10 px-2 py-1 rounded-md">
-          {format(cycleStart, 'dd/MM')} - {format(cycleEnd, 'dd/MM')}
-        </div>
-      </div>
-
-      {/* Gradient Container cho Main Stat và Nhóm Thực Tế */}
-      <div className="relative overflow-hidden">
-        <div className={`absolute inset-0 bg-gradient-to-b ${isPositive ? 'from-emerald-500/15 via-emerald-500/5' : 'from-rose-500/15 via-rose-500/5'} to-transparent pointer-events-none`} />
-
-        {/* Main Stat: Dư / Thiếu (So sánh Đã đạt vs Công nhật) */}
-        <div className="pt-6 pb-5 flex flex-col items-center justify-center relative z-10">
-          <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
-            {isPositive ? 'Đang dư công' : 'Đang thiếu công'}
-          </span>
-          <div className="relative inline-flex items-center justify-center">
-            <div className="absolute right-full mr-3 flex items-center">
-              {isPositive ? (
-                <TrendingUp className="w-8 h-8 text-emerald-500" strokeWidth={3} />
-              ) : (
-                <TrendingDown className="w-8 h-8 text-rose-500" strokeWidth={3} />
-              )}
-            </div>
-            <span className={`text-5xl font-black tracking-tighter ${isPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {isLoading ? '-' : Math.abs(balance).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
-            </span>
-          </div>
-        </div>
-
-        {/* Nhóm Thực Tế - 2 thông tin chính hàng dưới số dư/thiếu */}
-        <div className="mx-4 mb-5 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/50 flex items-center py-4 shadow-sm relative z-10">
-          <div className="flex-1 flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <Target className="w-4 h-4 text-muted-foreground/70" />
-              <span className="text-xs uppercase font-bold text-muted-foreground/90">Mục tiêu</span>
-            </div>
-            <span className="text-xl font-black text-blue-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
-          </div>
-          <div className="w-px h-10 bg-border/60" />
-          <div className="flex-1 flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-muted-foreground/90" />
-              <span className="text-xs uppercase font-bold text-muted-foreground/90">Đã đạt</span>
-            </div>
-            <span className="text-xl font-black text-amber-500">{isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Nhóm Thông tin phụ - 3 mục tách rời */}
-      <div className="grid grid-cols-3 gap-3 px-4 pb-5">
+    <div className="flex flex-col gap-3">
+      {/* Thẻ Hero: Tiến độ chính (Premium Glass Card) */}
+      <div className="relative overflow-hidden rounded-3xl p-5 border border-white/10 shadow-2xl bg-gradient-to-br from-zinc-900 to-zinc-950">
+        <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
         
-        {/* Công chuẩn */}
-        <div className="bg-secondary/20 border border-border/50 rounded-xl py-3.5 px-2 flex flex-col items-center text-center overflow-hidden">
-          <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center mb-2">
-            <Calendar className="w-4 h-4 text-blue-400" />
+        <div className="flex justify-between items-start mb-6 relative z-10">
+          <div>
+            <p className="text-zinc-400 font-medium text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              Sản lượng đạt được
+            </p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-black text-white tracking-tighter">
+                {isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-zinc-500 font-semibold text-sm">công</span>
+            </div>
           </div>
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider whitespace-nowrap">Công chuẩn</span>
-          <span className="text-xl font-black text-foreground">{isLoading ? '-' : congChuan}</span>
+          <div className={cn(
+            "px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm backdrop-blur-md border",
+            isPositive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+          )}>
+            {isPositive ? <TrendingUp className="w-3.5 h-3.5" strokeWidth={3} /> : <TrendingDown className="w-3.5 h-3.5" strokeWidth={3} />}
+            {isPositive ? '+' : '-'}{Math.abs(balance).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+          </div>
         </div>
 
-        {/* Ngày nghỉ */}
-        <div className="bg-secondary/20 border border-border/50 rounded-xl py-3.5 px-2 flex flex-col items-center text-center overflow-hidden">
-          <div className="w-8 h-8 rounded-full bg-rose-500/15 flex items-center justify-center mb-2">
-            <Palmtree className="w-4 h-4 text-rose-400" />
+        {/* Thanh tiến độ siêu mượt */}
+        <div className="space-y-2 relative z-10">
+          <div className="flex justify-between text-xs font-semibold">
+            <span className="text-zinc-400">Tiến độ so với công nhật</span>
+            <span className="text-white">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} mục tiêu</span>
           </div>
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider whitespace-nowrap">Ngày nghỉ</span>
-          <span className="text-xl font-black text-foreground">{isLoading ? '-' : ngayNghi}</span>
+          <div className="h-3 w-full bg-zinc-800 rounded-full overflow-hidden shadow-inner relative">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className={cn(
+                "h-full rounded-full relative",
+                isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-gradient-to-r from-amber-600 to-amber-400"
+              )}
+            >
+              <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bento Grid: Thông tin phụ */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Box 1: Công chuẩn */}
+        <div className="bg-card border border-border/50 rounded-3xl p-4 flex flex-col justify-between aspect-square shadow-sm relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
+          <div className="w-9 h-9 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 mb-2 group-hover:scale-110 transition-transform">
+            <Calendar className="w-4.5 h-4.5" />
+          </div>
+          <div>
+            <p className="text-2xl font-black text-foreground">{isLoading ? '-' : congChuan}</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Công chuẩn</p>
+          </div>
         </div>
 
-        {/* Tăng ca */}
-        <div className="bg-secondary/20 border border-border/50 rounded-xl py-3.5 px-2 flex flex-col items-center text-center overflow-hidden">
-          <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center mb-2">
-            <Zap className="w-4 h-4 text-purple-400" />
+        {/* Box 2: Tăng ca */}
+        <div className="bg-card border border-border/50 rounded-3xl p-4 flex flex-col justify-between aspect-square shadow-sm relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
+          <div className="w-9 h-9 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 mb-2 group-hover:scale-110 transition-transform">
+            <Zap className="w-4.5 h-4.5" />
           </div>
-          <span className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider whitespace-nowrap">Tăng ca</span>
-          <span className="text-xl font-black text-foreground">
-            {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
-          </span>
+          <div>
+            <p className="text-xl font-black text-foreground tracking-tight">
+              {isLoading ? '-' : `${gioTangCa}h${phutTangCaLe > 0 ? `${phutTangCaLe}p` : ''}`}
+            </p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">Tăng ca</p>
+          </div>
         </div>
 
+        {/* Box 3: Ngày nghỉ */}
+        <div className="bg-card border border-border/50 rounded-3xl p-4 flex flex-col justify-between aspect-square shadow-sm relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent pointer-events-none" />
+          <div className="w-9 h-9 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-2 group-hover:scale-110 transition-transform">
+            <Palmtree className="w-4.5 h-4.5" />
+          </div>
+          <div>
+            <p className="text-2xl font-black text-foreground">{isLoading ? '-' : ngayNghi}</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Ngày nghỉ</p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+

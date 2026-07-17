@@ -12,6 +12,7 @@ const CongTuan = lazy(() => import('@/pages/cong-tuan'));
 const CaiDat = lazy(() => import('@/pages/cai-dat'));
 const Login = lazy(() => import('@/pages/login'));
 const HuongDan = lazy(() => import('@/pages/huong-dan'));
+const TinhLuong = lazy(() => import('@/pages/tinh-luong'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,7 @@ function Router() {
         <Route path="/cong-tuan"><ProtectedRoute component={CongTuan} /></Route>
         <Route path="/cai-dat"><ProtectedRoute component={CaiDat} /></Route>
         <Route path="/huong-dan"><ProtectedRoute component={HuongDan} /></Route>
+        <Route path="/tinh-luong"><ProtectedRoute component={TinhLuong} /></Route>
         <Route component={NotFound} />
       </Switch>
     </Suspense>

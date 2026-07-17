@@ -2,14 +2,20 @@ import React from 'react';
 import { Drawer } from 'vaul';
 import { format, getDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { CalendarX, Check, Plus, Loader2 } from 'lucide-react';
+import { CalendarX, Check, Plus, Loader2, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MissingDaysModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   missingDays: Date[];
   loadingDays: Record<string, boolean>;
-  onConfirmNghi: (dateStr: string) => void;
+  onConfirmNghi: (dateStr: string, loaiNghi: string) => void;
   onOpenAddSanLuong: (dateStr: string) => void;
 }
 
@@ -48,14 +54,29 @@ export function MissingDaysModal({ open, onOpenChange, missingDays, loadingDays,
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onConfirmNghi(dateStr)}
-                        disabled={isLoading}
-                        className="px-3 py-1.5 rounded-lg border border-border/50 bg-secondary/50 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                      >
-                        {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                        Nghỉ
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            disabled={isLoading}
+                            className="px-3 py-1.5 rounded-lg border border-border/50 bg-secondary/50 text-muted-foreground text-[11px] font-semibold uppercase tracking-wider hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                          >
+                            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                            Nghỉ
+                            <ChevronDown className="w-3 h-3 opacity-50" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[180px]">
+                          <DropdownMenuItem onClick={() => onConfirmNghi(dateStr, 'nghi_phep')}>
+                            Nghỉ phép năm
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onConfirmNghi(dateStr, 'nghi_huong_luong')}>
+                            Nghỉ hưởng lương
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onConfirmNghi(dateStr, 'nghi_khong_luong')}>
+                            Nghỉ không lương
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
 
                       <button
                         onClick={() => {

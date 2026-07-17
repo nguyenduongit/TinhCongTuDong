@@ -51,19 +51,21 @@ export default function CaiDat() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-background text-foreground flex justify-center selection:bg-primary/30">
-      <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl">
+      <div className="w-full max-w-[430px] relative pb-[120px] bg-background min-h-[100dvh] flex flex-col shadow-2xl overflow-x-hidden">
         
-        <div className="absolute top-0 left-0 right-0 h-48 bg-primary/5 blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
+        {/* Nền Blur cực quang */}
+        <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-purple-500/10 via-primary/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-12 flex flex-col gap-6 relative z-10 flex-1"
+          className="px-5 pt-8 flex flex-col gap-6 relative z-10 flex-1"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
+          {/* Header */}
           <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Cài đặt</h1>
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground shadow-sm">
               <SettingsIcon className="w-5 h-5" />
             </div>
           </motion.header>
@@ -72,40 +74,45 @@ export default function CaiDat() {
             
             {/* User Profile */}
             {user && (
-              <motion.div variants={pageItemVariants} className="bg-card border border-border/50 rounded-2xl squircle-xl p-4 flex items-center gap-4 shadow-sm">
-                {user.avatar ? (
-                  <img src={user.avatar} alt="Avatar" className="w-14 h-14 rounded-full border-2 border-primary/20 object-cover" />
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                    <UserIcon className="w-6 h-6" />
-                  </div>
-                )}
-                <div className="flex-col flex flex-1 overflow-hidden">
+              <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl p-4 flex items-center gap-4 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-16 bg-primary/10 rounded-full blur-[40px] -mr-8 -mt-8 pointer-events-none" />
+                
+                <div className="relative">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Avatar" className="w-14 h-14 rounded-full border border-white/10 object-cover shadow-[0_0_15px_rgba(var(--primary),0.3)]" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                      <UserIcon className="w-6 h-6" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-col flex flex-1 overflow-hidden relative z-10">
                   <h3 className="font-bold text-foreground text-lg truncate">{user.name}</h3>
-                  <p className="text-muted-foreground text-sm truncate mb-2">{user.email}</p>
+                  <p className="text-muted-foreground text-[13px] truncate mb-2">{user.email}</p>
                   <div className="flex items-center gap-2">
                     {user.plan === 'pro' ? (
                       <>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[10px] font-bold uppercase tracking-wider">
-                          <span className="kim-cuong-tim text-[12px] leading-none">&#128142;</span>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-primary/20 border border-purple-500/30 text-purple-400 text-[10px] font-bold uppercase tracking-wider shadow-inner">
+                          <span className="text-[10px] leading-none">&#128142;</span>
                           Pro
                         </div>
                         {user.proExpiryDate && (
-                          <span className="text-[11px] text-muted-foreground/80 font-medium">
+                          <span className="text-[11px] text-zinc-400 font-medium">
                             HSD: {new Date(user.proExpiryDate).toLocaleDateString('vi-VN')}
                           </span>
                         )}
                       </>
                     ) : (
                       <>
-                        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary border border-border/50 text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+                        <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
                           Free
                         </div>
                         <button 
                           onClick={() => setShowUpgradeModal(true)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-purple-600 transition-colors shadow-sm shadow-purple-500/20"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-purple-600 transition-colors shadow-[0_0_10px_rgba(168,85,247,0.4)]"
                         >
-                          <span className="kim-cuong-tim text-[10px] leading-none">&#128142;</span>
+                          <span className="text-[10px] leading-none">&#128142;</span>
                           Nâng cấp Pro
                         </button>
                       </>
@@ -117,94 +124,92 @@ export default function CaiDat() {
 
             {/* Section 1 */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Dữ liệu</h3>
-              <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
+              <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Dữ liệu</h3>
+              <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
                 <button 
                   onClick={() => setShowCongDoanModal(true)}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <Database className="w-4 h-4" />
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
+                      <Database className="w-4.5 h-4.5" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Quản lý công đoạn</span>
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">Quản lý công đoạn</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
               </div>
             </motion.div>
 
-
-
             {/* Section 2 */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2 flex items-center gap-1.5">
+              <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1 flex items-center gap-1.5">
                 Công cụ
-                <span className="kim-cuong-tim text-[12px] leading-none">&#128142;</span>
+                <span className="text-[10px] leading-none opacity-80">&#128142;</span>
               </h3>
-              <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
+              <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
                 <button 
                   onClick={() => user?.plan === 'pro' ? setShowEstimationModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none border-b border-white/5 group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                      <CalendarDays className="w-4 h-4" />
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                      <CalendarDays className="w-4.5 h-4.5" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
                       Tính toán Dự tính
                     </span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
-                <div className="h-[1px] w-full bg-border/50" />
+                
                 <button 
                   onClick={() => user?.plan === 'pro' ? setShowQuotaLookupModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none border-b border-white/5 group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-                      <Search className="w-4 h-4" />
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20 transition-colors">
+                      <Search className="w-4.5 h-4.5" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
                       Tra cứu định mức
                     </span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
-                <div className="h-[1px] w-full bg-border/50" />
+                
                 <button 
                   onClick={() => user?.plan === 'pro' ? setShowSalaryCalculatorModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20 group-hover:bg-purple-500/20 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
                     </div>
-                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
                       Tính lương
                     </span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
               </div>
             </motion.div>
 
             {/* Section 3 */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Thông tin</h3>
-              <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
+              <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Thông tin</h3>
+              <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
                 <button 
                   onClick={() => setLocation('/huong-dan')}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors border-b border-border/50 outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors border-b border-white/5 outline-none group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                      <HelpCircle className="w-4 h-4" />
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-zinc-500/10 flex items-center justify-center text-zinc-400 border border-zinc-500/20 group-hover:bg-zinc-500/20 transition-colors">
+                      <HelpCircle className="w-4.5 h-4.5" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Hướng dẫn sử dụng</span>
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">Hướng dẫn sử dụng</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
                 <button 
                   onClick={() => {
@@ -218,15 +223,15 @@ export default function CaiDat() {
                       });
                     });
                   }}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors border-b border-border/50 outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors border-b border-white/5 outline-none group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-400 border border-yellow-500/20 group-hover:bg-yellow-500/20 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Đăng ký nhận thông báo</span>
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">Đăng ký nhận thông báo</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
                 {user && (
                 <button 
@@ -244,34 +249,34 @@ export default function CaiDat() {
                       console.error(err);
                     }
                   }}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors border-b border-border/50 outline-none"
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors border-b border-white/5 outline-none group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400 border border-sky-500/20 group-hover:bg-sky-500/20 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Test Gửi Thông Báo</span>
+                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">Test Gửi Thông Báo</span>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
                 </button>
                 )}
                 <div className="w-full flex items-center justify-between p-4 bg-transparent">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                      <Info className="w-4 h-4" />
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-zinc-500/10 flex items-center justify-center text-zinc-400 border border-zinc-500/20">
+                      <Info className="w-4.5 h-4.5" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">Phiên bản</span>
+                    <span className="text-sm font-semibold text-foreground/90">Phiên bản</span>
                   </div>
-                  <span className="text-xs text-muted-foreground font-medium">1.0.0</span>
+                  <span className="text-xs text-zinc-500 font-bold bg-white/5 px-2 py-1 rounded-md border border-white/5">1.0.0</span>
                 </div>
               </div>
             </motion.div>
 
             {/* Logout */}
-            <motion.div variants={pageItemVariants} className="mt-4">
+            <motion.div variants={pageItemVariants} className="mt-2 mb-4">
               <button 
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors rounded-2xl squircle-xl font-bold outline-none"
+                className="w-full flex items-center justify-center gap-2 p-4 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors rounded-3xl border border-rose-500/20 font-bold outline-none shadow-sm"
               >
                 <LogOut className="w-5 h-5" />
                 Đăng xuất
