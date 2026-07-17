@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, CalendarDays, Search, Diamond } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { CongDoanModal } from '@/components/CongDoanModal';
 import { EstimationModal } from '@/components/EstimationModal';
 import { QuotaLookupModal } from '@/components/QuotaLookupModal';
+import { SalaryCalculatorModal } from '@/components/SalaryCalculatorModal';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/lib/supabase';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -15,9 +17,28 @@ export default function CaiDat() {
   const [showCongDoanModal, setShowCongDoanModal] = useState(false);
   const [showEstimationModal, setShowEstimationModal] = useState(false);
   const [showQuotaLookupModal, setShowQuotaLookupModal] = useState(false);
+  const [showSalaryCalculatorModal, setShowSalaryCalculatorModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { user, refetchUser, signOut } = useAuth();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('status') === 'success') {
+      // Bắt buộc làm mới JWT token để lấy user_metadata (thuộc tính Pro) mới nhất từ server
+      supabase.auth.refreshSession().then(({ error }) => {
+        if (!error) {
+          refetchUser();
+          toast.success("Thanh toán thành công! Chào mừng bạn đến với gói Pro 💎");
+        }
+        // Xoá query param để không hiện lại toast khi reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    } else if (params.get('status') === 'cancel') {
+      toast.error("Bạn đã huỷ giao dịch thanh toán.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [refetchUser]);
 
   const handleLogout = async () => {
     try {
@@ -64,10 +85,17 @@ export default function CaiDat() {
                   <p className="text-muted-foreground text-sm truncate mb-2">{user.email}</p>
                   <div className="flex items-center gap-2">
                     {user.plan === 'pro' ? (
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[10px] font-bold uppercase tracking-wider">
-                        <span className="kim-cuong-tim text-[12px] leading-none">&#128142;</span>
-                        Pro: {user.proExpiryDate ? `${Math.max(0, Math.ceil((new Date(user.proExpiryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))} ngày` : ''}
-                      </div>
+                      <>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-500 text-[10px] font-bold uppercase tracking-wider">
+                          <span className="kim-cuong-tim text-[12px] leading-none">&#128142;</span>
+                          Pro
+                        </div>
+                        {user.proExpiryDate && (
+                          <span className="text-[11px] text-muted-foreground/80 font-medium">
+                            HSD: {new Date(user.proExpiryDate).toLocaleDateString('vi-VN')}
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <>
                         <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-secondary border border-border/50 text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
@@ -110,7 +138,10 @@ export default function CaiDat() {
 
             {/* Section 2 */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2">Công cụ</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-2 flex items-center gap-1.5">
+                Công cụ
+                <span className="kim-cuong-tim text-[12px] leading-none">&#128142;</span>
+              </h3>
               <div className="bg-card border border-border/50 rounded-2xl squircle-xl overflow-hidden shadow-sm">
                 <button 
                   onClick={() => user?.plan === 'pro' ? setShowEstimationModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
@@ -122,7 +153,6 @@ export default function CaiDat() {
                     </div>
                     <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                       Tính toán Dự tính
-                      <span className="kim-cuong-tim text-[14px] leading-none drop-shadow-sm">&#128142;</span>
                     </span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -138,7 +168,21 @@ export default function CaiDat() {
                     </div>
                     <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                       Tra cứu định mức
-                      <span className="kim-cuong-tim text-[14px] leading-none drop-shadow-sm">&#128142;</span>
+                    </span>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <div className="h-[1px] w-full bg-border/50" />
+                <button 
+                  onClick={() => user?.plan === 'pro' ? setShowSalaryCalculatorModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
+                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-secondary/50 transition-colors outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      Tính lương
                     </span>
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -248,6 +292,7 @@ export default function CaiDat() {
 
       <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
       <QuotaLookupModal open={showQuotaLookupModal} onOpenChange={setShowQuotaLookupModal} />
+      <SalaryCalculatorModal open={showSalaryCalculatorModal} onOpenChange={setShowSalaryCalculatorModal} />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
     </div>
   );

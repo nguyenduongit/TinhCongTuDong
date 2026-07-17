@@ -48,7 +48,7 @@ serve(async (req) => {
 
     // Mã order code kiểu INT32 (Dưới 9007199254740991)
     const orderCode = Number(String(Date.now()).slice(-9) + Math.floor(Math.random() * 1000));
-    const amount = 1000;
+    const amount = 2000;
     const description = "Nang cap Pro";
     const returnUrl = `${origin}/cai-dat?status=success`;
     const cancelUrl = `${origin}/cai-dat?status=cancel`;

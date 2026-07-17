@@ -34,11 +34,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUser = async () => {
     setIsLoading(true);
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      if (session?.user) {
-        const plan = session.user.user_metadata?.plan || 'free';
-        const proExpiryDate = session.user.user_metadata?.pro_expires_at || null;
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error && error.message !== 'Auth session missing!') throw error;
+      if (user) {
+        const plan = user.user_metadata?.plan || 'free';
+        const proExpiryDate = user.user_metadata?.pro_expires_at || null;
         let finalPlan = plan;
         if (plan === 'pro' && proExpiryDate) {
           if (new Date(proExpiryDate) < new Date()) {
@@ -47,10 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Unknown',
-          avatar: session.user.user_metadata?.avatar_url,
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown',
+          avatar: user.user_metadata?.avatar_url,
           plan: finalPlan,
           proExpiryDate: proExpiryDate,
         });
