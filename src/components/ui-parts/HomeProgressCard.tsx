@@ -77,20 +77,22 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
         <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
         <div className="flex justify-between items-start mb-6 relative z-10">
-          <div className="inline-flex flex-col">
+          <div className="flex flex-col">
             <p className="text-zinc-400 font-medium text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               Sản lượng đạt được
             </p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-black text-white tracking-tighter">
-                {isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
-              </span>
-              <span className="text-zinc-500 font-semibold text-sm">công</span>
-            </div>
-            <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-widest border-t border-white/5 pt-1 mt-1">
-              <span>Mục tiêu</span>
-              <span className="text-emerald-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+            <div className="inline-flex flex-col self-start">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-white tracking-tighter">
+                  {isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-zinc-500 font-semibold text-sm">công</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-widest border-t border-white/5 pt-1 mt-1 w-0 min-w-full">
+                <span>Mục tiêu</span>
+                <span className="text-emerald-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
+              </div>
             </div>
           </div>
           <div className={cn(
