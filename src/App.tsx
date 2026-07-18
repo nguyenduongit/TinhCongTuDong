@@ -71,8 +71,41 @@ function Router() {
 }
 
 import { Toaster as SonnerToaster } from 'sonner';
+import { InstallPwa } from '@/components/InstallPwa';
+import { useState, useEffect as useReactEffect } from 'react';
 
 function App() {
+  const [isPwa, setIsPwa] = useState(true);
+
+  useReactEffect(() => {
+    const checkIsPwa = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                           (window.navigator as any).standalone || 
+                           document.referrer.includes('android-app://');
+      
+      if (localStorage.getItem('bypass_pwa') === 'true') {
+         setIsPwa(true);
+         return;
+      }
+      
+      setIsPwa(isStandalone);
+    };
+    
+    checkIsPwa();
+    
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (e.matches) setIsPwa(true);
+    };
+    
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  if (!isPwa) {
+    return <InstallPwa />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
