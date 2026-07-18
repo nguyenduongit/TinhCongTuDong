@@ -211,7 +211,7 @@ export function SanLuongDayCard({
 
             return (
               <div key={entry.id} className={`flex items-stretch group relative ${idx !== items.length - 1 ? 'border-b border-white/5' : ''}`}>
-                <div className="flex-1 flex" onDoubleClick={() => onEdit?.(entry)}>
+                <div className="flex-1 flex" onDoubleClick={() => !(entry.thong_ke_ngay as any)?.is_ngay_nghi && onEdit?.(entry)}>
                   {content}
                 </div>
 
@@ -224,14 +224,18 @@ export function SanLuongDayCard({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-2xl border-white/10 bg-zinc-900/95 backdrop-blur-xl p-1">
-                      <DropdownMenuItem 
-                        onClick={() => onEdit?.(entry)}
-                        className="gap-2.5 cursor-pointer rounded-lg py-2 focus:bg-white/10"
-                      >
-                        <Pencil className="w-4 h-4 text-emerald-400" />
-                        <span className="font-semibold text-sm">Sửa công</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-white/10" />
+                      {!(entry.thong_ke_ngay as any)?.is_ngay_nghi && (
+                        <>
+                          <DropdownMenuItem 
+                            onClick={() => onEdit?.(entry)}
+                            className="gap-2.5 cursor-pointer rounded-lg py-2 focus:bg-white/10"
+                          >
+                            <Pencil className="w-4 h-4 text-emerald-400" />
+                            <span className="font-semibold text-sm">Sửa công</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-white/10" />
+                        </>
+                      )}
                       <DropdownMenuItem 
                         onClick={() => {
                           if (confirm('Bạn có chắc muốn xóa bản ghi này?')) {
@@ -241,7 +245,7 @@ export function SanLuongDayCard({
                         className="gap-2.5 cursor-pointer rounded-lg py-2 focus:bg-rose-500/20 focus:text-rose-400 text-rose-500"
                       >
                         <Trash2 className="w-4 h-4" />
-                        <span className="font-semibold text-sm">Xóa</span>
+                        <span className="font-semibold text-sm">{(entry.thong_ke_ngay as any)?.is_ngay_nghi ? 'Hủy ngày nghỉ' : 'Xóa'}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
