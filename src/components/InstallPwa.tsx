@@ -83,16 +83,6 @@ export function InstallPwa() {
              </div>
           )}
         </div>
-
-        <button 
-          onClick={() => {
-            localStorage.setItem('bypass_pwa', 'true');
-            window.location.reload();
-          }}
-          className="mt-10 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest hover:text-primary transition-colors"
-        >
-          Tiếp tục trên trình duyệt (Dành cho Dev)
-        </button>
       </motion.div>
     </div>
   );
