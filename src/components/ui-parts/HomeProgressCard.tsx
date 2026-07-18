@@ -139,19 +139,21 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
             {/* Vạch mốc công chuẩn (chỉ xuất hiện khi vượt mốc) */}
             {isOvertimeScale && (
               <div 
-                className="absolute top-5 bottom-0 -translate-x-1/2 flex flex-col items-center z-10 pointer-events-none"
+                className="absolute top-7 -translate-x-1/2 flex flex-col items-center z-10 pointer-events-none"
                 style={{ left: `${chuanPercent}%` }}
               >
-                <div className="w-px h-6 border-l border-dashed border-zinc-400" />
-                <div className="text-[8px] font-bold text-zinc-400 bg-zinc-900/90 px-1 rounded shadow-sm whitespace-nowrap">
+                <div className="w-px h-5 border-l border-dashed border-zinc-400" />
+                <div className="text-[9px] font-bold text-zinc-400 mt-1 whitespace-nowrap">
                   Mốc chuẩn
                 </div>
               </div>
             )}
           </div>
-          <div className="flex justify-between text-[11px] font-semibold px-1">
+          <div className="flex justify-between text-[11px] font-semibold px-1 mt-2">
             <span className="text-zinc-500 uppercase tracking-widest">Tiến độ tháng</span>
-            <span className="text-zinc-400">{isLoading ? '-' : congChuan} công chuẩn</span>
+            {!isOvertimeScale && (
+              <span className="text-zinc-400">{isLoading ? '-' : congChuan} công chuẩn</span>
+            )}
           </div>
         </div>
       </div>
