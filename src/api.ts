@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
 import { computeCongSp, computeCongNhat, computeCongHoTro, computeWeeklyCongSp, truncate3, type ChiTietItem } from '@/lib/business-logic';
+import { minutesToCong, getWorkMinutesForDay } from '@/lib/work-rules';
+import { getCycleStringFromYearMonth } from '@/lib/date-utils';
+import { type CompanyConfig, DEFAULT_COMPANY_CONFIG, mergeWithDefaults } from '@/lib/company-config';
 
 export type CongDoan = {
   id: number;
@@ -310,25 +313,15 @@ export const useGetSanLuongDashboard = (options: any = {}) => {
       const m = parseInt(monthStr, 10);
       const d = parseInt(dayStr, 10);
       
+      // Xác định tháng công hiện tại (ngày > 20 → tháng sau)
       let cycleMonth = m;
       let cycleYear = y;
       if (d > 20) {
         cycleMonth = m + 1;
-        if (cycleMonth > 12) {
-          cycleMonth = 1;
-          cycleYear++;
-        }
-      }
-      
-      let prevMonth = cycleMonth - 1;
-      let prevYear = cycleYear;
-      if (prevMonth < 1) {
-        prevMonth = 12;
-        prevYear--;
+        if (cycleMonth > 12) { cycleMonth = 1; cycleYear++; }
       }
 
-      const cycleStartStr = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-21`;
-      const cycleEndStr = `${cycleYear}-${cycleMonth.toString().padStart(2, '0')}-20`;
+      const { cycleStartStr, cycleEndStr } = getCycleStringFromYearMonth(cycleYear, cycleMonth);
 
       const now = new Date();
       const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
@@ -415,18 +408,10 @@ export const useGetCongTuan = (params: { month: string }, options: any = {}) => 
     queryFn: async () => {
       const monthStr = params.month;
       const [yearStr, mStr] = monthStr.split('-');
-      let cycleYear = parseInt(yearStr, 10);
-      let cycleMonth = parseInt(mStr, 10);
-      
-      let prevMonth = cycleMonth - 1;
-      let prevYear = cycleYear;
-      if (prevMonth < 1) {
-        prevMonth = 12;
-        prevYear--;
-      }
+      const cycleYear  = parseInt(yearStr, 10);
+      const cycleMonth = parseInt(mStr, 10);
 
-      const cycleStartStr = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-21`;
-      const cycleEndStr = `${cycleYear}-${cycleMonth.toString().padStart(2, '0')}-20`;
+      const { cycleStartStr, cycleEndStr } = getCycleStringFromYearMonth(cycleYear, cycleMonth);
 
       const { data: rows, error } = await supabase.from('san_luong')
         .select('*')
@@ -524,7 +509,7 @@ export const useGetCongTuan = (params: { month: string }, options: any = {}) => 
       });
       weekGroups.sort((a, b) => b.weekNum - a.weekNum);
 
-      const totalCongMonth = weekGroups.reduce((sum, week) => sum + week.totalCongSp + (week.totalHoTroPhut / 480), 0);
+      const totalCongMonth = weekGroups.reduce((sum, week) => sum + week.totalCongSp + minutesToCong(week.totalHoTroPhut), 0);
 
       return { weekGroups, totalCongMonth };
     },
@@ -568,9 +553,11 @@ export const useSearchDinhMuc = (keyword: string) => {
 
 // --- THONG TIN LUONG ---
 export type ThongTinLuong = {
-  luong_co_ban: number;
   ngay_vao_cong_ty: string | null;
   ngay_ky_hop_dong: string | null;
+  gioi_tinh: string | null;
+  bac_luong: string | null;
+  menstrual_dates?: Record<string, string>;
 };
 
 export const useGetThongTinLuong = () => {
@@ -582,49 +569,210 @@ export const useGetThongTinLuong = () => {
       
       if (error) throw error;
       
-      const config = currentUser?.user_metadata?.salary_config || {};
+      const config = currentUser?.user_metadata?.profile || currentUser?.user_metadata?.salary_config || {};
       return {
-        luong_co_ban: config['luong_co_ban'] || config['1_0'] || 0,
         ngay_vao_cong_ty: config['ngay_vao'] || null,
         ngay_ky_hop_dong: config['ngay_ky_hd'] || null,
+        gioi_tinh: config['gioi_tinh'] || null,
+        bac_luong: config['bac_luong'] || null,
+        menstrual_dates: config['menstrual_dates'] || {},
       } as ThongTinLuong;
     },
     enabled: !!user?.id,
   });
 };
 
-export const useUpsertThongTinLuong = () => {
+export type UserProfileUpdate = ThongTinLuong & {
+  name?: string;
+};
+
+export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
+  const { refetchUser } = useAuth();
   return useMutation({
-    mutationFn: async (data: ThongTinLuong) => {
+    mutationFn: async (data: UserProfileUpdate) => {
       const { data: { user: currentUser }, error: fetchError } = await supabase.auth.getUser();
       if (fetchError) throw fetchError;
 
-      const currentConfig = currentUser?.user_metadata?.salary_config || {};
+      const currentConfig = currentUser?.user_metadata?.profile || {};
       
-      // Xóa các cấu hình cũ dư thừa, chỉ lưu lại 3 thông tin cơ bản
-      const newConfig = {
-        'luong_co_ban': data.luong_co_ban,
+      // Xóa các cấu hình cũ dư thừa, lưu thông tin vào 'profile'
+      const newProfile = {
         'ngay_vao': data.ngay_vao_cong_ty,
         'ngay_ky_hd': data.ngay_ky_hop_dong,
+        'gioi_tinh': data.gioi_tinh,
+        'bac_luong': data.bac_luong,
+        'menstrual_dates': data.gioi_tinh === 'nu' 
+          ? (data.menstrual_dates !== undefined ? data.menstrual_dates : (currentConfig['menstrual_dates'] || {}))
+          : {},
       };
 
+      const updatePayload: any = {
+        profile: newProfile,
+        salary_config: null // Xóa key cũ để dọn dẹp data
+      };
+      if (data.name !== undefined) {
+        updatePayload.full_name = data.name;
+      }
+
       const { data: updateData, error } = await supabase.auth.updateUser({
-        data: {
-          salary_config: newConfig
-        }
+        data: updatePayload
       });
 
       if (error) throw error;
-      return {
-        luong_co_ban: newConfig['luong_co_ban'] || 0,
-        ngay_vao_cong_ty: newConfig['ngay_vao'] || null,
-        ngay_ky_hop_dong: newConfig['ngay_ky_hd'] || null,
-      } as ThongTinLuong;
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['thong-tin-luong'] });
+      refetchUser();
     }
   });
 };
 
+
+// --- COMPANY CONFIG ---
+
+export const getCompanyConfigQueryKey = () => ['company-config'];
+
+/**
+ * Hook lấy cấu hình nghiệp vụ của công ty từ Supabase.
+ *
+ * - Fetch bảng `company_config` (mỗi row là một key-value).
+ * - Tự động merge với DEFAULT_COMPANY_CONFIG nếu DB thiếu key nào.
+ * - Dữ liệu được cache bởi React Query, chỉ fetch lại khi stale.
+ *
+ * Dùng trong trang tính lương và bất kỳ component nào cần config công ty.
+ *
+ * @example
+ * const { config } = useCompanyConfig();
+ * const insurance = computeInsuranceDeductions(basicSalary, config);
+ */
+export const useCompanyConfig = () => {
+  const query = useQuery({
+    queryKey: getCompanyConfigQueryKey(),
+    queryFn: async (): Promise<CompanyConfig> => {
+      const { data, error } = await supabase
+        .from('company_config')
+        .select('key, value');
+
+      if (error) {
+        // Bảng chưa tồn tại hoặc lỗi mạng → dùng defaults
+        console.warn('[useCompanyConfig] Không thể fetch company_config, dùng giá trị mặc định:', error.message);
+        return DEFAULT_COMPANY_CONFIG;
+      }
+
+      if (!data || data.length === 0) return DEFAULT_COMPANY_CONFIG;
+
+      // Chuyển mảng [{key, value}] thành object {key: value}
+      const partial = data.reduce<Record<string, number>>((acc, row) => {
+        acc[row.key] = Number(row.value);
+        return acc;
+      }, {});
+
+      return mergeWithDefaults(partial as Partial<CompanyConfig>);
+    },
+    // Config không thay đổi thường xuyên — cache 5 phút
+    staleTime: 5 * 60 * 1000,
+  });
+
+  return {
+    config: query.data ?? DEFAULT_COMPANY_CONFIG,
+    isLoading: query.isLoading,
+  };
+};
+
+/**
+ * Mutation cập nhật một key config (dùng cho trang Admin sau này).
+ *
+ * @example
+ * const { mutate } = useUpdateCompanyConfig();
+ * mutate({ key: 'meal_allowance_per_day', value: 40000 });
+ */
+export const useUpdateCompanyConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ key, value }: { key: keyof CompanyConfig; value: number }) => {
+      const { error } = await supabase
+        .from('company_config')
+        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getCompanyConfigQueryKey() });
+    },
+  });
+};
+
+// --- SALARY TIERS ---
+
+export type SalaryTier = {
+  tier_code: string;
+  base_salary: number;
+};
+
+export const useGetSalaryTiers = () => {
+  return useQuery({
+    queryKey: ['salary-tiers'],
+    queryFn: async (): Promise<SalaryTier[]> => {
+      const { data, error } = await supabase
+        .from('salary_tiers')
+        .select('tier_code, base_salary')
+        .order('tier_code', { ascending: true });
+
+      if (error) {
+        console.warn('[useGetSalaryTiers] Không thể fetch salary_tiers:', error.message);
+        return [];
+      }
+
+      return data as SalaryTier[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  created_at: string;
+  raw_user_metadata: any;
+};
+
+export function useGetAllUsers() {
+  return useQuery({
+    queryKey: ['admin_users'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_all_users');
+      if (error) {
+        console.error('Error fetching all users:', error);
+        return [] as AdminUser[]; // Return empty list instead of crashing
+      }
+      return (data ?? []) as AdminUser[];
+    },
+    retry: false, // don't retry if the RPC doesn't exist
+  });
+}
+
+export function useAdminUpdateUserPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      targetUserId,
+      plan,
+      expiresAt,
+    }: {
+      targetUserId: string;
+      plan: 'free' | 'pro';
+      expiresAt?: string | null;
+    }) => {
+      const { error } = await supabase.rpc('admin_update_user_plan', {
+        target_user_id: targetUserId,
+        new_plan: plan,
+        new_expires_at: expiresAt ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_users'] });
+    },
+  });
+}

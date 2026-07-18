@@ -6,6 +6,7 @@ import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api'
 import { CongDoanModal } from './CongDoanModal';
 import { format, parseISO, getDay } from 'date-fns';
 import { getTodayVNString } from '@/lib/date-utils';
+import { getWorkMinutesForDay } from '@/lib/work-rules';
 import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
 
 export interface SanLuongDrawerProps {
@@ -94,14 +95,8 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
   useEffect(() => {
     if (isEditMode || !ngay) return;
     const date = parseISO(ngay);
-    const dayOfWeek = getDay(date); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    if (dayOfWeek === 0) {
-      setThoiGian('0');
-    } else if (dayOfWeek === 6) {
-      setThoiGian('240');
-    } else {
-      setThoiGian('480');
-    }
+    const dayOfWeek = getDay(date);
+    setThoiGian(getWorkMinutesForDay(dayOfWeek).toString());
   }, [ngay, isEditMode]);
 
   const handleAddBlock = () => {

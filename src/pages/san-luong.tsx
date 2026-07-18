@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { addMonths, subMonths, format, parseISO, startOfDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getTodayVNString, getNowVNDateLocal, getCycleRangeStrings } from '@/lib/date-utils';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal, Clock, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useListSanLuong, useDeleteSanLuong, useListCongDoan } from '@/api';
@@ -13,7 +13,7 @@ import type { SanLuong } from '@/api';
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { SanLuongDayCard } from '@/components/ui-parts/SanLuongDayCard';
-import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
+import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/animations';
 
 // Nhóm mảng entries theo ngày
 function groupByDate(entries: SanLuong[]): { date: string; items: SanLuong[] }[] {
@@ -45,6 +45,7 @@ function formatDateHeader(dateStr: string): string {
 export default function SanLuong() {
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
   const [editEntry, setEditEntry] = useState<SanLuong | null>(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(getNowVNDateLocal()).getTime();
   const monthStr = format(currentMonth, 'yyyy-MM');
@@ -95,20 +96,11 @@ export default function SanLuong() {
         <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-primary/10 via-amber-500/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-8 flex flex-col gap-6 relative z-10 flex-1"
+          className="px-5 pt-5 flex flex-col gap-5 relative z-10 flex-1"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
-
-          {/* Header */}
-          <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Sản lượng</h1>
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground shadow-sm">
-              <CalendarIcon className="w-5 h-5" />
-            </div>
-          </motion.header>
-
           {/* Month picker dạng Pill */}
           <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-full p-1.5 flex items-center justify-between shadow-sm mx-auto w-full max-w-[280px]">
             <button
@@ -178,9 +170,31 @@ export default function SanLuong() {
         </motion.div>
 
         <BottomNav />
+
+        {/* FAB Chấm Công */}
+        <motion.div
+          variants={fabVariants}
+          initial="hidden"
+          animate="show"
+          className="fixed bottom-[90px] w-full max-w-[430px] z-20 flex justify-center pointer-events-none"
+        >
+          <button
+            onClick={() => setIsAddOpen(true)}
+            className="pointer-events-auto relative group flex items-center justify-center outline-none transition-transform hover:scale-105 active:scale-95"
+          >
+            {/* Vòng sáng nhấp nháy */}
+            <div className="absolute inset-0 bg-primary/50 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300 animate-pulse" />
+            {/* Nút vật lý */}
+            <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-b from-amber-400 to-amber-600 flex items-center justify-center shadow-[0_10px_40px_rgba(245,158,11,0.5)] border-4 border-background relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/20 hover:bg-transparent transition-colors" />
+              <Plus className="w-10 h-10 text-white" strokeWidth={2.5} />
+            </div>
+          </button>
+        </motion.div>
       </div>
 
       <SanLuongDrawer entry={editEntry} open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)} />
+      <SanLuongDrawer entry={null} open={isAddOpen} onOpenChange={setIsAddOpen} />
     </div>
   );
 }

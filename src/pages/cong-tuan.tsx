@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getCycleMonthFromDate, getCycleRange, getNowVNDateLocal } from '@/lib/date-utils';
-import { ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
@@ -53,19 +53,11 @@ export default function CongTuan() {
         <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-amber-500/10 via-primary/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-8 flex flex-col gap-6 relative z-10 flex-1"
+          className="px-5 pt-5 flex flex-col gap-5 relative z-10 flex-1"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
-          {/* Header */}
-          <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Công tuần</h1>
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground shadow-sm">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-          </motion.header>
-
           {/* Month picker dạng Pill */}
           <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-full p-1.5 flex items-center justify-between shadow-sm mx-auto w-full max-w-[280px]">
             <button 

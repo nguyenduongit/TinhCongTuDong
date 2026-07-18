@@ -3,6 +3,7 @@ import { format, addDays } from 'date-fns';
 import { ChevronLeft, Info, PackageOpen, Target, Zap, Clock, Coffee, AlertTriangle } from 'lucide-react';
 import { useGetSanLuongDashboard, useListCongDoan, getListCongDoanQueryKey } from '@/api';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
+import { minutesToCong } from '@/lib/work-rules';
 import { parseQuyCach } from '@/components/ui-parts/CongDoanFormUI';
 import { reverseCalcPcs } from '@/lib/business-logic';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,11 +43,11 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
   }
 
   const futureStandardCong = futureStart <= cycleEnd ? calculateRequiredCongForCycle(futureStart, cycleEnd) : 0;
-  
+
   // Tính tổng số công mục tiêu
-  const workedCong = (stats?.month_total_time || 0) / 480;
-  const overtimeCong = (overtimeHours * 60) / 480;
-  const leaveCong = (leaveHours * 60) / 480;
+  const workedCong = minutesToCong(stats?.month_total_time || 0);
+  const overtimeCong = minutesToCong(overtimeHours * 60);
+  const leaveCong = minutesToCong(leaveHours * 60);
 
   const totalRequiredCong = workedCong + futureStandardCong + overtimeCong - leaveCong;
   const totalAchievedCong = stats?.month_total_sl || 0;
@@ -80,13 +81,13 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
             </button>
           )}
           <h2 className="text-lg font-bold text-foreground">
-            Công cụ Dự tính
+            Dự báo Sản lượng
           </h2>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 relative z-10">
-        
+
         {/* Info Block */}
         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-4.5 flex flex-col gap-2.5 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-bold text-emerald-400">
@@ -109,11 +110,11 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
             </div>
             <h3 className="font-bold text-foreground text-base">Chưa cập nhật hôm nay</h3>
             <p className="text-[13px] text-zinc-400 font-medium px-2">
-              Vui lòng nhập đầy đủ sản lượng của ngày hôm nay trước khi sử dụng công cụ dự tính để đảm bảo số liệu tính toán bắt đầu từ "ngày mai" là chính xác tuyệt đối.
+              Vui lòng nhập đầy đủ sản lượng của ngày hôm nay trước khi sử dụng công cụ dự báo để đảm bảo số liệu tính toán bắt đầu từ "ngày mai" là chính xác tuyệt đối.
             </p>
           </div>
         ) : (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col gap-6"
@@ -126,8 +127,8 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
                   Tăng ca dự kiến
                 </label>
                 <div className="relative group">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={overtimeHours || ''}
                     onChange={(e) => setOvertimeHours(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3.5 text-xl font-black text-foreground outline-none focus:border-emerald-500/50 focus:bg-black/40 transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -143,8 +144,8 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
                   Nghỉ phép dự kiến
                 </label>
                 <div className="relative group">
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={leaveHours || ''}
                     onChange={(e) => setLeaveHours(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3.5 text-xl font-black text-foreground outline-none focus:border-emerald-500/50 focus:bg-black/40 transition-all shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -161,7 +162,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
                 <PackageOpen className="w-4.5 h-4.5 text-emerald-400" />
                 <span className="text-sm font-bold text-foreground">Dự tính cần hoàn thành</span>
               </div>
-              
+
               <div className="p-5 flex flex-col gap-5">
                 <div className="flex flex-col gap-2">
                   <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-1">Chọn công đoạn dự tính:</span>
@@ -185,7 +186,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
 
                 {missingCong === 0 ? (
                   <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 text-center text-emerald-400 text-sm font-bold mt-1 shadow-sm">
-                    🎉 Với dự tính này, bạn đã đủ hoặc vượt chỉ tiêu!
+                    🎉 Với dự báo này, bạn đã đủ hoặc vượt chỉ tiêu!
                   </div>
                 ) : (
                   <AnimatePresence mode="wait">
@@ -196,7 +197,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
                       className="bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 flex items-center gap-4.5 mt-1 shadow-sm relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 p-12 bg-emerald-500/10 rounded-full blur-[30px] -mr-8 -mt-8 pointer-events-none" />
-                      
+
                       <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex flex-shrink-0 items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)] border border-emerald-500/20 relative z-10">
                         <Zap className="w-6 h-6" />
                       </div>

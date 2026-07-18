@@ -12,7 +12,13 @@ const CongTuan = lazy(() => import('@/pages/cong-tuan'));
 const CaiDat = lazy(() => import('@/pages/cai-dat'));
 const Login = lazy(() => import('@/pages/login'));
 const HuongDan = lazy(() => import('@/pages/huong-dan'));
-const TinhLuong = lazy(() => import('@/pages/tinh-luong'));
+const AdminPage = lazy(() => import('@/pages/admin'));
+
+// Tool Pages
+const CongDoanPage = lazy(() => import('@/pages/cong-cu/cong-doan'));
+const EstimationPage = lazy(() => import('@/pages/cong-cu/du-tinh'));
+const QuotaLookupPage = lazy(() => import('@/pages/cong-cu/tra-cuu'));
+const SalaryCalculatorPage = lazy(() => import('@/pages/cong-cu/tinh-luong'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,7 +61,13 @@ function Router() {
         <Route path="/cong-tuan"><ProtectedRoute component={CongTuan} /></Route>
         <Route path="/cai-dat"><ProtectedRoute component={CaiDat} /></Route>
         <Route path="/huong-dan"><ProtectedRoute component={HuongDan} /></Route>
-        <Route path="/tinh-luong"><ProtectedRoute component={TinhLuong} /></Route>
+        <Route path="/admin"><ProtectedRoute component={AdminPage} /></Route>
+        
+        {/* Tool Routes */}
+        <Route path="/cong-cu/cong-doan"><ProtectedRoute component={CongDoanPage} /></Route>
+        <Route path="/cong-cu/du-tinh"><ProtectedRoute component={EstimationPage} /></Route>
+        <Route path="/cong-cu/tra-cuu"><ProtectedRoute component={QuotaLookupPage} /></Route>
+        <Route path="/cong-cu/tinh-luong"><ProtectedRoute component={SalaryCalculatorPage} /></Route>
         <Route component={NotFound} />
       </Switch>
     </Suspense>

@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useLocation } from 'wouter';
 import { Input } from '@/components/ui/input';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, ChevronLeft } from 'lucide-react';
 import { useSearchDinhMuc } from '@/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function QuotaLookupModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export default function QuotaLookupPage() {
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -24,28 +20,28 @@ export function QuotaLookupModal({ open, onOpenChange }: { open: boolean; onOpen
 
   const { data: results, isLoading, isError } = useSearchDinhMuc(debouncedSearch);
 
-  // Reset khi tắt/mở modal
-  useEffect(() => {
-    if (!open) {
-      setSearchTerm('');
-      setDebouncedSearch('');
-    }
-  }, [open]);
+  // Lấy focus tự động hoặc không cần thiết nữa vì không còn ẩn hiện như modal
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[430px] p-0 gap-0 overflow-hidden flex flex-col h-[85vh] sm:h-[600px] rounded-t-[2rem] sm:rounded-[2rem] border-white/10 bg-background/80 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+    <div className="min-h-[100dvh] w-full bg-background flex flex-col relative overflow-hidden">
+      <div className="w-full max-w-[430px] mx-auto bg-background flex flex-col h-[100dvh] relative">
         
         {/* Background effects */}
         <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-br from-amber-500/10 via-primary/5 to-transparent blur-[60px] pointer-events-none rounded-full transform -translate-y-1/2 z-0" />
 
-        <DialogHeader className="p-5 pb-4 shrink-0 border-b border-white/5 bg-transparent relative z-10">
-          <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+        <header className="p-5 pb-4 shrink-0 border-b border-white/5 bg-transparent relative z-10">
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <button 
+              onClick={() => setLocation('/')}
+              className="w-9 h-9 flex items-center justify-center -ml-2 rounded-full bg-white/5 text-muted-foreground border border-white/5 hover:text-foreground hover:bg-white/10 transition-colors outline-none"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
             <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
               <Search className="w-4 h-4" />
             </div>
             Tra cứu định mức
-          </DialogTitle>
+          </h1>
           <div className="relative mt-4 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-amber-500 transition-colors" />
             <Input
@@ -58,7 +54,7 @@ export function QuotaLookupModal({ open, onOpenChange }: { open: boolean; onOpen
               <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-500 animate-spin" />
             )}
           </div>
-        </DialogHeader>
+        </header>
 
         <div className="flex-1 overflow-y-auto p-4 bg-transparent relative z-0 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           <AnimatePresence mode="popLayout">
@@ -153,7 +149,7 @@ export function QuotaLookupModal({ open, onOpenChange }: { open: boolean; onOpen
             )}
           </AnimatePresence>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

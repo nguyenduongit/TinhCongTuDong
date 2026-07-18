@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, CalendarDays, Search, Diamond } from 'lucide-react';
+import { ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, Diamond } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
-import { CongDoanModal } from '@/components/CongDoanModal';
-import { EstimationModal } from '@/components/EstimationModal';
-import { QuotaLookupModal } from '@/components/QuotaLookupModal';
-import { SalaryCalculatorModal } from '@/components/SalaryCalculatorModal';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
@@ -13,12 +9,11 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
+import { ProfileModal } from '@/components/ProfileModal';
+
 export default function CaiDat() {
-  const [showCongDoanModal, setShowCongDoanModal] = useState(false);
-  const [showEstimationModal, setShowEstimationModal] = useState(false);
-  const [showQuotaLookupModal, setShowQuotaLookupModal] = useState(false);
-  const [showSalaryCalculatorModal, setShowSalaryCalculatorModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { user, refetchUser, signOut } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -57,24 +52,20 @@ export default function CaiDat() {
         <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-purple-500/10 via-primary/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-8 flex flex-col gap-6 relative z-10 flex-1"
+          className="px-5 pt-5 flex flex-col gap-6 relative z-10 flex-1"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
-          {/* Header */}
-          <motion.header variants={pageItemVariants} className="flex justify-between items-center mb-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Cài đặt</h1>
-            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border border-border/50 text-muted-foreground shadow-sm">
-              <SettingsIcon className="w-5 h-5" />
-            </div>
-          </motion.header>
-
           <div className="flex flex-col gap-6">
             
             {/* User Profile */}
             {user && (
-              <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl p-4 flex items-center gap-4 shadow-lg relative overflow-hidden">
+              <motion.button 
+                variants={pageItemVariants} 
+                onClick={() => setShowProfileModal(true)}
+                className="w-full text-left bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl p-4 flex items-center gap-4 shadow-lg relative overflow-hidden hover:bg-card/80 transition-colors"
+              >
                 <div className="absolute top-0 right-0 p-16 bg-primary/10 rounded-full blur-[40px] -mr-8 -mt-8 pointer-events-none" />
                 
                 <div className="relative">
@@ -109,7 +100,10 @@ export default function CaiDat() {
                           Free
                         </div>
                         <button 
-                          onClick={() => setShowUpgradeModal(true)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowUpgradeModal(true);
+                          }}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-purple-600 transition-colors shadow-[0_0_10px_rgba(168,85,247,0.4)]"
                         >
                           <span className="text-[10px] leading-none">&#128142;</span>
@@ -119,7 +113,7 @@ export default function CaiDat() {
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </motion.button>
             )}
 
             {/* Section 1 */}
@@ -127,7 +121,7 @@ export default function CaiDat() {
               <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Dữ liệu</h3>
               <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
                 <button 
-                  onClick={() => setShowCongDoanModal(true)}
+                  onClick={() => setLocation('/cong-cu/cong-doan')}
                   className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none group"
                 >
                   <div className="flex items-center gap-3.5">
@@ -141,61 +135,7 @@ export default function CaiDat() {
               </div>
             </motion.div>
 
-            {/* Section 2 */}
-            <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1 flex items-center gap-1.5">
-                Công cụ
-                <span className="text-[10px] leading-none opacity-80">&#128142;</span>
-              </h3>
-              <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
-                <button 
-                  onClick={() => user?.plan === 'pro' ? setShowEstimationModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none border-b border-white/5 group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
-                      <CalendarDays className="w-4.5 h-4.5" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
-                      Tính toán Dự tính
-                    </span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
-                </button>
-                
-                <button 
-                  onClick={() => user?.plan === 'pro' ? setShowQuotaLookupModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none border-b border-white/5 group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20 transition-colors">
-                      <Search className="w-4.5 h-4.5" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
-                      Tra cứu định mức
-                    </span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
-                </button>
-                
-                <button 
-                  onClick={() => user?.plan === 'pro' ? setShowSalaryCalculatorModal(true) : toast.error("Chức năng chỉ có ở tài khoản Pro", { icon: "💎" })}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20 group-hover:bg-purple-500/20 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-banknote"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
-                    </div>
-                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">
-                      Tính lương
-                    </span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
-                </button>
-              </div>
-            </motion.div>
-
-            {/* Section 3 */}
+            {/* Section 3 (was Section 3, now Section 2) */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
               <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Thông tin</h3>
               <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
@@ -289,16 +229,8 @@ export default function CaiDat() {
         <BottomNav />
       </div>
 
-      <CongDoanModal 
-        open={showCongDoanModal} 
-        onOpenChange={setShowCongDoanModal} 
-        manageMode={true} 
-      />
-
-      <EstimationModal open={showEstimationModal} onOpenChange={setShowEstimationModal} />
-      <QuotaLookupModal open={showQuotaLookupModal} onOpenChange={setShowQuotaLookupModal} />
-      <SalaryCalculatorModal open={showSalaryCalculatorModal} onOpenChange={setShowSalaryCalculatorModal} />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+      <ProfileModal open={showProfileModal} onOpenChange={setShowProfileModal} />
     </div>
   );
 }

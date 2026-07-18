@@ -1,4 +1,5 @@
 import { format, addDays, eachDayOfInterval, getDay } from 'date-fns';
+import { CYCLE_START_DAY, CYCLE_END_DAY, getWorkMinutesForDay, FULL_WORKDAY_MINUTES } from './work-rules.js';
 
 /**
  * Các hàm hỗ trợ lấy thời gian theo múi giờ Việt Nam (Asia/Ho_Chi_Minh).
@@ -58,8 +59,8 @@ export function getCycleRange(cycleMonth: Date): { start: Date, end: Date } {
   const month = cycleMonth.getMonth();
   const year = cycleMonth.getFullYear();
 
-  const start = new Date(year, month - 1, 21);
-  const end = new Date(year, month, 20, 23, 59, 59, 999);
+  const start = new Date(year, month - 1, CYCLE_START_DAY);
+  const end = new Date(year, month, CYCLE_END_DAY, 23, 59, 59, 999);
 
   return { start, end };
 }
@@ -90,16 +91,30 @@ export function calculateRequiredCongForCycle(
   let required = 0;
   for (const date of days) {
     const dayOfWeek = getDay(date);
-    
-    let standardMins = 0;
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      standardMins = 480;
-    } else if (dayOfWeek === 6) {
-      standardMins = 240;
-    }
-    
-    required += standardMins / 480;
+    const standardMins = getWorkMinutesForDay(dayOfWeek);
+    required += standardMins / FULL_WORKDAY_MINUTES;
   }
   
   return required;
+}
+
+/**
+ * Trả về chuỗi ngày bắt đầu/kết thúc chu kỳ ký công dạng 'yyyy-MM-dd'.
+ * Dùng để query DB mà không cần tạo Date object rồi format lại.
+ * @param year  Năm của tháng công (VD: 2026)
+ * @param month Tháng công 1-indexed (VD: 7 cho tháng 7)
+ */
+export function getCycleStringFromYearMonth(
+  year: number,
+  month: number
+): { cycleStartStr: string; cycleEndStr: string } {
+  let prevMonth = month - 1;
+  let prevYear = year;
+  if (prevMonth < 1) {
+    prevMonth = 12;
+    prevYear--;
+  }
+  const cycleStartStr = `${prevYear}-${prevMonth.toString().padStart(2, '0')}-${CYCLE_START_DAY}`;
+  const cycleEndStr   = `${year}-${month.toString().padStart(2, '0')}-${CYCLE_END_DAY}`;
+  return { cycleStartStr, cycleEndStr };
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, TrendingUp, TrendingDown, CheckCircle2, Calendar, Palmtree, Zap, Star } from 'lucide-react';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
+import { getWorkMinutesForDay, minutesToCong } from '@/lib/work-rules';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -42,9 +43,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
         if (log) {
           const tongPhutThucTe = (log.thoi_gian_thuc_hien || 0) + (log.thoi_gian_ho_tro || 0);
           const dayOfWeek = getDay(d);
-          let phutHanhChinhQuyDinh = 0;
-          if (dayOfWeek >= 1 && dayOfWeek <= 5) phutHanhChinhQuyDinh = 480;
-          else if (dayOfWeek === 6) phutHanhChinhQuyDinh = 240;
+          let phutHanhChinhQuyDinh = getWorkMinutesForDay(dayOfWeek);
 
           if (tongPhutThucTe > phutHanhChinhQuyDinh) {
             tongPhutTangCa += (tongPhutThucTe - phutHanhChinhQuyDinh);
@@ -54,7 +53,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
     }
   }
 
-  const congNhat = (stats?.month_total_time || 0) / 480;
+  const congNhat = minutesToCong(stats?.month_total_time || 0);
   // const ngayCongConLai = congChuan - congHanhChinh;
   // const congMucTieuCuoiThang = congNhat + ngayCongConLai; // Chỉ mang tính tham khảo
 
@@ -64,7 +63,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
 
   const gioTangCa = Math.floor(tongPhutTangCa / 60);
   const phutTangCaLe = tongPhutTangCa % 60;
-  
+
   const progressPercent = congNhat > 0 ? Math.min((congSp / congNhat) * 100, 100) : 0;
 
   return (
@@ -72,7 +71,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
       {/* Thẻ Hero: Tiến độ chính (Premium Glass Card) */}
       <div className="relative overflow-hidden rounded-3xl p-5 border border-white/10 shadow-2xl bg-gradient-to-br from-zinc-900 to-zinc-950">
         <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
-        
+
         <div className="flex justify-between items-start mb-6 relative z-10">
           <div>
             <p className="text-zinc-400 font-medium text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
@@ -98,11 +97,11 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
         {/* Thanh tiến độ siêu mượt */}
         <div className="space-y-2 relative z-10">
           <div className="flex justify-between text-xs font-semibold">
-            <span className="text-zinc-400">Tiến độ so với công nhật</span>
-            <span className="text-white">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} mục tiêu</span>
+            <span className="text-zinc-400">Tiến độ so với mục tiêu</span>
+            <span className="text-white">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} công</span>
           </div>
           <div className="h-3 w-full bg-zinc-800 rounded-full overflow-hidden shadow-inner relative">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 1, ease: "easeOut" }}

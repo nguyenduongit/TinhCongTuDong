@@ -52,7 +52,7 @@ export function UpgradeModal({ open, onOpenChange }: { open: boolean, onOpenChan
             <div className="flex flex-col gap-3 mb-8">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30">
                 <Check className="w-5 h-5 text-purple-500" />
-                <span className="text-sm font-medium">Tính toán dự tính sản lượng</span>
+                <span className="text-sm font-medium">Dự báo sản lượng</span>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30">
                 <Check className="w-5 h-5 text-purple-500" />

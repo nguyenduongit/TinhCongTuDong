@@ -1,33 +1,28 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Bell, CalendarX, Check, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { CalendarX } from 'lucide-react';
+import { useState } from 'react';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-import { useGetSanLuongDashboard, useDeleteSanLuong, useConfirmNgayNghi } from '@/api';
-import { useQueryClient } from '@tanstack/react-query';
-import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
-import type { SanLuong } from '@/api';
+import { useGetSanLuongDashboard, useConfirmNgayNghi } from '@/api';
 import { getNowVNDateLocal, getCycleRange, getCycleMonthFromDate } from '@/lib/date-utils';
 
 import { BottomNav } from '@/components/BottomNav';
-import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { HomeProgressCard } from '@/components/ui-parts/HomeProgressCard';
+import { HomeToolsGrid } from '@/components/ui-parts/HomeToolsGrid';
 import { MissingDaysModal } from '@/components/MissingDaysModal';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/animations';
+import { SanLuongDrawer } from '@/components/SanLuongDrawer';
+import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function Home() {
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [missingModalInitialDate, setMissingModalInitialDate] = useState<string | undefined>();
   const [isMissingModalOpen, setIsMissingModalOpen] = useState(false);
+  const [missingModalInitialDate, setMissingModalInitialDate] = useState<string | undefined>();
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
-  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data: dashboard, isLoading: isLoadingDashboard } = useGetSanLuongDashboard();
-  const todayEntries = dashboard?.todayEntries || [];
   const monthEntries = dashboard?.monthEntries || [];
-  const stats = dashboard?.stats;
-  const isLoadingStats = isLoadingDashboard;
 
   const today = getNowVNDateLocal();
   const { start: cycleStart, end: cycleEnd } = getCycleRange(getCycleMonthFromDate(today));
@@ -50,14 +45,6 @@ export default function Home() {
     }
   }
   missingDays = missingDays.sort((a, b) => b.getTime() - a.getTime());
-
-  const deleteMutation = useDeleteSanLuong();
-
-  const handleDelete = async (id: number) => {
-    await deleteMutation.mutateAsync({ id });
-    queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
-  };
 
   const currentDateStr = format(getNowVNDateLocal(), 'EEEE, dd MMMM', { locale: vi });
 
@@ -102,14 +89,26 @@ export default function Home() {
                 {getGreeting()}!
               </h1>
             </div>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-primary p-[2px] shadow-lg">
-              <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
-                <span className="text-primary font-black text-sm">NV</span>
-              </div>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-primary p-[2px] shadow-lg flex-shrink-0">
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-background rounded-full flex items-center justify-center">
+                  <span className="text-primary font-black text-sm">
+                    {user?.name
+                      ? user.name.trim().split(/\s+/).slice(-2).map(w => w[0].toUpperCase()).join('')
+                      : '?'}
+                  </span>
+                </div>
+              )}
             </div>
           </motion.header>
 
-          {/* Banner Thông Báo Thiếu Ngày (Tích hợp luồng chính) */}
+          {/* Banner Thông Báo Thiếu Ngày */}
           <AnimatePresence>
             {missingDays.length > 0 && (
               <motion.div
@@ -118,7 +117,7 @@ export default function Home() {
                 exit={{ opacity: 0, y: -20, height: 0 }}
                 className="overflow-hidden"
               >
-                <button 
+                <button
                   onClick={() => setIsMissingModalOpen(true)}
                   className="w-full bg-gradient-to-r from-rose-500/10 to-amber-500/10 border border-rose-500/20 text-rose-500 px-4 py-3 rounded-2xl font-bold text-sm shadow-sm backdrop-blur-md flex items-center justify-between transition-transform active:scale-[0.98]"
                 >
@@ -137,55 +136,21 @@ export default function Home() {
             <motion.div variants={pageItemVariants}>
               <HomeProgressCard
                 dashboardData={dashboard}
-                isLoading={isLoadingStats}
+                isLoading={isLoadingDashboard}
               />
             </motion.div>
+
+            {/* Quick Tools */}
+            <HomeToolsGrid isPro={user?.plan === 'pro'} />
           </div>
         </motion.div>
-
-        {/* Nút FAB Chấm Công siêu nổi bật lơ lửng ngay trên BottomNav */}
-        <AnimatePresence>
-          <motion.div
-            variants={fabVariants}
-            initial="hidden"
-            animate="show"
-            exit={{ opacity: 0, scale: 0, transition: { duration: 0.2 } }}
-            className="fixed bottom-[90px] w-full max-w-[430px] z-20 flex justify-center pointer-events-none"
-          >
-            <TooltipProvider>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <div className="pointer-events-auto">
-                    <button
-                      onClick={() => setIsAddOpen(true)}
-                      className="relative group flex items-center justify-center outline-none transition-transform hover:scale-105 active:scale-95"
-                    >
-                      {/* Vòng sáng nhấp nháy ở dưới */}
-                      <div className="absolute inset-0 bg-primary/50 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300 animate-pulse" />
-                      
-                      {/* Nút vật lý */}
-                      <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-b from-amber-400 to-amber-600 flex items-center justify-center shadow-[0_10px_40px_rgba(245,158,11,0.5)] border-4 border-background relative overflow-hidden">
-                        <div className="absolute inset-0 bg-white/20 hover:bg-transparent transition-colors" />
-                        <Plus className="w-10 h-10 text-white" strokeWidth={2.5} />
-                      </div>
-                    </button>
-                  </div>
-                </TooltipTrigger>
-                {todayEntries.length > 0 && (
-                  <TooltipContent side="top" sideOffset={10}>
-                    <p>Sửa sản lượng hôm nay</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          </motion.div>
-        </AnimatePresence>
 
         <BottomNav />
       </div>
 
+      {/* Modal báo ngày thiếu — vẫn cần SanLuongDrawer để bổ sung từ modal */}
       <SanLuongDrawer
-        entry={(!missingModalInitialDate && todayEntries.length > 0) ? todayEntries[0] : null}
+        entry={null}
         open={isAddOpen}
         onOpenChange={(open) => {
           setIsAddOpen(open);
@@ -194,7 +159,7 @@ export default function Home() {
         initialDate={missingModalInitialDate}
       />
 
-      <MissingDaysModal 
+      <MissingDaysModal
         open={isMissingModalOpen}
         onOpenChange={setIsMissingModalOpen}
         missingDays={missingDays}

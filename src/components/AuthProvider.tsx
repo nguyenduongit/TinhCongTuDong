@@ -9,6 +9,7 @@ type User = {
   avatar?: string | null;
   plan: 'free' | 'pro';
   proExpiryDate?: string | null;
+  isAdmin: boolean;
 };
 
 type AuthContextType = {
@@ -37,8 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error && error.message !== 'Auth session missing!') throw error;
       if (user) {
-        const plan = user.user_metadata?.plan || 'free';
-        const proExpiryDate = user.user_metadata?.pro_expires_at || null;
+        const sub = user.user_metadata?.subscription || {};
+        const plan = sub.plan || user.user_metadata?.plan || 'free';
+        const proExpiryDate = sub.expires_at || user.user_metadata?.pro_expires_at || null;
         let finalPlan = plan;
         if (plan === 'pro' && proExpiryDate) {
           if (new Date(proExpiryDate) < new Date()) {
@@ -53,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: user.user_metadata?.avatar_url,
           plan: finalPlan,
           proExpiryDate: proExpiryDate,
+          isAdmin: user.user_metadata?.isAdmin === true || user.user_metadata?.isAdmin === 'true' || user.user_metadata?.isadmin === true || user.user_metadata?.isadmin === 'true',
         });
       } else {
         setUser(null);
@@ -70,8 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const plan = session.user.user_metadata?.plan || 'free';
-        const proExpiryDate = session.user.user_metadata?.pro_expires_at || null;
+        const sub = session.user.user_metadata?.subscription || {};
+        const plan = sub.plan || session.user.user_metadata?.plan || 'free';
+        const proExpiryDate = sub.expires_at || session.user.user_metadata?.pro_expires_at || null;
         let finalPlan = plan;
         if (plan === 'pro' && proExpiryDate) {
           if (new Date(proExpiryDate) < new Date()) {
@@ -86,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: session.user.user_metadata?.avatar_url,
           plan: finalPlan,
           proExpiryDate: proExpiryDate,
+          isAdmin: session.user.user_metadata?.isAdmin === true || session.user.user_metadata?.isAdmin === 'true' || session.user.user_metadata?.isadmin === true || session.user.user_metadata?.isadmin === 'true',
         });
         import('@/lib/onesignal').then(({ loginOneSignal }) => {
           loginOneSignal(session.user.id);

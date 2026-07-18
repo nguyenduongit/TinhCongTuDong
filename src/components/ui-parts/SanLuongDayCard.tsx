@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import type { SanLuong } from '@/api';
+import { minutesToCong } from '@/lib/work-rules';
 
 export interface SanLuongDayCardProps {
   dateStr: string;
@@ -32,7 +33,7 @@ export function SanLuongDayCard({
   readOnly
 }: SanLuongDayCardProps) {
   const dayCongSp = items.reduce((s, e) => s + ((e.thong_ke_ngay as any)?.tong_cong_sp || 0), 0);
-  const dayCongHoTro = items.reduce((s, e) => s + ((e as any).thoi_gian_ho_tro || 0) / 480, 0);
+  const dayCongHoTro = items.reduce((s, e) => s + minutesToCong((e as any).thoi_gian_ho_tro || 0), 0);
   const dayTotalCong = dayCongSp + dayCongHoTro;
   
   const dayTime = items.reduce((s, e) => s + (e.thoi_gian_thuc_hien ?? 0) + (e.thoi_gian_ho_tro ?? 0), 0);

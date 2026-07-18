@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { minutesToCong } from '@/lib/work-rules';
 
 export interface WeekGroup {
   weekNum: number;
@@ -20,53 +21,50 @@ export interface CongTuanCardProps {
 }
 
 export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardProps) {
-  const totalCongDatDuoc = week.totalCongSp + week.totalHoTroPhut / 480;
-  const congMucTieu = week.totalTime / 480;
+  const totalCongDatDuoc = week.totalCongSp + minutesToCong(week.totalHoTroPhut);
+  const congMucTieu = minutesToCong(week.totalTime);
   const hieuSoCong = totalCongDatDuoc - congMucTieu;
 
   return (
     <div className={`bg-card/80 backdrop-blur-md border border-white/5 rounded-3xl flex flex-col shadow-lg overflow-hidden relative ${readOnly ? 'pointer-events-none' : ''}`}>
-      {/* Header - Glassmorphism style */}
-      <div className={`flex flex-col gap-2 px-5 py-4 border-b border-white/5 ${week.isCurrentWeek ? 'bg-gradient-to-r from-amber-500/10 to-transparent' : 'bg-white/5'}`}>
+      {/* Header - compact single row */}
+      <div className={`flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 ${week.isCurrentWeek ? 'bg-gradient-to-r from-amber-500/10 to-transparent' : 'bg-white/5'}`}>
         
-        {/* Row 1: Tiêu đề tuần và Khoảng thời gian */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              {week.isCurrentWeek && <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />}
-              <h4 className={`text-sm font-bold capitalize ${week.isCurrentWeek ? 'text-amber-400' : 'text-foreground/90'}`}>
-                {week.isCurrentWeek ? 'Tuần này' : week.isLastWeek ? 'Tuần trước' : `Tuần ${week.weekNum}`}
-              </h4>
-            </div>
-            <span className={`text-[11px] font-medium ${week.isCurrentWeek ? 'ml-4' : ''} text-zinc-400`}>
-              {format(week.startDate, 'dd/MM')} - {format(week.endDate, 'dd/MM')}
+        {/* Left: tên tuần + khoảng ngày */}
+        <div className="flex items-center gap-2 min-w-0">
+          {week.isCurrentWeek && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0 shadow-[0_0_6px_rgba(245,158,11,0.7)]" />}
+          <div className="min-w-0">
+            <span className={`text-sm font-bold ${week.isCurrentWeek ? 'text-amber-400' : 'text-foreground/90'}`}>
+              {week.isCurrentWeek ? 'Tuần này' : week.isLastWeek ? 'Tuần trước' : `Tuần ${week.weekNum}`}
             </span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-baseline gap-1 bg-gradient-to-r from-amber-500/20 to-primary/20 px-3 py-1 rounded-full border border-amber-500/20 shadow-inner">
-              <span className="text-amber-400 font-black text-sm leading-none">
-                {totalCongDatDuoc.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
-              </span>
-              <span className="text-[10px] text-amber-500/80 font-bold uppercase tracking-wider">công</span>
-            </div>
+            <span className="text-zinc-500 font-medium text-[11px] ml-2">
+              {format(week.startDate, 'dd/MM')} – {format(week.endDate, 'dd/MM')}
+            </span>
           </div>
         </div>
 
-        {/* Row 2: Status Pill */}
-        {(hieuSoCong > 0 || hieuSoCong < 0) && (
-          <div className="flex items-center mt-1">
-            {hieuSoCong > 0 ? (
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 tracking-wide uppercase">
-                Dư {hieuSoCong.toLocaleString('vi-VN', { maximumFractionDigits: 3 })} công
+        {/* Right: tổng công + delta */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Delta pill */}
+          {hieuSoCong !== 0 && (
+            hieuSoCong > 0 ? (
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                +{hieuSoCong.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
               </span>
             ) : (
-              <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 tracking-wide uppercase">
-                Thiếu {Math.abs(hieuSoCong).toLocaleString('vi-VN', { maximumFractionDigits: 3 })} công
+              <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                -{Math.abs(hieuSoCong).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
               </span>
-            )}
+            )
+          )}
+          {/* Tổng công */}
+          <div className="flex items-baseline gap-1 bg-amber-500/15 px-2.5 py-1 rounded-full border border-amber-500/20">
+            <span className="text-amber-400 font-black text-sm leading-none">
+              {totalCongDatDuoc.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
+            </span>
+            <span className="text-[9px] text-amber-500/70 font-bold uppercase">công</span>
           </div>
-        )}
+        </div>
       </div>
       
       {/* Content - Danh sách chi tiết */}
@@ -114,7 +112,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
               <div className="w-px h-6 bg-white/10 rounded-full"></div>
               <div className="flex flex-col items-end min-w-[3.5rem]">
                 <span className="text-[10px] text-zinc-500 font-medium mb-0.5">Công HT</span>
-                <span className="text-purple-400 font-black text-sm tracking-tight">{(week.totalHoTroPhut / 480).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}</span>
+                <span className="text-purple-400 font-black text-sm tracking-tight">{minutesToCong(week.totalHoTroPhut).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}</span>
               </div>
             </div>
           </div>

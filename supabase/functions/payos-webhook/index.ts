@@ -67,8 +67,12 @@ serve(async (req) => {
           await supabaseClient.auth.admin.updateUserById(order.user_id, {
             user_metadata: {
               ...currentMetadata,
-              plan: 'pro',
-              pro_expires_at: newExpiry
+              subscription: {
+                plan: 'pro',
+                expires_at: newExpiry
+              },
+              plan: null,
+              pro_expires_at: null
             }
           });
 
