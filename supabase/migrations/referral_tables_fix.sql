@@ -162,7 +162,7 @@ BEGIN
     r.tracking_end_date,
     r.created_at,
     r.completed_at,
-    (SELECT COUNT(DISTINCT sl.ngay)::int FROM san_luong sl WHERE sl.user_id = r.referee_id AND sl.ngay >= r.tracking_start_date::text AND sl.ngay <= r.tracking_end_date::text) AS days_with_entry,
+    (SELECT COUNT(DISTINCT sl.ngay)::int FROM san_luong sl WHERE sl.user_id = r.referee_id AND sl.ngay >= r.tracking_start_date AND sl.ngay <= r.tracking_end_date) AS days_with_entry,
     (SELECT COUNT(*)::int FROM generate_series(r.tracking_start_date, LEAST(r.tracking_end_date, CURRENT_DATE), '1 day'::interval) d WHERE EXTRACT(dow FROM d) BETWEEN 1 AND 6) AS total_workdays
   FROM referrals r
   JOIN auth.users u1 ON u1.id = r.referrer_id
@@ -197,10 +197,10 @@ BEGIN
     d.d::date AS ngay,
     EXTRACT(dow FROM d.d)::int AS day_of_week,
     (EXTRACT(dow FROM d.d) BETWEEN 1 AND 6) AS is_workday,
-    EXISTS(SELECT 1 FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date::text) AS has_entry,
-    COALESCE((SELECT SUM(COALESCE((sl.thong_ke_ngay->>'tong_cong_sp')::numeric, 0) + COALESCE((sl.thong_ke_ngay->>'tong_cong_ho_tro')::numeric, 0)) FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date::text), 0) AS total_cong_sp,
-    COALESCE((SELECT SUM(sl.thoi_gian_thuc_hien + COALESCE(sl.thoi_gian_ho_tro, 0))::int FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date::text), 0) AS total_time,
-    COALESCE((SELECT jsonb_agg(jsonb_build_object('id', sl.id, 'chi_tiet', sl.chi_tiet, 'thong_ke_ngay', sl.thong_ke_ngay, 'thoi_gian_thuc_hien', sl.thoi_gian_thuc_hien, 'thoi_gian_ho_tro', sl.thoi_gian_ho_tro)) FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date::text), '[]'::jsonb) AS entries
+    EXISTS(SELECT 1 FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date) AS has_entry,
+    COALESCE((SELECT SUM(COALESCE((sl.thong_ke_ngay->>'tong_cong_sp')::numeric, 0) + COALESCE((sl.thong_ke_ngay->>'tong_cong_ho_tro')::numeric, 0)) FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date), 0) AS total_cong_sp,
+    COALESCE((SELECT SUM(sl.thoi_gian_thuc_hien + COALESCE(sl.thoi_gian_ho_tro, 0))::int FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date), 0) AS total_time,
+    COALESCE((SELECT jsonb_agg(jsonb_build_object('id', sl.id, 'chi_tiet', sl.chi_tiet, 'thong_ke_ngay', sl.thong_ke_ngay, 'thoi_gian_thuc_hien', sl.thoi_gian_thuc_hien, 'thoi_gian_ho_tro', sl.thoi_gian_ho_tro)) FROM san_luong sl WHERE sl.user_id = p_user_id AND sl.ngay = d.d::date), '[]'::jsonb) AS entries
   FROM generate_series(p_start_date, p_end_date, '1 day'::interval) d(d)
   ORDER BY d.d;
 END;
@@ -228,7 +228,7 @@ BEGIN
     SELECT COUNT(*)::int INTO v_missed_days
     FROM generate_series(v_ref.tracking_start_date, v_ref.tracking_end_date, '1 day'::interval) d
     WHERE EXTRACT(dow FROM d) BETWEEN 1 AND 6
-      AND NOT EXISTS (SELECT 1 FROM san_luong sl WHERE sl.user_id = v_ref.referee_id AND sl.ngay = d::date::text);
+      AND NOT EXISTS (SELECT 1 FROM san_luong sl WHERE sl.user_id = v_ref.referee_id AND sl.ngay = d::date);
 
     IF v_missed_days = 0 THEN
       SELECT COALESCE((raw_user_meta_data->'subscription'->>'expires_at')::timestamptz, (raw_user_meta_data->>'pro_expires_at')::timestamptz, now())
