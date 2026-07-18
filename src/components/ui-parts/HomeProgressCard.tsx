@@ -98,15 +98,10 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
 
         {/* Thanh tiến độ siêu mượt */}
         <div className="space-y-2 relative z-10">
-          <div className="flex justify-between text-xs font-semibold px-1 mb-6">
-            <span className="text-zinc-400">Tiến độ tháng</span>
-            <span className="text-white">{isLoading ? '-' : congChuan} công</span>
-          </div>
-          
-          <div className="relative">
+          <div className="relative pt-6">
             {/* Target indicator badge */}
             <div 
-              className="absolute -top-7 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 z-20"
+              className="absolute top-0 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 z-20"
               style={{ left: `${targetPercent}%` }}
             >
               <div className="bg-primary/90 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-black text-white whitespace-nowrap shadow-lg border border-primary/20">
@@ -115,15 +110,12 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
               <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-primary/90" />
             </div>
 
-            <div className="h-3 w-full bg-zinc-800/50 rounded-full overflow-hidden shadow-inner relative border border-white/5">
+            <div className="h-3 w-full bg-zinc-800/80 rounded-full overflow-hidden shadow-inner relative mt-1">
               {/* Leave bar (Right aligned) */}
               {ngayNghi > 0 && (
                 <div 
-                  className="absolute right-0 top-0 bottom-0 z-0 opacity-80"
-                  style={{ 
-                    width: `${leavePercent}%`,
-                    background: 'repeating-linear-gradient(45deg, #f43f5e, #f43f5e 4px, #be123c 4px, #be123c 8px)'
-                  }}
+                  className="absolute right-0 top-0 bottom-0 z-0 bg-rose-500/60"
+                  style={{ width: `${leavePercent}%` }}
                 />
               )}
 
@@ -140,6 +132,10 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
                 <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
               </motion.div>
             </div>
+          </div>
+          <div className="flex justify-between text-[11px] font-semibold px-1">
+            <span className="text-zinc-500 uppercase tracking-widest">Tiến độ tháng</span>
+            <span className="text-zinc-400">{isLoading ? '-' : congChuan} công chuẩn</span>
           </div>
         </div>
       </div>
