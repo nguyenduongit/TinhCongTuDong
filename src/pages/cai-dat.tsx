@@ -101,7 +101,17 @@ export default function CaiDat() {
                 </div>
                 
                 <div className="flex-col flex flex-1 overflow-hidden relative z-10">
-                  <h3 className="font-bold text-foreground text-lg truncate">{user.name}</h3>
+                  <input 
+                    type="text"
+                    defaultValue={user.name || ''}
+                    onBlur={(e) => {
+                      if (e.target.value && e.target.value !== user.name) {
+                        handleUpdateName(e.target.value);
+                      }
+                    }}
+                    placeholder="Tên của bạn..."
+                    className="font-bold text-foreground text-lg w-full bg-transparent border-none outline-none p-0 focus:ring-0 focus:text-primary transition-colors truncate"
+                  />
                   <p className="text-muted-foreground text-[13px] truncate mb-2">{user.email}</p>
                   <div className="flex items-center gap-2">
                     {user.plan === 'pro' ? (
@@ -143,19 +153,6 @@ export default function CaiDat() {
               <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Hồ sơ cá nhân</h3>
               <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm text-sm">
                 
-                {/* Tên hiển thị */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-white/5 gap-2">
-                  <span className="font-semibold text-foreground/90">Tên hiển thị</span>
-                  <input 
-                    type="text" 
-                    defaultValue={user.name || ''}
-                    onBlur={(e) => {
-                      if (e.target.value !== user.name) handleUpdateName(e.target.value);
-                    }}
-                    className="bg-transparent border-none outline-none text-muted-foreground text-right focus:text-foreground w-full sm:w-1/2 p-0"
-                    placeholder="Nhập tên..."
-                  />
-                </div>
 
                 {/* Giới tính */}
                 <div className="flex items-center justify-between p-4 border-b border-white/5">
