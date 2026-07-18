@@ -5,7 +5,7 @@ import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, ge
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal, Clock, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { useListSanLuong, useDeleteSanLuong, useListCongDoan } from '@/api';
+import { useListSanLuong, useDeleteSanLuong, useListCongDoan, useConfirmNgayNghi } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey, getListCongDoanQueryKey } from '@/api';
 import type { SanLuong } from '@/api';
@@ -15,18 +15,28 @@ import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { SanLuongDayCard } from '@/components/ui-parts/SanLuongDayCard';
 import { pageContainerVariants, pageItemVariants, fabVariants } from '@/lib/animations';
 
-// Nhóm mảng entries theo ngày
-function groupByDate(entries: SanLuong[]): { date: string; items: SanLuong[] }[] {
+// Generate mảng entries theo ngày, bao gồm cả những ngày trống (chưa nhập)
+function generateDays(entries: SanLuong[], startStr: string, endStr: string): { date: string; items: SanLuong[] }[] {
   const map = new Map<string, SanLuong[]>();
   for (const entry of entries) {
-    const key = entry.ngay;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(entry);
+    if (!map.has(entry.ngay)) map.set(entry.ngay, []);
+    map.get(entry.ngay)!.push(entry);
   }
-  // Sắp xếp ngày giảm dần (ngày mới nhất lên trên)
-  return Array.from(map.entries())
-    .sort(([a], [b]) => b.localeCompare(a))
-    .map(([date, items]) => ({ date, items }));
+
+  const todayStr = getTodayVNString();
+  const end = todayStr < endStr ? todayStr : endStr;
+
+  const result: { date: string; items: SanLuong[] }[] = [];
+  let current = parseISO(startStr);
+  const endD = parseISO(end);
+
+  while (current <= endD) {
+    const dStr = format(current, 'yyyy-MM-dd');
+    result.push({ date: dStr, items: map.get(dStr) || [] });
+    current = new Date(current.setDate(current.getDate() + 1));
+  }
+
+  return result.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 function formatDateHeader(dateStr: string): string {
@@ -46,6 +56,8 @@ export default function SanLuong() {
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
   const [editEntry, setEditEntry] = useState<SanLuong | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [initialAddDate, setInitialAddDate] = useState<string | undefined>(undefined);
+  const [savingLeaveDates, setSavingLeaveDates] = useState<Record<string, boolean>>({});
 
   const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(getNowVNDateLocal()).getTime();
   const monthStr = format(currentMonth, 'yyyy-MM');
@@ -53,10 +65,10 @@ export default function SanLuong() {
   const queryClient = useQueryClient();
   const { startStr, endStr } = getCycleRangeStrings(currentMonth);
 
-  // Lấy dữ liệu theo tháng
   const { data: entries = [], isLoading } = useListSanLuong({ startDate: startStr, endDate: endStr });
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
   const deleteMutation = useDeleteSanLuong();
+  const confirmNghiMutation = useConfirmNgayNghi();
 
   const congDoanMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -69,7 +81,7 @@ export default function SanLuong() {
   }, [congDoanMap]);
 
   const monthEntries = entries; // Data is already filtered by backend
-  const grouped = groupByDate(monthEntries);
+  const grouped = generateDays(monthEntries, startStr, endStr);
 
   // Tính tổng tháng
   const totalCongMonth = monthEntries.reduce((sum, e) => sum + ((e.thong_ke_ngay as any)?.tong_cong_sp || 0), 0);
@@ -81,6 +93,17 @@ export default function SanLuong() {
     await deleteMutation.mutateAsync({ id });
     queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
     queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
+  };
+
+  const handleConfirmNghi = async (dateStr: string, loaiNghi: string) => {
+    setSavingLeaveDates(prev => ({ ...prev, [dateStr]: true }));
+    try {
+      await confirmNghiMutation.mutateAsync({ ngay: dateStr, loai_nghi: loaiNghi });
+      queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
+    } finally {
+      setSavingLeaveDates(prev => ({ ...prev, [dateStr]: false }));
+    }
   };
 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
@@ -160,6 +183,12 @@ export default function SanLuong() {
                           }}
                           onEdit={(entry) => setEditEntry(entry)}
                           onDelete={(id) => handleDelete(id)}
+                          onAdd={(dateStr) => {
+                            setInitialAddDate(dateStr);
+                            setIsAddOpen(true);
+                          }}
+                          onLeave={handleConfirmNghi}
+                          isSavingLeave={savingLeaveDates[date]}
                         />
                       </div>
                   ))}
@@ -171,30 +200,19 @@ export default function SanLuong() {
 
         <BottomNav />
 
-        {/* FAB Chấm Công */}
-        <motion.div
-          variants={fabVariants}
-          initial="hidden"
-          animate="show"
-          className="fixed bottom-[90px] w-full max-w-[430px] z-20 flex justify-center pointer-events-none"
-        >
-          <button
-            onClick={() => setIsAddOpen(true)}
-            className="pointer-events-auto relative group flex items-center justify-center outline-none transition-transform hover:scale-105 active:scale-95"
-          >
-            {/* Vòng sáng nhấp nháy */}
-            <div className="absolute inset-0 bg-primary/50 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300 animate-pulse" />
-            {/* Nút vật lý */}
-            <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-b from-amber-400 to-amber-600 flex items-center justify-center shadow-[0_10px_40px_rgba(245,158,11,0.5)] border-4 border-background relative overflow-hidden">
-              <div className="absolute inset-0 bg-white/20 hover:bg-transparent transition-colors" />
-              <Plus className="w-10 h-10 text-white" strokeWidth={2.5} />
-            </div>
-          </button>
-        </motion.div>
+        {/* FAB Removed */}
       </div>
 
       <SanLuongDrawer entry={editEntry} open={!!editEntry} onOpenChange={(open) => !open && setEditEntry(null)} />
-      <SanLuongDrawer entry={null} open={isAddOpen} onOpenChange={setIsAddOpen} />
+      <SanLuongDrawer 
+        entry={null} 
+        open={isAddOpen} 
+        onOpenChange={(open) => {
+          setIsAddOpen(open);
+          if (!open) setTimeout(() => setInitialAddDate(undefined), 300);
+        }} 
+        initialDate={initialAddDate}
+      />
     </div>
   );
 }
