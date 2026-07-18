@@ -1,10 +1,16 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.3"
+import webpush from "npm:web-push@3.6.7"
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-// Reusing the same OneSignal config from your existing daily reminder
-const ONESIGNAL_APP_ID = "c93d0d06-6e89-4bb3-b7fa-0d7f78e3e6f4";
-const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY")!;
+const VAPID_PUBLIC = "BN2br3pB7RDQM3rO4BKjiQYlRXBvf-Qnhdwin5rOoeKK2l9daNIilN_VPeJoHH1zpt8vwvp0vwbVgw0WqGY68R8";
+const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE") || "D7kXf1BnadTVq4lNZPNBFO1Z2V4DjbUO_CKCwoDIVjE";
+
+webpush.setVapidDetails(
+  'mailto:your-email@example.com',
+  VAPID_PUBLIC,
+  VAPID_PRIVATE
+);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -36,35 +42,47 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ message: "Không tìm thấy Admin nào để thông báo." }), { headers: { "Content-Type": "application/json" } });
     }
 
-    // Prepare OneSignal Notification
-    const payload = {
-      app_id: ONESIGNAL_APP_ID,
-      include_aliases: {
-        external_id: adminIds
-      },
-      target_channel: "push",
-      headings: { "en": "User mới đăng ký!", "vi": "Tài khoản mới đăng ký!" },
-      contents: { 
-        "en": `${newUserName} vừa tạo tài khoản mới.`, 
-        "vi": `${newUserName} vừa tạo tài khoản mới trên hệ thống.` 
-      },
-      url: "https://tinh-cong-tu-dong.vercel.app/admin" // Mở thẳng tab Admin
-    };
+    // Lấy subscriptions của các admin
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .in('user_id', adminIds);
 
-    const response = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`
-      },
-      body: JSON.stringify(payload)
+    if (error) throw error;
+
+    if (!subscriptions || subscriptions.length === 0) {
+      return new Response(JSON.stringify({ message: "Không có admin nào đăng ký nhận thông báo." }), { headers: { "Content-Type": "application/json" } });
+    }
+
+    const payload = JSON.stringify({
+      title: 'Tài khoản mới đăng ký!',
+      body: `${newUserName} vừa tạo tài khoản mới trên hệ thống.`,
+      url: 'https://tinh-cong-tu-dong.vercel.app/admin'
     });
 
-    const result = await response.json();
+    const promises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
+        }
+      };
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .catch(err => {
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            return supabase.from('push_subscriptions').delete().eq('id', sub.id);
+          } else {
+            console.error("Lỗi gửi push cho admin", sub.user_id, err);
+          }
+        });
+    });
+
+    await Promise.all(promises);
 
     return new Response(JSON.stringify({ 
-      message: `Đã gửi thông báo tới ${adminIds.length} admin.`,
-      onesignal: result 
+      message: `Đã gửi thông báo tới ${subscriptions.length} thiết bị của admin.`
     }), { headers: { "Content-Type": "application/json" } });
 
   } catch (err: any) {

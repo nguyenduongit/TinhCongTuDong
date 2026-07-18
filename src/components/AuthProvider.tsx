@@ -92,14 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           proExpiryDate: proExpiryDate,
           isAdmin: session.user.user_metadata?.isAdmin === true || session.user.user_metadata?.isAdmin === 'true' || session.user.user_metadata?.isadmin === true || session.user.user_metadata?.isadmin === 'true',
         });
-        import('@/lib/onesignal').then(({ loginOneSignal }) => {
-          loginOneSignal(session.user.id);
-        });
+
       } else {
         setUser(null);
-        import('@/lib/onesignal').then(({ logoutOneSignal }) => {
-          logoutOneSignal();
-        });
+
       }
     });
 

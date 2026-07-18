@@ -46,11 +46,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function Router() {
-  useEffect(() => {
-    import('@/lib/onesignal').then(({ initOneSignal }) => {
-      initOneSignal().catch(console.error);
-    }).catch(console.error);
-  }, []);
+
 
   return (
     <Suspense fallback={<div className="min-h-[100dvh] flex items-center justify-center bg-background text-primary"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
