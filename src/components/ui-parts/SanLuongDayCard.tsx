@@ -118,8 +118,39 @@ export function SanLuongDayCard({
       ) : (
         <div className="flex flex-col py-1">
           {items.map((entry, idx) => {
-            const content = (
-              <div className="flex flex-col w-full pl-5 pr-2">
+            const tk = entry.thong_ke_ngay as any;
+            let content;
+
+            if (tk?.is_ngay_nghi) {
+              const loaiNghi = tk.loai_nghi;
+              const label = loaiNghi === 'nghi_phep' ? 'Nghỉ phép năm' 
+                          : loaiNghi === 'nghi_huong_luong' ? 'Nghỉ hưởng lương' 
+                          : loaiNghi === 'nghi_khong_luong' ? 'Nghỉ không lương' 
+                          : 'Ngày nghỉ';
+              const icon = loaiNghi === 'nghi_phep' ? '🌴' 
+                         : loaiNghi === 'nghi_huong_luong' ? '💰' 
+                         : '☕';
+
+              content = (
+                <div className="flex flex-col w-full pl-5 pr-2 py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-xl shadow-inner">
+                      {icon}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-rose-400 font-bold text-[10px] uppercase tracking-wider mb-0.5">
+                        Lý do nghỉ
+                      </span>
+                      <span className="text-[15px] font-semibold text-foreground/90">
+                        {label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            } else {
+              content = (
+                <div className="flex flex-col w-full pl-5 pr-2">
                 {entry.chi_tiet.map((item, i) => (
                   <div key={i} className={`flex items-center justify-between py-3 ${i !== entry.chi_tiet.length - 1 ? 'border-b border-white/5' : ''}`}>
                     <div className="flex flex-col gap-1 flex-1 pr-3">
@@ -166,8 +197,11 @@ export function SanLuongDayCard({
                     </div>
                   </div>
                 )}
+                  </div>
+                )}
               </div>
             );
+          }
 
             if (readOnly) {
               return (
