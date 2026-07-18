@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { getCycleMonthFromDate, getCycleRange, getNowVNDateLocal } from '@/lib/date-utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
@@ -10,8 +10,13 @@ import { useGetCongTuan, useListCongDoan } from '@/api';
 import { getListCongDoanQueryKey } from '@/api';
 import { BottomNav } from '@/components/BottomNav';
 import { CongTuanCard, type WeekGroup } from '@/components/ui-parts/CongTuanCard';
+import { useAuth } from '@/components/AuthProvider';
+import { UpgradeModal } from '@/components/UpgradeModal';
 
 export default function CongTuan() {
+  const { user } = useAuth();
+  const isPro = user?.plan === 'pro';
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => getCycleMonthFromDate(getNowVNDateLocal()));
   const isCurrentMonth = currentMonth.getTime() === getCycleMonthFromDate(getNowVNDateLocal()).getTime();
 
@@ -53,11 +58,12 @@ export default function CongTuan() {
         <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-br from-amber-500/10 via-primary/5 to-transparent blur-[80px] pointer-events-none rounded-full transform -translate-y-1/2" />
 
         <motion.div 
-          className="px-5 pt-5 flex flex-col gap-5 relative z-10 flex-1"
+          className="px-5 pt-5 flex flex-col gap-5 relative z-10 flex-1 overflow-hidden"
           variants={pageContainerVariants}
           initial="hidden"
           animate="show"
         >
+          <div className={`flex flex-col gap-5 relative flex-1 transition-all duration-500 ${!isPro ? 'opacity-20 blur-[6px] pointer-events-none select-none' : ''}`}>
           {/* Month picker dạng Pill */}
           <motion.div variants={pageItemVariants} className="bg-card/60 backdrop-blur-md border border-white/5 rounded-full p-1.5 flex items-center justify-between shadow-sm mx-auto w-full max-w-[280px]">
             <button 
@@ -105,12 +111,33 @@ export default function CongTuan() {
                   />
                 ))}
               </div>
+              </div>
             )}
           </motion.div>
+          </div>
+
+          {!isPro && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center mt-[-60px]">
+              <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-4 text-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Chức năng chỉ dành cho tài khoản Pro</h3>
+              <p className="text-sm text-muted-foreground mb-6">Nâng cấp ngay để theo dõi thống kê công tuần chi tiết và đầy đủ nhất.</p>
+              <button 
+                onClick={() => setShowUpgradeModal(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-purple-500 text-white font-bold shadow-[0_4px_20px_rgba(168,85,247,0.4)] hover:bg-purple-600 active:scale-95 transition-all w-full max-w-[280px]"
+              >
+                <span className="text-lg leading-none drop-shadow-md">&#128142;</span>
+                Nâng cấp Pro ngay
+              </button>
+            </div>
+          )}
         </motion.div>
 
         <BottomNav />
       </div>
+
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
     </div>
   );
 }

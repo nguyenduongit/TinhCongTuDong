@@ -21,7 +21,7 @@ export function BottomNav() {
       <div className={cn("grid h-16 px-2", isAdmin ? "grid-cols-5" : "grid-cols-4")}>
         <NavItem href="/" icon={Home} label="Trang chủ" isActive={location === '/'} />
         <NavItem href="/san-luong" icon={History} label="Sản lượng" isActive={location === '/san-luong'} />
-        <NavItem href="/cong-tuan" icon={BarChart3} label="Công tuần" isActive={location === '/cong-tuan'} />
+        <NavItem href="/cong-tuan" icon={BarChart3} label="Công tuần" isActive={location === '/cong-tuan'} isPro />
         <NavItem href="/cai-dat" icon={Settings} label="Cài đặt" isActive={location === '/cai-dat'} />
         {isAdmin && <NavItem href="/admin" icon={ShieldAlert} label="Admin" isActive={location === '/admin'} isSpecial />}
       </div>
@@ -29,7 +29,7 @@ export function BottomNav() {
   );
 }
 
-function NavItem({ href, icon: Icon, label, isActive, isSpecial }: { href: string, icon: any, label: string, isActive: boolean, isSpecial?: boolean }) {
+function NavItem({ href, icon: Icon, label, isActive, isSpecial, isPro }: { href: string, icon: any, label: string, isActive: boolean, isSpecial?: boolean, isPro?: boolean }) {
   if (isSpecial) {
     return (
       <Link href={href} className="relative flex flex-col items-center justify-center gap-1 mt-1.5 group">
@@ -49,10 +49,17 @@ function NavItem({ href, icon: Icon, label, isActive, isSpecial }: { href: strin
 
   return (
     <Link href={href} className={cn(
-      "flex flex-col items-center justify-center gap-1 transition-colors mt-2",
+      "flex flex-col items-center justify-center gap-1 transition-colors mt-2 relative",
       isActive ? "text-primary" : "text-muted-foreground/80 hover:text-foreground"
     )}>
-      <Icon className={cn("w-6 h-6", !isActive && "opacity-85")} />
+      <div className="relative">
+        <Icon className={cn("w-6 h-6", !isActive && "opacity-85")} />
+        {isPro && (
+          <div className="absolute -top-1.5 -right-3 px-1 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[8px] font-bold leading-none backdrop-blur-md">
+            Pro
+          </div>
+        )}
+      </div>
       <span className={cn("text-[10px]", isActive ? "font-bold tracking-tight" : "font-semibold opacity-90")}>{label}</span>
     </Link>
   );
