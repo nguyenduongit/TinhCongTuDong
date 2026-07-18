@@ -110,27 +110,27 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
               <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-primary/90" />
             </div>
 
-            <div className="h-3 w-full bg-zinc-800/80 rounded-full overflow-hidden shadow-inner flex mt-1">
+            <div className="h-3 w-full bg-zinc-800/80 rounded-full overflow-hidden shadow-inner relative mt-1">
+              {/* Leave bar (Right aligned) */}
+              {ngayNghi > 0 && (
+                <div 
+                  className="absolute right-0 top-0 bottom-0 z-0 bg-rose-500/60 transition-all duration-1000"
+                  style={{ width: `${leavePercent}%` }}
+                />
+              )}
+
               {/* Progress bar */}
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className={cn(
-                  "h-full relative z-10 shrink-0",
+                  "h-full relative z-10",
                   isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[2px_0_10px_rgba(52,211,153,0.3)]" : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[2px_0_10px_rgba(245,158,11,0.3)]"
                 )}
               >
                 <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
               </motion.div>
-
-              {/* Leave bar (Right after progress) */}
-              {ngayNghi > 0 && (
-                <div 
-                  className="h-full z-0 bg-rose-500/60 shrink-0 transition-all duration-1000"
-                  style={{ width: `${leavePercent}%` }}
-                />
-              )}
             </div>
           </div>
           <div className="flex justify-between text-[11px] font-semibold px-1">
