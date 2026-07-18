@@ -121,14 +121,7 @@ export default function CongTuan() {
                 <Lock className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">Chức năng chỉ dành cho tài khoản Pro</h3>
-              <p className="text-sm text-muted-foreground mb-6">Nâng cấp ngay để theo dõi thống kê công tuần chi tiết và đầy đủ nhất.</p>
-              <button 
-                onClick={() => setShowUpgradeModal(true)}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-purple-500 text-white font-bold shadow-[0_4px_20px_rgba(168,85,247,0.4)] hover:bg-purple-600 active:scale-95 transition-all w-full max-w-[280px]"
-              >
-                <span className="text-lg leading-none drop-shadow-md">&#128142;</span>
-                Nâng cấp Pro ngay
-              </button>
+              <p className="text-sm text-muted-foreground">Theo dõi thống kê công tuần chi tiết và đầy đủ nhất.</p>
             </div>
           )}
         </motion.div>
