@@ -83,11 +83,6 @@ function App() {
                            (window.navigator as any).standalone || 
                            document.referrer.includes('android-app://');
       
-      if (localStorage.getItem('bypass_pwa') === 'true') {
-         setIsPwa(true);
-         return;
-      }
-      
       setIsPwa(isStandalone);
     };
     
