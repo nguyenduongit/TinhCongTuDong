@@ -1,19 +1,23 @@
 self.addEventListener('push', function (event) {
+  let title = 'Thông báo Tự động';
+  let options = { 
+    body: 'Bạn có một thông báo mới',
+    data: '/'
+  };
+  
   if (event.data) {
     try {
       const data = event.data.json();
-      const title = data.title || 'Thông báo';
-      const options = {
-        body: data.body || '',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        data: data.url || '/'
-      };
-      event.waitUntil(self.registration.showNotification(title, options));
+      title = data.title || title;
+      options.body = data.body || options.body;
+      if (data.url) options.data = data.url;
     } catch (e) {
-      console.error('Lỗi khi parse dữ liệu push:', e);
+      options.body = event.data.text() || options.body;
     }
   }
+  
+  const promise = self.registration.showNotification(title, options);
+  event.waitUntil(promise);
 });
 
 self.addEventListener('notificationclick', function (event) {
@@ -21,13 +25,11 @@ self.addEventListener('notificationclick', function (event) {
   const urlToOpen = event.notification.data || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Nếu đã có tab mở, focus vào nó
       for (const client of clientList) {
         if (client.url === urlToOpen && 'focus' in client) {
           return client.focus();
         }
       }
-      // Nếu chưa, mở tab mới
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }

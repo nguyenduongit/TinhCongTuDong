@@ -34,7 +34,15 @@ export async function requestPushPermission(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Đăng ký Service Worker
+    // Unregister OneSignal service worker if it exists
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const reg of registrations) {
+      if (reg.active?.scriptURL.includes('OneSignal')) {
+        await reg.unregister();
+      }
+    }
+
+    // Đăng ký Service Worker mới
     const registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
 
