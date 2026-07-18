@@ -111,7 +111,6 @@ export default function CongTuan() {
                   />
                 ))}
               </div>
-              </div>
             )}
           </motion.div>
           </div>
