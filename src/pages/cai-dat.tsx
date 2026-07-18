@@ -184,7 +184,14 @@ export default function CaiDat() {
                       toast.loading("Đang gửi thử thông báo...", { id: "test-notify" });
                       const { supabase } = await import('@/lib/supabase');
                       const { data, error } = await supabase.functions.invoke('send-push', {
-                        body: { testUserId: user.id }
+                        body: { 
+                          testUserId: user.id,
+                          payload: {
+                            title: 'Thử nghiệm thông báo',
+                            body: 'Nếu bạn nhận được tin nhắn này, Web Push Native đã hoạt động hoàn hảo!',
+                            url: 'https://tinh-cong-tu-dong.vercel.app/cai-dat'
+                          }
+                        }
                       });
                       if (error) throw error;
                       if (data?.ok === false) {
