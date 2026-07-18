@@ -64,7 +64,9 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
   const gioTangCa = Math.floor(tongPhutTangCa / 60);
   const phutTangCaLe = tongPhutTangCa % 60;
 
-  const progressPercent = congNhat > 0 ? Math.min((congSp / congNhat) * 100, 100) : 0;
+  const progressPercent = congChuan > 0 ? Math.min((congSp / congChuan) * 100, 100) : 0;
+  const targetPercent = congChuan > 0 ? Math.min((congHanhChinh / congChuan) * 100, 100) : 0;
+  const leavePercent = congChuan > 0 ? Math.min((ngayNghi / congChuan) * 100, 100) : 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -72,7 +74,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
       <div className="relative overflow-hidden rounded-3xl p-5 border border-white/10 shadow-2xl bg-gradient-to-br from-zinc-900 to-zinc-950">
         <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
-        <div className="flex justify-between items-start mb-6 relative z-10">
+        <div className="flex justify-between items-start mb-10 relative z-10">
           <div>
             <p className="text-zinc-400 font-medium text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
@@ -96,22 +98,48 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
 
         {/* Thanh tiến độ siêu mượt */}
         <div className="space-y-2 relative z-10">
-          <div className="flex justify-between text-xs font-semibold">
-            <span className="text-zinc-400">Tiến độ so với mục tiêu</span>
-            <span className="text-white">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} công</span>
+          <div className="flex justify-between text-xs font-semibold px-1 mb-6">
+            <span className="text-zinc-400">Tiến độ tháng</span>
+            <span className="text-white">{isLoading ? '-' : congChuan} công</span>
           </div>
-          <div className="h-3 w-full bg-zinc-800 rounded-full overflow-hidden shadow-inner relative">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={cn(
-                "h-full rounded-full relative",
-                isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-gradient-to-r from-amber-600 to-amber-400"
-              )}
+          
+          <div className="relative">
+            {/* Target indicator badge */}
+            <div 
+              className="absolute -top-7 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 z-20"
+              style={{ left: `${targetPercent}%` }}
             >
-              <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
-            </motion.div>
+              <div className="bg-primary/90 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-black text-white whitespace-nowrap shadow-lg border border-primary/20">
+                Mục tiêu: {congHanhChinh.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
+              </div>
+              <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-primary/90" />
+            </div>
+
+            <div className="h-3 w-full bg-zinc-800/50 rounded-full overflow-hidden shadow-inner relative border border-white/5">
+              {/* Leave bar (Right aligned) */}
+              {ngayNghi > 0 && (
+                <div 
+                  className="absolute right-0 top-0 bottom-0 z-0 opacity-80"
+                  style={{ 
+                    width: `${leavePercent}%`,
+                    background: 'repeating-linear-gradient(45deg, #f43f5e, #f43f5e 4px, #be123c 4px, #be123c 8px)'
+                  }}
+                />
+              )}
+
+              {/* Progress bar */}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={cn(
+                  "h-full rounded-full relative z-10",
+                  isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                )}
+              >
+                <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
+              </motion.div>
+            </div>
           </div>
         </div>
       </div>
