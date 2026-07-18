@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export function InstallPwa() {
   const [device, setDevice] = useState<'ios' | 'android' | 'desktop' | 'unknown'>('unknown');
-  
+
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(ua)) {
@@ -20,8 +20,8 @@ export function InstallPwa() {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm z-10 flex flex-col items-center text-center"
@@ -54,7 +54,7 @@ export function InstallPwa() {
                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
                   <PlusSquare className="w-5 h-5 text-emerald-400" />
                 </div>
-                <p className="text-sm text-muted-foreground leading-tight"><strong className="text-foreground">Bước 2:</strong> Cuộn xuống và chọn <strong>"Thêm vào MH chính"</strong> (Add to Home Screen).</p>
+                <p className="text-sm text-muted-foreground leading-tight"><strong className="text-foreground">Bước 2:</strong> Cuộn xuống và chọn <strong>"Thêm vào Màn hình chính"</strong> (Add to Home Screen).</p>
               </div>
             </div>
           ) : device === 'android' ? (
@@ -75,12 +75,12 @@ export function InstallPwa() {
               </div>
             </div>
           ) : (
-             <div className="flex flex-col gap-5 text-center items-center py-4">
-               <Download className="w-12 h-12 text-primary/50 mb-2" />
-               <p className="text-sm text-muted-foreground font-medium px-4">
-                 Bạn đang dùng trình duyệt máy tính. Vui lòng cài đặt ứng dụng dưới dạng PWA thông qua biểu tượng cài đặt trên thanh địa chỉ.
-               </p>
-             </div>
+            <div className="flex flex-col gap-5 text-center items-center py-4">
+              <Download className="w-12 h-12 text-primary/50 mb-2" />
+              <p className="text-sm text-muted-foreground font-medium px-4">
+                Bạn đang dùng trình duyệt máy tính. Vui lòng cài đặt ứng dụng dưới dạng PWA thông qua biểu tượng cài đặt trên thanh địa chỉ.
+              </p>
+            </div>
           )}
         </div>
       </motion.div>
