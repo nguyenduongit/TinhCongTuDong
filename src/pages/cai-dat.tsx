@@ -9,13 +9,37 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
-import { ProfileModal } from '@/components/ProfileModal';
-
+import { useGetThongTinLuong, useUpdateProfile, useGetSalaryTiers } from '@/api';
 export default function CaiDat() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const { user, refetchUser, signOut } = useAuth();
   const [, setLocation] = useLocation();
+
+  const { data: profileData } = useGetThongTinLuong();
+  const { data: salaryTiers = [] } = useGetSalaryTiers();
+  const updateMutation = useUpdateProfile();
+
+  const handleUpdate = async (field: string, value: string | number | null) => {
+    try {
+      await updateMutation.mutateAsync({ [field]: value });
+      toast.success('Đã cập nhật!');
+    } catch (e: any) {
+      toast.error('Lỗi khi cập nhật: ' + e.message);
+    }
+  };
+
+  const handleUpdateName = async (name: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: name }
+      });
+      if (error) throw error;
+      refetchUser();
+      toast.success('Đã cập nhật tên!');
+    } catch (e: any) {
+      toast.error('Lỗi khi cập nhật tên: ' + e.message);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,10 +85,8 @@ export default function CaiDat() {
             
             {/* User Profile */}
             {user && (
-              <motion.button 
-                variants={pageItemVariants} 
-                onClick={() => setShowProfileModal(true)}
-                className="w-full text-left bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl p-4 flex items-center gap-4 shadow-lg relative overflow-hidden hover:bg-card/80 transition-colors"
+              <div 
+                className="w-full text-left bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl p-4 flex items-center gap-4 shadow-lg relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-16 bg-primary/10 rounded-full blur-[40px] -mr-8 -mt-8 pointer-events-none" />
                 
@@ -113,7 +135,91 @@ export default function CaiDat() {
                     )}
                   </div>
                 </div>
-              </motion.button>
+              </div>
+            )}
+
+            {user && profileData && (
+            <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
+              <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Hồ sơ cá nhân</h3>
+              <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm text-sm">
+                
+                {/* Tên hiển thị */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-white/5 gap-2">
+                  <span className="font-semibold text-foreground/90">Tên hiển thị</span>
+                  <input 
+                    type="text" 
+                    defaultValue={user.name || ''}
+                    onBlur={(e) => {
+                      if (e.target.value !== user.name) handleUpdateName(e.target.value);
+                    }}
+                    className="bg-transparent border-none outline-none text-muted-foreground text-right focus:text-foreground w-full sm:w-1/2 p-0"
+                    placeholder="Nhập tên..."
+                  />
+                </div>
+
+                {/* Giới tính */}
+                <div className="flex items-center justify-between p-4 border-b border-white/5">
+                  <span className="font-semibold text-foreground/90">Giới tính</span>
+                  <select 
+                    value={profileData?.gioi_tinh || ''}
+                    onChange={(e) => handleUpdate('gioi_tinh', e.target.value)}
+                    className="bg-transparent border-none outline-none text-muted-foreground text-right appearance-none focus:text-foreground"
+                  >
+                    <option value="" disabled>Chưa chọn</option>
+                    <option value="nam" className="bg-background">Nam</option>
+                    <option value="nu" className="bg-background">Nữ</option>
+                  </select>
+                </div>
+
+                {/* Bậc lương */}
+                <div className="flex items-center justify-between p-4 border-b border-white/5">
+                  <span className="font-semibold text-foreground/90">Bậc lương</span>
+                  <select 
+                    value={profileData?.bac_luong || ''}
+                    onChange={(e) => handleUpdate('bac_luong', e.target.value)}
+                    className="bg-transparent border-none outline-none text-muted-foreground text-right appearance-none focus:text-foreground"
+                  >
+                    <option value="" disabled>Chưa chọn</option>
+                    {salaryTiers.map(t => (
+                      <option key={t.tier_code} value={t.tier_code} className="bg-background">{t.tier_code}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Lương cơ bản */}
+                {profileData?.bac_luong && (
+                  <div className="flex items-center justify-between p-4 border-b border-white/5">
+                    <span className="font-semibold text-foreground/90">Lương cơ bản</span>
+                    <span className="text-muted-foreground text-right">
+                      {new Intl.NumberFormat('vi-VN').format(salaryTiers.find(t => t.tier_code === profileData.bac_luong)?.base_salary || 0)} VNĐ
+                    </span>
+                  </div>
+                )}
+
+                {/* Ngày vào công ty */}
+                <div className="flex items-center justify-between p-4 border-b border-white/5">
+                  <span className="font-semibold text-foreground/90">Ngày vào công ty</span>
+                  <input 
+                    type="date" 
+                    value={profileData?.ngay_vao_cong_ty || ''}
+                    onChange={(e) => handleUpdate('ngay_vao_cong_ty', e.target.value || null)}
+                    className="bg-transparent border-none outline-none text-muted-foreground text-right focus:text-foreground [&::-webkit-calendar-picker-indicator]:invert-[0.5]"
+                  />
+                </div>
+
+                {/* Ngày ký hợp đồng */}
+                <div className="flex items-center justify-between p-4">
+                  <span className="font-semibold text-foreground/90">Ngày ký hợp đồng</span>
+                  <input 
+                    type="date" 
+                    value={profileData?.ngay_ky_hop_dong || ''}
+                    onChange={(e) => handleUpdate('ngay_ky_hop_dong', e.target.value || null)}
+                    className="bg-transparent border-none outline-none text-muted-foreground text-right focus:text-foreground [&::-webkit-calendar-picker-indicator]:invert-[0.5]"
+                  />
+                </div>
+
+              </div>
+            </motion.div>
             )}
 
 
@@ -179,7 +285,6 @@ export default function CaiDat() {
       </div>
 
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
-      <ProfileModal open={showProfileModal} onOpenChange={setShowProfileModal} />
     </div>
   );
 }
