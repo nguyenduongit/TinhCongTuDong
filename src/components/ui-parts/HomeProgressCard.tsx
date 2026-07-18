@@ -64,9 +64,12 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
   const gioTangCa = Math.floor(tongPhutTangCa / 60);
   const phutTangCaLe = tongPhutTangCa % 60;
 
-  const progressPercent = congChuan > 0 ? Math.min((congSp / congChuan) * 100, 100) : 0;
-  const targetPercent = congChuan > 0 ? Math.min((congNhat / congChuan) * 100, 100) : 0;
-  const leavePercent = congChuan > 0 ? Math.min((ngayNghi / congChuan) * 100, 100) : 0;
+  const maxScale = Math.max(congChuan, congSp + ngayNghi, congNhat + ngayNghi);
+  const progressPercent = maxScale > 0 ? (congSp / maxScale) * 100 : 0;
+  const targetPercent = maxScale > 0 ? (congNhat / maxScale) * 100 : 0;
+  const leavePercent = maxScale > 0 ? (ngayNghi / maxScale) * 100 : 0;
+  const chuanPercent = maxScale > 0 ? (congChuan / maxScale) * 100 : 0;
+  const isOvertimeScale = maxScale > congChuan;
 
   return (
     <div className="flex flex-col gap-3">
@@ -132,6 +135,19 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
                 <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
               </motion.div>
             </div>
+            
+            {/* Vạch mốc công chuẩn (chỉ xuất hiện khi vượt mốc) */}
+            {isOvertimeScale && (
+              <div 
+                className="absolute top-5 bottom-0 -translate-x-1/2 flex flex-col items-center z-10 pointer-events-none"
+                style={{ left: `${chuanPercent}%` }}
+              >
+                <div className="w-px h-6 border-l border-dashed border-zinc-400" />
+                <div className="text-[8px] font-bold text-zinc-400 bg-zinc-900/90 px-1 rounded shadow-sm whitespace-nowrap">
+                  Mốc chuẩn
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex justify-between text-[11px] font-semibold px-1">
             <span className="text-zinc-500 uppercase tracking-widest">Tiến độ tháng</span>
