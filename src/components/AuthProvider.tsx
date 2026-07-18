@@ -28,6 +28,39 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+/**
+ * Kiểm tra và áp dụng mã referral sau khi user đăng nhập.
+ * Chỉ chạy 1 lần khi có referral_code trong localStorage.
+ */
+async function tryApplyReferral(userId: string) {
+  const refCode = localStorage.getItem('referral_code');
+  if (!refCode) return;
+
+  try {
+    const { data, error } = await supabase.rpc('apply_referral', {
+      p_referee_id: userId,
+      p_referral_code: refCode.toUpperCase(),
+    });
+
+    if (error) {
+      console.warn('[Referral] RPC error:', error.message);
+    } else if (data?.success) {
+      console.log('[Referral] Applied successfully');
+    } else if (data?.error === 'already_referred') {
+      console.log('[Referral] User already has a referrer');
+    } else if (data?.error === 'self_referral') {
+      console.warn('[Referral] Cannot refer yourself');
+    } else if (data?.error === 'invalid_code') {
+      console.warn('[Referral] Invalid referral code');
+    }
+  } catch (e) {
+    console.warn('[Referral] Failed to apply:', e);
+  } finally {
+    // Luôn xóa khỏi localStorage sau khi thử áp dụng (dù thành công hay thất bại)
+    localStorage.removeItem('referral_code');
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,6 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           proExpiryDate: proExpiryDate,
           isAdmin: session.user.user_metadata?.isAdmin === true || session.user.user_metadata?.isAdmin === 'true' || session.user.user_metadata?.isadmin === true || session.user.user_metadata?.isadmin === 'true',
         });
+
+        // Tự động áp dụng referral code nếu có trong localStorage
+        // Chạy fire-and-forget, không block UI
+        tryApplyReferral(session.user.id);
 
       } else {
         setUser(null);

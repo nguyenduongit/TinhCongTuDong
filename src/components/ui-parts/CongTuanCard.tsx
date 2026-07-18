@@ -29,7 +29,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
     <div className={`bg-card/80 backdrop-blur-md border border-white/5 rounded-3xl flex flex-col shadow-lg overflow-hidden relative ${readOnly ? 'pointer-events-none' : ''}`}>
       {/* Header - compact single row */}
       <div className={`flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 ${week.isCurrentWeek ? 'bg-gradient-to-r from-amber-500/10 to-transparent' : 'bg-white/5'}`}>
-        
+
         {/* Left: tên tuần + khoảng ngày */}
         <div className="flex items-center gap-2 min-w-0">
           {week.isCurrentWeek && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0 shadow-[0_0_6px_rgba(245,158,11,0.7)]" />}
@@ -66,7 +66,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
           </div>
         </div>
       </div>
-      
+
       {/* Content - Danh sách chi tiết */}
       <div className="flex flex-col py-1">
         {Object.entries(week.congDoanStats).map(([ma_cong_doan, stats], i, arr) => (
@@ -79,7 +79,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
                 {getCongDoanName(ma_cong_doan)}
               </span>
             </div>
-            
+
             <div className="flex gap-4 items-center">
               <div className="flex flex-col items-end min-w-[3.5rem]">
                 <span className="text-[10px] text-zinc-500 font-medium mb-0.5">SL</span>
@@ -93,7 +93,7 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
             </div>
           </div>
         ))}
-        
+
         {/* Hỗ trợ */}
         {week.totalHoTroPhut > 0 && (
           <div className="flex justify-between items-center py-3 px-5 border-t border-white/5 border-dashed mt-1">
@@ -101,9 +101,9 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
               <span className="text-purple-400 font-bold text-[10px] bg-purple-500/10 px-1.5 py-0.5 rounded-md border border-purple-500/20 uppercase tracking-wider self-start">
                 HỖ TRỢ
               </span>
-              <span className="text-[13px] font-semibold text-foreground/90 line-clamp-1">Thời gian phụ trợ</span>
+              <span className="text-[13px] font-semibold text-foreground/90 line-clamp-1">Thời gian hổ trợ</span>
             </div>
-            
+
             <div className="flex gap-4 items-center">
               <div className="flex flex-col items-end min-w-[3.5rem]">
                 <span className="text-[10px] text-zinc-500 font-medium mb-0.5">Phút</span>

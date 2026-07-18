@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, Diamond } from 'lucide-react';
+import { ChevronRight, Database, HelpCircle, Info, LogOut, User as UserIcon, Diamond, Gift, Copy, Check, Link2, Users } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useAuth } from '@/components/AuthProvider';
@@ -9,7 +9,133 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
-import { useGetThongTinLuong, useUpdateProfile, useGetSalaryTiers } from '@/api';
+import { useGetThongTinLuong, useUpdateProfile, useGetSalaryTiers, useGetMyReferralCode, useGetMyReferrals } from '@/api';
+
+// ─── Referral Card Component ──────────────────────────────────────────────────
+function ReferralCard() {
+  const { data: referralCode, isLoading: codeLoading } = useGetMyReferralCode();
+  const { data: myReferrals = [] } = useGetMyReferrals();
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const completedCount = myReferrals.filter(r => r.status === 'completed').length;
+  const trackingCount = myReferrals.filter(r => r.status === 'tracking').length;
+
+  const handleCopyLink = async () => {
+    if (!referralCode) return;
+    const link = `${window.location.origin}?ref=${referralCode}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      toast.success('Đã copy link mời!');
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      toast.error('Không thể copy');
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!referralCode) return;
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      setCopiedCode(true);
+      toast.success('Đã copy mã giới thiệu!');
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      toast.error('Không thể copy');
+    }
+  };
+
+  return (
+    <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
+      <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Mời bạn bè</h3>
+      <div className="relative overflow-hidden bg-gradient-to-br from-purple-500/15 via-cyan-500/10 to-primary/10 backdrop-blur-md border border-purple-500/20 rounded-3xl p-5 shadow-lg">
+        {/* Decorative glow */}
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-[50px] pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-cyan-500/15 rounded-full blur-[40px] pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col gap-4">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500/30 to-cyan-500/30 flex items-center justify-center border border-purple-500/30 shadow-inner">
+              <Gift className="w-5 h-5 text-purple-300" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-foreground">Mời bạn bè nhận Pro</h4>
+              <p className="text-[11px] text-muted-foreground">Bạn được tặng 3 tháng Pro khi bạn bè dùng đều đặn</p>
+            </div>
+          </div>
+
+          {/* Referral Code Display */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-black/20 rounded-xl px-4 py-2.5 border border-white/10">
+              <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-0.5">Mã giới thiệu</div>
+              {codeLoading ? (
+                <div className="h-6 w-20 bg-white/5 rounded animate-pulse" />
+              ) : (
+                <div className="text-lg font-mono font-black text-foreground tracking-[0.25em] select-all">
+                  {referralCode}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleCopyCode}
+              className="shrink-0 w-11 h-11 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center transition-all active:scale-95"
+              title="Copy mã"
+            >
+              {copiedCode ? (
+                <Check className="w-4.5 h-4.5 text-emerald-400" />
+              ) : (
+                <Copy className="w-4.5 h-4.5 text-zinc-400" />
+              )}
+            </button>
+          </div>
+
+          {/* Copy Link Button */}
+          <button
+            onClick={handleCopyLink}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600 text-white text-sm font-bold transition-all active:scale-[0.98] shadow-lg shadow-purple-500/20 border border-purple-400/20"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-4 h-4" />
+                Đã copy!
+              </>
+            ) : (
+              <>
+                <Link2 className="w-4 h-4" />
+                Copy link mời
+              </>
+            )}
+          </button>
+
+          {/* Stats */}
+          {myReferrals.length > 0 && (
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                <Users className="w-3.5 h-3.5" />
+                <span>Đã mời: <span className="font-bold text-foreground">{myReferrals.length}</span></span>
+              </div>
+              {trackingCount > 0 && (
+                <div className="flex items-center gap-1 text-[11px]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-amber-400 font-medium">{trackingCount} đang theo dõi</span>
+                </div>
+              )}
+              {completedCount > 0 && (
+                <div className="flex items-center gap-1 text-[11px]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-emerald-400 font-medium">{completedCount} thành công</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function CaiDat() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { user, refetchUser, signOut } = useAuth();
@@ -218,6 +344,9 @@ export default function CaiDat() {
               </div>
             </motion.div>
             )}
+
+            {/* Referral Card */}
+            {user && <ReferralCard />}
 
 
             {/* Section 3 (was Section 3, now Section 2) */}

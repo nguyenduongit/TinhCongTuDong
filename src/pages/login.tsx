@@ -1,12 +1,36 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { Gift } from 'lucide-react';
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
+  const [refCode, setRefCode] = useState('');
+  const [showRefInput, setShowRefInput] = useState(false);
+
+  // Lưu ref code từ URL vào localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refFromUrl = params.get('ref');
+    if (refFromUrl) {
+      localStorage.setItem('referral_code', refFromUrl.toUpperCase());
+      setRefCode(refFromUrl.toUpperCase());
+      setShowRefInput(true);
+      // Xoá query param khỏi URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      toast.success('Đã ghi nhận mã giới thiệu!');
+    } else {
+      // Kiểm tra nếu đã có ref code trong localStorage
+      const savedRef = localStorage.getItem('referral_code');
+      if (savedRef) {
+        setRefCode(savedRef);
+        setShowRefInput(true);
+      }
+    }
+  }, []);
 
   // If already logged in, redirect to home
   useEffect(() => {
@@ -20,6 +44,11 @@ export default function Login() {
   }
 
   const handleGoogleLogin = async () => {
+    // Lưu ref code nhập tay vào localStorage trước khi redirect
+    if (refCode.trim()) {
+      localStorage.setItem('referral_code', refCode.trim().toUpperCase());
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -76,6 +105,47 @@ export default function Login() {
             </svg>
             <span>Tiếp tục với Google</span>
           </button>
+
+          {/* Referral code section */}
+          <div className="w-full flex flex-col items-center gap-2 mt-1">
+            {showRefInput ? (
+              <div className="w-full flex flex-col gap-2">
+                <div className="flex items-center gap-2 px-1">
+                  <Gift className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span className="text-xs text-muted-foreground">Mã giới thiệu</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={refCode}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+                      setRefCode(val);
+                    }}
+                    placeholder="VD: ABC123"
+                    maxLength={6}
+                    className="w-full h-11 rounded-xl bg-background border border-white/10 text-foreground text-center text-lg font-mono font-bold tracking-[0.3em] px-4 focus:outline-none focus:ring-2 focus:ring-purple-500/40 placeholder:text-zinc-600 placeholder:tracking-normal placeholder:font-normal placeholder:text-sm"
+                  />
+                  {refCode && (
+                    <button
+                      onClick={() => { setRefCode(''); localStorage.removeItem('referral_code'); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-500 hover:text-foreground text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowRefInput(true)}
+                className="text-xs text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1.5"
+              >
+                <Gift className="w-3.5 h-3.5" />
+                Có mã giới thiệu? Nhập tại đây
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

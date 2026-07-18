@@ -776,3 +776,151 @@ export function useAdminUpdateUserPlan() {
     },
   });
 }
+
+// ─── REFERRAL SYSTEM ──────────────────────────────────────────────────────────
+
+export type ReferralInfo = {
+  referral_id: string;
+  referrer_id: string;
+  referrer_email: string;
+  referrer_name: string;
+  referrer_avatar: string | null;
+  referee_id: string;
+  referee_email: string;
+  referee_name: string;
+  referee_avatar: string | null;
+  referral_code: string;
+  status: 'tracking' | 'completed' | 'failed';
+  reward_granted: boolean;
+  tracking_start_date: string;
+  tracking_end_date: string;
+  created_at: string;
+  completed_at: string | null;
+  days_with_entry: number;
+  total_workdays: number;
+};
+
+export type DailyEntry = {
+  ngay: string;
+  day_of_week: number;
+  is_workday: boolean;
+  has_entry: boolean;
+  total_cong_sp: number;
+  total_time: number;
+  entries: any[];
+};
+
+/**
+ * Lấy hoặc tạo mã referral code của user hiện tại.
+ */
+export function useGetMyReferralCode() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['referral-code', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_or_create_referral_code', {
+        p_user_id: user!.id,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    enabled: !!user?.id,
+    staleTime: Infinity, // Code không đổi
+  });
+}
+
+/**
+ * Lấy danh sách người mà user hiện tại đã mời.
+ */
+export function useGetMyReferrals() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['my-referrals', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('referrals')
+        .select('*')
+        .eq('referrer_id', user!.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Array<{
+        id: string;
+        referrer_id: string;
+        referee_id: string;
+        referral_code: string;
+        status: string;
+        reward_granted: boolean;
+        tracking_start_date: string;
+        tracking_end_date: string;
+        created_at: string;
+        completed_at: string | null;
+      }>;
+    },
+    enabled: !!user?.id,
+  });
+}
+
+/**
+ * Áp dụng mã referral cho user hiện tại (người được mời).
+ */
+export function useApplyReferralCode() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (referralCode: string) => {
+      const { data, error } = await supabase.rpc('apply_referral', {
+        p_referee_id: user!.id,
+        p_referral_code: referralCode,
+      });
+      if (error) throw error;
+      return data as { success: boolean; error?: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-referrals'] });
+    },
+  });
+}
+
+/**
+ * Admin: Lấy toàn bộ danh sách referral kèm thông tin user.
+ */
+export function useAdminGetReferrals() {
+  return useQuery({
+    queryKey: ['admin-referrals'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_get_referrals');
+      if (error) {
+        console.error('Error fetching admin referrals:', error);
+        return [] as ReferralInfo[];
+      }
+      return (data ?? []) as ReferralInfo[];
+    },
+    retry: false,
+  });
+}
+
+/**
+ * Admin: Lấy chi tiết sản lượng hàng ngày của user trong khoảng thời gian.
+ */
+export function useAdminGetUserDailyEntries(
+  userId: string | null,
+  startDate: string | null,
+  endDate: string | null
+) {
+  return useQuery({
+    queryKey: ['admin-daily-entries', userId, startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_get_user_daily_entries', {
+        p_user_id: userId!,
+        p_start_date: startDate!,
+        p_end_date: endDate!,
+      });
+      if (error) {
+        console.error('Error fetching daily entries:', error);
+        return [] as DailyEntry[];
+      }
+      return (data ?? []) as DailyEntry[];
+    },
+    enabled: !!userId && !!startDate && !!endDate,
+  });
+}
