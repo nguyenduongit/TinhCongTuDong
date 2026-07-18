@@ -139,18 +139,7 @@ export default function CaiDat() {
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
               <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Thông tin</h3>
               <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
-                <button 
-                  onClick={() => setLocation('/huong-dan')}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors border-b border-white/5 outline-none group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-zinc-500/10 flex items-center justify-center text-zinc-400 border border-zinc-500/20 group-hover:bg-zinc-500/20 transition-colors">
-                      <HelpCircle className="w-4.5 h-4.5" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">Hướng dẫn sử dụng</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
-                </button>
+
                 <button 
                   onClick={() => {
                     import('@/lib/push').then(({ requestPushPermission }) => {
