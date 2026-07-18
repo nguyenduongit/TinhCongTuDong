@@ -98,7 +98,7 @@ export default function CongDoanPage() {
             <header className="flex items-center justify-between p-5 border-b border-white/5 relative z-10 shrink-0">
               <div className="flex items-center gap-3">
                 <button 
-                  onClick={() => setLocation('/cai-dat')}
+                  onClick={() => setLocation('/')}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-muted-foreground border border-white/5 hover:text-foreground hover:bg-white/10 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
