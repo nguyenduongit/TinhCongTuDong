@@ -179,13 +179,21 @@ export default function CaiDat() {
                     try {
                       toast.loading("Đang gửi thử thông báo...", { id: "test-notify" });
                       const { supabase } = await import('@/lib/supabase');
-                      const { error } = await supabase.functions.invoke('send-daily-reminder', {
+                      const { data, error } = await supabase.functions.invoke('send-daily-reminder', {
                         body: { testUserId: user.id }
                       });
                       if (error) throw error;
-                      toast.success("Đã gửi! Vui lòng kiểm tra màn hình của bạn.", { id: "test-notify" });
-                    } catch (err) {
-                      toast.error("Lỗi khi gửi thông báo test.", { id: "test-notify" });
+                      // Check for application-level errors returned in response body
+                      if (data?.error) {
+                        const onesignalErrors = data?.onesignal?.errors;
+                        const detail = Array.isArray(onesignalErrors) ? onesignalErrors.join(', ') : JSON.stringify(data.onesignal);
+                        toast.error(`Lỗi từ OneSignal: ${detail}`, { id: "test-notify" });
+                        console.error("OneSignal debug:", data.debug);
+                      } else {
+                        toast.success("Đã gửi! Vui lòng kiểm tra màn hình của bạn.", { id: "test-notify" });
+                      }
+                    } catch (err: any) {
+                      toast.error(`Lỗi: ${err?.message || "Không xác định"}`, { id: "test-notify" });
                       console.error(err);
                     }
                   }}

@@ -1,64 +1,21 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarX } from 'lucide-react';
-import { useState } from 'react';
-import { format, eachDayOfInterval, getDay } from 'date-fns';
+import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-import { useGetSanLuongDashboard, useConfirmNgayNghi } from '@/api';
-import { getNowVNDateLocal, getCycleRange, getCycleMonthFromDate } from '@/lib/date-utils';
+import { useGetSanLuongDashboard } from '@/api';
+import { getNowVNDateLocal } from '@/lib/date-utils';
 
 import { BottomNav } from '@/components/BottomNav';
 import { HomeProgressCard } from '@/components/ui-parts/HomeProgressCard';
 import { HomeToolsGrid } from '@/components/ui-parts/HomeToolsGrid';
-import { MissingDaysModal } from '@/components/MissingDaysModal';
-import { SanLuongDrawer } from '@/components/SanLuongDrawer';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 import { useAuth } from '@/components/AuthProvider';
 
 export default function Home() {
-  const [isMissingModalOpen, setIsMissingModalOpen] = useState(false);
-  const [missingModalInitialDate, setMissingModalInitialDate] = useState<string | undefined>();
-  const [isAddOpen, setIsAddOpen] = useState(false);
-
   const { user } = useAuth();
   const { data: dashboard, isLoading: isLoadingDashboard } = useGetSanLuongDashboard();
-  const monthEntries = dashboard?.monthEntries || [];
-
-  const today = getNowVNDateLocal();
-  const { start: cycleStart, end: cycleEnd } = getCycleRange(getCycleMonthFromDate(today));
-
-  let missingDays: Date[] = [];
-  if (!isLoadingDashboard) {
-    const endCalcDate = today > cycleEnd ? cycleEnd : (today < cycleStart ? cycleStart : today);
-    if (today >= cycleStart) {
-      const days = eachDayOfInterval({ start: cycleStart, end: endCalcDate });
-      for (const d of days) {
-        const dayOfWeek = getDay(d);
-        if (dayOfWeek === 0) continue; // Bỏ qua Chủ Nhật
-
-        const dStr = format(d, 'yyyy-MM-dd');
-        const hasLog = monthEntries.some((e: any) => e.ngay === dStr);
-        if (!hasLog) {
-          missingDays.push(d);
-        }
-      }
-    }
-  }
-  missingDays = missingDays.sort((a, b) => b.getTime() - a.getTime());
 
   const currentDateStr = format(getNowVNDateLocal(), 'EEEE, dd MMMM', { locale: vi });
-
-  const confirmMutation = useConfirmNgayNghi();
-  const [loadingDays, setLoadingDays] = useState<Record<string, boolean>>({});
-
-  const handleConfirmNgayNghi = async (dateStr: string, loaiNghi: string) => {
-    setLoadingDays(prev => ({ ...prev, [dateStr]: true }));
-    try {
-      await confirmMutation.mutateAsync({ ngay: dateStr, loai_nghi: loaiNghi });
-    } finally {
-      setLoadingDays(prev => ({ ...prev, [dateStr]: false }));
-    }
-  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -108,29 +65,6 @@ export default function Home() {
             </div>
           </motion.header>
 
-          {/* Banner Thông Báo Thiếu Ngày */}
-          <AnimatePresence>
-            {missingDays.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -20, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                exit={{ opacity: 0, y: -20, height: 0 }}
-                className="overflow-hidden"
-              >
-                <button
-                  onClick={() => setIsMissingModalOpen(true)}
-                  className="w-full bg-gradient-to-r from-rose-500/10 to-amber-500/10 border border-rose-500/20 text-rose-500 px-4 py-3 rounded-2xl font-bold text-sm shadow-sm backdrop-blur-md flex items-center justify-between transition-transform active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-2">
-                    <CalendarX className="w-5 h-5" />
-                    <span>Có {missingDays.length} ngày trống sản lượng!</span>
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <div className="flex flex-col gap-3">
             {/* Progress Card Bento */}
             <motion.div variants={pageItemVariants}>
@@ -147,29 +81,6 @@ export default function Home() {
 
         <BottomNav />
       </div>
-
-      {/* Modal báo ngày thiếu — vẫn cần SanLuongDrawer để bổ sung từ modal */}
-      <SanLuongDrawer
-        entry={null}
-        open={isAddOpen}
-        onOpenChange={(open) => {
-          setIsAddOpen(open);
-          if (!open) setTimeout(() => setMissingModalInitialDate(undefined), 300);
-        }}
-        initialDate={missingModalInitialDate}
-      />
-
-      <MissingDaysModal
-        open={isMissingModalOpen}
-        onOpenChange={setIsMissingModalOpen}
-        missingDays={missingDays}
-        loadingDays={loadingDays}
-        onConfirmNghi={handleConfirmNgayNghi}
-        onOpenAddSanLuong={(dateStr) => {
-          setMissingModalInitialDate(dateStr);
-          setIsAddOpen(true);
-        }}
-      />
     </div>
   );
 }
