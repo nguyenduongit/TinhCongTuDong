@@ -197,8 +197,6 @@ export function SanLuongDayCard({
                     </div>
                   </div>
                 )}
-                  </div>
-                )}
               </div>
             );
           }
