@@ -64,12 +64,11 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
   const gioTangCa = Math.floor(tongPhutTangCa / 60);
   const phutTangCaLe = tongPhutTangCa % 60;
 
-  const maxScale = Math.max(congChuan, congSp + ngayNghi, congNhat + ngayNghi);
-  const progressPercent = maxScale > 0 ? (congSp / maxScale) * 100 : 0;
+  const congTangCa = minutesToCong(tongPhutTangCa);
+  const maxScale = congChuan + congTangCa;
+  
   const targetPercent = maxScale > 0 ? (congNhat / maxScale) * 100 : 0;
   const leavePercent = maxScale > 0 ? (ngayNghi / maxScale) * 100 : 0;
-  const chuanPercent = maxScale > 0 ? (congChuan / maxScale) * 100 : 0;
-  const isOvertimeScale = maxScale > congChuan;
 
   return (
     <div className="flex flex-col gap-3">
@@ -77,8 +76,8 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
       <div className="relative overflow-hidden rounded-3xl p-5 border border-white/10 shadow-2xl bg-gradient-to-br from-zinc-900 to-zinc-950">
         <div className="absolute top-0 right-0 p-32 bg-primary/20 rounded-full blur-[80px] -mr-16 -mt-16 pointer-events-none" />
 
-        <div className="flex justify-between items-start mb-10 relative z-10">
-          <div>
+        <div className="flex justify-between items-start mb-6 relative z-10">
+          <div className="inline-flex flex-col">
             <p className="text-zinc-400 font-medium text-xs uppercase tracking-widest mb-1 flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               Sản lượng đạt được
@@ -88,6 +87,10 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
                 {isLoading ? '-' : congSp.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
               <span className="text-zinc-500 font-semibold text-sm">công</span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-widest border-t border-white/5 pt-1 mt-1">
+              <span>Mục tiêu</span>
+              <span className="text-emerald-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
             </div>
           </div>
           <div className={cn(
@@ -101,18 +104,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
 
         {/* Thanh tiến độ siêu mượt */}
         <div className="space-y-2 relative z-10">
-          <div className="relative pt-6">
-            {/* Target indicator badge */}
-            <div 
-              className="absolute top-0 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 z-20"
-              style={{ left: `${targetPercent}%` }}
-            >
-              <div className="bg-primary/90 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-black text-white whitespace-nowrap shadow-lg border border-primary/20">
-                Mục tiêu: {congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
-              </div>
-              <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-primary/90" />
-            </div>
-
+          <div className="relative pt-2">
             <div className="h-3 w-full bg-zinc-800/80 rounded-full overflow-hidden shadow-inner relative mt-1">
               {/* Leave bar (Right aligned) */}
               {ngayNghi > 0 && (
@@ -122,38 +114,20 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
                 />
               )}
 
-              {/* Progress bar */}
+              {/* Target bar (Mục tiêu - xanh lá) */}
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
+                animate={{ width: `${targetPercent}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
-                className={cn(
-                  "h-full relative z-10",
-                  isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[2px_0_10px_rgba(52,211,153,0.3)]" : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[2px_0_10px_rgba(245,158,11,0.3)]"
-                )}
+                className="h-full relative z-10 bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[2px_0_10px_rgba(52,211,153,0.3)]"
               >
                 <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
               </motion.div>
             </div>
-            
-            {/* Vạch mốc công chuẩn (chỉ xuất hiện khi vượt mốc) */}
-            {isOvertimeScale && (
-              <div 
-                className="absolute top-7 -translate-x-1/2 flex flex-col items-center z-10 pointer-events-none"
-                style={{ left: `${chuanPercent}%` }}
-              >
-                <div className="w-px h-5 border-l border-dashed border-zinc-400" />
-                <div className="text-[9px] font-bold text-zinc-400 mt-1 whitespace-nowrap">
-                  Mốc chuẩn
-                </div>
-              </div>
-            )}
           </div>
           <div className="flex justify-between text-[11px] font-semibold px-1 mt-2">
-            <span className="text-zinc-500 uppercase tracking-widest">Tiến độ tháng</span>
-            {!isOvertimeScale && (
-              <span className="text-zinc-400">{isLoading ? '-' : congChuan} công chuẩn</span>
-            )}
+            <span className="text-zinc-500 uppercase tracking-widest">Tiến độ thời gian</span>
+            <span className="text-zinc-400">{isLoading ? '-' : maxScale.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} tối đa</span>
           </div>
         </div>
       </div>
