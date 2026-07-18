@@ -26,10 +26,8 @@ export function InstallPwa() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm z-10 flex flex-col items-center text-center"
       >
-        <div className="w-20 h-20 bg-gradient-to-tr from-primary to-amber-500 rounded-3xl p-[2px] mb-8 shadow-2xl shadow-primary/20">
-          <div className="w-full h-full bg-background rounded-[22px] flex items-center justify-center">
-            <Smartphone className="w-10 h-10 text-primary" />
-          </div>
+        <div className="w-24 h-24 mb-8 shadow-[0_8px_30px_rgba(244,63,94,0.3)] rounded-[24px] overflow-hidden bg-background p-1 border border-white/10">
+          <img src="/icon-192.png" alt="App Logo" className="w-full h-full object-cover rounded-[20px]" />
         </div>
 
         <h1 className="text-2xl font-black tracking-tight mb-3 text-foreground">
