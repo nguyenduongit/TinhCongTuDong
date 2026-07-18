@@ -32,7 +32,13 @@ function generateDays(entries: SanLuong[], startStr: string, endStr: string): { 
 
   while (current <= endD) {
     const dStr = format(current, 'yyyy-MM-dd');
-    result.push({ date: dStr, items: map.get(dStr) || [] });
+    const items = map.get(dStr) || [];
+    
+    // Ẩn chủ nhật nếu không có dữ liệu nhập
+    if (current.getDay() !== 0 || items.length > 0) {
+      result.push({ date: dStr, items });
+    }
+    
     current = new Date(current.setDate(current.getDate() + 1));
   }
 
