@@ -21,7 +21,7 @@ export default function CaiDat() {
 
   const handleUpdate = async (field: string, value: string | number | null) => {
     try {
-      await updateMutation.mutateAsync({ [field]: value });
+      await updateMutation.mutateAsync({ [field]: value } as any);
       toast.success('Đã cập nhật!');
     } catch (e: any) {
       toast.error('Lỗi khi cập nhật: ' + e.message);
