@@ -125,8 +125,8 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
                 className={cn(
-                  "h-full rounded-full relative z-10",
-                  isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                  "h-full relative z-10",
+                  isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[2px_0_10px_rgba(52,211,153,0.3)]" : "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[2px_0_10px_rgba(245,158,11,0.3)]"
                 )}
               >
                 <div className="absolute inset-0 bg-white/20 w-full h-full skeleton-shimmer" />
