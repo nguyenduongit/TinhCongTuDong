@@ -116,24 +116,6 @@ export default function CaiDat() {
               </motion.button>
             )}
 
-            {/* Section 1 */}
-            <motion.div variants={pageItemVariants} className="flex flex-col gap-2">
-              <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-4 mb-1">Dữ liệu</h3>
-              <div className="bg-card/60 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden shadow-sm">
-                <button 
-                  onClick={() => setLocation('/cong-cu/cong-doan')}
-                  className="w-full flex items-center justify-between p-4 bg-transparent hover:bg-white/5 transition-colors outline-none group"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
-                      <Database className="w-4.5 h-4.5" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground/90 group-hover:text-foreground transition-colors">Quản lý công đoạn</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/40 transition-colors" />
-                </button>
-              </div>
-            </motion.div>
 
             {/* Section 3 (was Section 3, now Section 2) */}
             <motion.div variants={pageItemVariants} className="flex flex-col gap-2">

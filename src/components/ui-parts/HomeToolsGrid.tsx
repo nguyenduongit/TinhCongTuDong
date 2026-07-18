@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CalendarDays, Search, ChevronRight } from 'lucide-react';
+import { CalendarDays, Search, ChevronRight, Database } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -102,6 +102,17 @@ export function HomeToolsGrid({ isPro }: HomeToolsGridProps) {
   };
 
   const tools = [
+    {
+      icon: <Database className="w-5 h-5" />,
+      label: 'Quản lý công đoạn',
+      description: 'Quản lý danh sách và đơn giá các công đoạn',
+      isPro: false,
+      accentColor: 'bg-blue-500/15 text-blue-400',
+      bgColor: 'bg-blue-500/5 hover:bg-blue-500/10',
+      borderColor: 'border-blue-500/15 hover:border-blue-500/30',
+      glowColor: 'bg-blue-500/10',
+      onClick: () => setLocation('/cong-cu/cong-doan'),
+    },
     {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
