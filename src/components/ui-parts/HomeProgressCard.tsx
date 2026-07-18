@@ -66,7 +66,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
 
   const congTangCa = minutesToCong(tongPhutTangCa);
   const maxScale = congChuan + congTangCa;
-  
+
   const targetPercent = maxScale > 0 ? (congNhat / maxScale) * 100 : 0;
   const leavePercent = maxScale > 0 ? (ngayNghi / maxScale) * 100 : 0;
 
@@ -110,7 +110,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
             <div className="h-3 w-full bg-zinc-800/80 rounded-full overflow-hidden shadow-inner relative mt-1">
               {/* Leave bar (Right aligned) */}
               {ngayNghi > 0 && (
-                <div 
+                <div
                   className="absolute right-0 top-0 bottom-0 z-0 bg-rose-500/60 transition-all duration-1000"
                   style={{ width: `${leavePercent}%` }}
                 />
@@ -128,8 +128,8 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
             </div>
           </div>
           <div className="flex justify-between text-[11px] font-semibold px-1 mt-2">
-            <span className="text-zinc-500 uppercase tracking-widest">Tiến độ thời gian</span>
-            <span className="text-zinc-400">{isLoading ? '-' : maxScale.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} tối đa</span>
+            <span className="text-zinc-500 uppercase tracking-widest">Tiến độ công việc</span>
+            <span className="text-zinc-400">{isLoading ? '-' : maxScale.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} công</span>
           </div>
         </div>
       </div>

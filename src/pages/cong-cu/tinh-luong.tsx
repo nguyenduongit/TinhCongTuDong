@@ -295,6 +295,38 @@ export default function SalaryCalculatorPage() {
     );
   }
 
+  if (!userTier) {
+    return (
+      <div className="min-h-[100dvh] w-full bg-background flex flex-col relative overflow-hidden items-center justify-center p-6">
+        <div className="w-full max-w-[430px] flex flex-col items-center text-center gap-6">
+          <div className="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center">
+            <Calculator className="w-10 h-10 text-amber-500" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Hồ sơ chưa hoàn tất</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed px-4">
+              Vui lòng cập nhật đầy đủ thông tin cá nhân (Bậc lương, chức vụ,...) trong phần Cài đặt để có thể tính lương tự động.
+            </p>
+          </div>
+          <Button 
+            className="w-full max-w-[280px] h-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold mt-4 shadow-[0_4px_12px_rgba(var(--primary),0.3)] hover:opacity-90 transition-opacity"
+            onClick={() => setLocation('/cai-dat')}
+          >
+            Đến trang Cài đặt
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            className="h-12 rounded-2xl text-zinc-400 hover:text-white"
+            onClick={() => setLocation('/')}
+          >
+            Về trang chủ
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] w-full bg-background flex flex-col relative overflow-hidden">
       <div className="w-full max-w-[430px] mx-auto bg-background flex flex-col h-[100dvh] relative">
