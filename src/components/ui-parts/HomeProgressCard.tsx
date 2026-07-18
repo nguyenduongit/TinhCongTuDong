@@ -65,7 +65,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
   const phutTangCaLe = tongPhutTangCa % 60;
 
   const progressPercent = congChuan > 0 ? Math.min((congSp / congChuan) * 100, 100) : 0;
-  const targetPercent = congChuan > 0 ? Math.min((congHanhChinh / congChuan) * 100, 100) : 0;
+  const targetPercent = congChuan > 0 ? Math.min((congNhat / congChuan) * 100, 100) : 0;
   const leavePercent = congChuan > 0 ? Math.min((ngayNghi / congChuan) * 100, 100) : 0;
 
   return (
@@ -105,7 +105,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
               style={{ left: `${targetPercent}%` }}
             >
               <div className="bg-primary/90 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-black text-white whitespace-nowrap shadow-lg border border-primary/20">
-                Mục tiêu: {congHanhChinh.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
+                Mục tiêu: {congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
               </div>
               <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-primary/90" />
             </div>
