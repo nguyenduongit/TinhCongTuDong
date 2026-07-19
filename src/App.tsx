@@ -97,8 +97,33 @@ import { Toaster as SonnerToaster } from 'sonner';
 import { InstallPwa } from '@/components/InstallPwa';
 import { useState, useEffect as useReactEffect } from 'react';
 
+function AppLayout({ isPwa }: { isPwa: boolean }) {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) return <FullPageLoader />;
+
+  // Nếu không phải PWA:
+  // - Cho phép dùng trình duyệt nếu CHƯA đăng nhập (để Login bắt mã referral)
+  // - ĐÃ đăng nhập xong thì khóa lại, bắt buộc cài App
+  if (!isPwa && user) {
+    return <InstallPwa />;
+  }
+
+  return <Router />;
+}
+
 function App() {
   const [isPwa, setIsPwa] = useState(true);
+
+  // Luôn luôn bắt mã giới thiệu ngay khi ứng dụng khởi chạy
+  useReactEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refFromUrl = params.get('ref');
+    if (refFromUrl) {
+      localStorage.setItem('referral_code', refFromUrl.toUpperCase());
+      // Không xoá URL ở đây để tránh ảnh hưởng wouter, trang login sẽ xoá sau
+    }
+  }, []);
 
   useReactEffect(() => {
     const checkIsPwa = () => {
@@ -120,16 +145,12 @@ function App() {
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
-  if (!isPwa) {
-    return <InstallPwa />;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
+            <AppLayout isPwa={isPwa} />
           </WouterRouter>
           <Toaster />
           <SonnerToaster position="top-center" richColors />

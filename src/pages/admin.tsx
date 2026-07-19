@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import {
-  useGetAllUsers, useAdminUpdateUserPlan, AdminUser,
+  useGetAllUsers, useAdminUpdateUserPlan, AdminUser, useAdminDeleteUser,
   useAdminGetReferrals, useAdminGetUserDailyEntries,
   ReferralInfo, DailyEntry,
   useAdminListDinhMuc, useAdminCreateDinhMuc, useAdminUpdateDinhMuc, useAdminDeleteDinhMuc, DinhMuc,
@@ -60,6 +60,8 @@ function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
   );
   const [saved, setSaved] = useState(false);
   const updateMutation = useAdminUpdateUserPlan();
+  const deleteMutation = useAdminDeleteUser();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
 
   const handleSave = async () => {
@@ -70,6 +72,15 @@ function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
     });
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 1200);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync({ targetUserId: u.id });
+      onClose();
+    } catch (e) {
+      alert('Lỗi xóa user: ' + (e as Error).message);
+    }
   };
 
   return (
@@ -127,6 +138,38 @@ function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
               className="h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-70 bg-primary text-primary-foreground">
               {saved ? <><Check className="w-4 h-4" /> Đã lưu!</> : updateMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</> : <><Check className="w-4 h-4" /> Lưu thay đổi</>}
             </button>
+          </div>
+
+          <div className="h-px bg-white/5 mt-2" />
+          
+          <div className="flex flex-col gap-2">
+            {!showDeleteConfirm ? (
+              <button 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" /> Xóa người dùng này
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
+                <p className="text-sm text-rose-200 text-center font-medium">Bạn có chắc chắn muốn xóa vĩnh viễn user này? Toàn bộ dữ liệu của họ sẽ bị xóa sạch.</p>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <button 
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="h-11 rounded-xl text-sm font-bold bg-white/10 text-foreground hover:bg-white/20 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button 
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isPending}
+                    className="h-11 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-70 transition-colors"
+                  >
+                    {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Xác nhận xóa'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

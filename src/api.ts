@@ -936,6 +936,21 @@ export function useAdminUpdateUserPlan() {
   });
 }
 
+export function useAdminDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ targetUserId }: { targetUserId: string }) => {
+      const { error } = await supabase.rpc('admin_delete_user', {
+        target_user_id: targetUserId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin_users'] });
+    },
+  });
+}
+
 // ─── REFERRAL SYSTEM ──────────────────────────────────────────────────────────
 
 export type ReferralInfo = {
