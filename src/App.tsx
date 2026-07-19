@@ -62,7 +62,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
 
   if (!user) {
-    setLocation('/login');
+    setLocation(`/login${window.location.search}`);
     return null;
   }
 
