@@ -397,7 +397,7 @@ export default function SalaryCalculatorPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[40px] -mr-10 -mt-10 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-[40px] -ml-10 -mb-10 pointer-events-none" />
 
-                <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Thực lãnh (Net)</h2>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Thực lãnh</h2>
                 <span className="font-black text-[42px] leading-none bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent drop-shadow-sm tracking-tight mb-2">
                   {formatVND(netIncome)}
                 </span>

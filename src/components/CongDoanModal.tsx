@@ -6,6 +6,7 @@ import {
   useCreateCongDoan,
   useUpdateCongDoan,
   useDeleteCongDoan,
+  useUpdateDinhMucQuyCach,
   type CongDoan
 } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -53,14 +54,18 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const ma_cong_doan = formData.get('ma_cong_doan') as string;
+    const quy_cach = formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '';
+
     await createMutation.mutateAsync({
       data: {
-        ma_cong_doan: formData.get('ma_cong_doan') as string,
+        ma_cong_doan,
         ten_cong_doan: formData.get('ten_cong_doan') as string,
         dinh_muc: Number(formData.get('dinh_muc')),
-        quy_cach: formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '',
+        quy_cach,
       }
     });
+
     queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
     setIsAdding(false);
   };
@@ -68,15 +73,19 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
   const handleUpdate = async (id: number, e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const ma_cong_doan = formData.get('ma_cong_doan') as string;
+    const quy_cach = formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '';
+
     await updateMutation.mutateAsync({
       id,
       data: {
-        ma_cong_doan: formData.get('ma_cong_doan') as string,
+        ma_cong_doan,
         ten_cong_doan: formData.get('ten_cong_doan') as string,
         dinh_muc: Number(formData.get('dinh_muc')),
-        quy_cach: formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '',
+        quy_cach,
       }
     });
+
     queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
     setEditingId(null);
   };

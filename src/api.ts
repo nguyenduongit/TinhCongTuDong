@@ -546,6 +546,7 @@ export type DinhMuc = {
   level_2_1: number;
   level_2_2: number;
   level_2_5: number;
+  quy_cach?: string | null;
   created_at: string;
 };
 
@@ -588,7 +589,128 @@ export const useGetDinhMucByCode = (productCode: string) => {
   });
 };
 
+// --- ADMIN ĐỊNH MỨC CRUD ---
+export const useAdminListDinhMuc = () => {
+  return useQuery({
+    queryKey: ['admin', 'dinh-muc', 'list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dinh_muc')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as DinhMuc[];
+    },
+  });
+};
+
+export const useAdminCreateDinhMuc = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Omit<DinhMuc, 'created_at'>) => {
+      const { data, error } = await supabase
+        .from('dinh_muc')
+        .insert(payload)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dinh-muc', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc'] });
+    },
+  });
+};
+
+export const useAdminUpdateDinhMuc = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Omit<DinhMuc, 'created_at'>) => {
+      const { error } = await supabase
+        .from('dinh_muc')
+        .update({
+          product_name: payload.product_name,
+          level_1_0: payload.level_1_0,
+          level_1_1: payload.level_1_1,
+          level_2_0: payload.level_2_0,
+          level_2_1: payload.level_2_1,
+          level_2_2: payload.level_2_2,
+          level_2_5: payload.level_2_5,
+          quy_cach: payload.quy_cach,
+        })
+        .eq('product_code', payload.product_code);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dinh-muc', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc', 'detail', variables.product_code] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc'] });
+    },
+  });
+};
+
+export const useAdminDeleteDinhMuc = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (productCode: string) => {
+      const { error } = await supabase
+        .from('dinh_muc')
+        .delete()
+        .eq('product_code', productCode);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, productCode) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dinh-muc', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc', 'detail', productCode] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc'] });
+    },
+  });
+};
+
+export const useUpdateDinhMucQuyCach = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productCode, quyCach }: { productCode: string; quyCach: string }) => {
+      const { error } = await supabase
+        .from('dinh_muc')
+        .update({ quy_cach: quyCach })
+        .eq('product_code', productCode);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, { productCode }) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dinh-muc', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc', 'detail', productCode] });
+      queryClient.invalidateQueries({ queryKey: ['dinh-muc'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'quy-cach-suggestions'] });
+    },
+  });
+};
+
 // --- THONG TIN LUONG ---
+
+export type QuyCachSuggestion = {
+  ma_cong_doan: string;
+  ten_cong_doan: string;
+  quy_cach: string;
+};
+
+export const useAdminListQuyCachSuggestions = () => {
+  return useQuery({
+    queryKey: ['admin', 'quy-cach-suggestions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_quy_cach_suggestions');
+      if (error) throw error;
+      return (data || []) as QuyCachSuggestion[];
+    },
+  });
+};
+
 export type ThongTinLuong = {
   ngay_vao_cong_ty: string | null;
   ngay_ky_hop_dong: string | null;

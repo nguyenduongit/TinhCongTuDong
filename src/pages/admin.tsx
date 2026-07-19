@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldAlert, Search, Crown, X, Check, Loader2,
   Calendar, Briefcase, VenusIcon, MarsIcon, User as UserIcon,
-  Users, Pencil, Gift, ArrowRight,
+  Users, Pencil, Gift, ArrowRight, Trash2,
   Clock, ChevronLeft, Eye, ChevronDown
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
@@ -11,6 +11,8 @@ import {
   useGetAllUsers, useAdminUpdateUserPlan, AdminUser,
   useAdminGetReferrals, useAdminGetUserDailyEntries,
   ReferralInfo, DailyEntry,
+  useAdminListDinhMuc, useAdminCreateDinhMuc, useAdminUpdateDinhMuc, useAdminDeleteDinhMuc, DinhMuc,
+  useUpdateDinhMucQuyCach, useAdminListQuyCachSuggestions
 } from '@/api';
 import { Input } from '@/components/ui/input';
 import { format, addMonths } from 'date-fns';
@@ -637,9 +639,268 @@ function ReferralTab() {
 
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Tab 5: Dinh Muc (Định Mức) ────────────────────────────────────────────────
+function DinhMucModal({ dm, onClose }: { dm?: DinhMuc; onClose: () => void }) {
+  const isEdit = !!dm;
+  const createMutation = useAdminCreateDinhMuc();
+  const updateMutation = useAdminUpdateDinhMuc();
+
+  const [formData, setFormData] = useState<Partial<DinhMuc>>(dm || {
+    product_code: '',
+    product_name: '',
+    level_1_0: 1,
+    level_1_1: 1,
+    level_2_0: 1,
+    level_2_1: 1,
+    level_2_2: 1,
+    level_2_5: 1,
+    quy_cach: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      if (isEdit) {
+        await updateMutation.mutateAsync(formData as Omit<DinhMuc, 'created_at'>);
+      } else {
+        await createMutation.mutateAsync(formData as Omit<DinhMuc, 'created_at'>);
+      }
+      onClose();
+    } catch (e) {
+      alert('Lỗi lưu định mức: ' + (e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <motion.div
+        className="relative w-full max-w-[430px] bg-card rounded-t-[2rem] border-t border-white/10 shadow-2xl overflow-hidden"
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-zinc-400">
+          <X className="w-4 h-4" />
+        </button>
+        <div className="px-6 pb-28 pt-4 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto hide-scrollbar">
+          <h2 className="text-xl font-bold">{isEdit ? 'Sửa Định Mức' : 'Thêm Định Mức'}</h2>
+          
+          <div className="space-y-2">
+            <span className="text-xs text-zinc-400 font-bold uppercase">Mã Công Đoạn</span>
+            <Input 
+              value={formData.product_code || ''} 
+              onChange={e => setFormData({ ...formData, product_code: e.target.value })} 
+              disabled={isEdit}
+              placeholder="Ví dụ: 3.1"
+              className="bg-black/20"
+            />
+          </div>
+          <div className="space-y-2">
+            <span className="text-xs text-zinc-400 font-bold uppercase">Tên Công Đoạn</span>
+            <Input 
+              value={formData.product_name || ''} 
+              onChange={e => setFormData({ ...formData, product_name: e.target.value })} 
+              placeholder="Tên công đoạn..."
+              className="bg-black/20"
+            />
+          </div>
+          <div className="space-y-2">
+            <span className="text-xs text-zinc-400 font-bold uppercase">Quy cách (Tùy chọn)</span>
+            <Input 
+              value={formData.quy_cach || ''} 
+              onChange={e => setFormData({ ...formData, quy_cach: e.target.value })} 
+              placeholder="VD: 270pcs/hộp"
+              className="bg-black/20"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {['1_0', '1_1', '2_0', '2_1', '2_2', '2_5'].map(lvl => (
+              <div key={lvl} className="space-y-2">
+                <span className="text-xs text-zinc-400 font-bold uppercase">Bậc {lvl.replace('_', '.')}</span>
+                <Input 
+                  inputMode="decimal"
+                  value={String((formData as any)[`level_${lvl}`] || '')} 
+                  onChange={e => setFormData({ ...formData, [`level_${lvl}`]: Number(e.target.value.replace(/[^0-9.]/g, '')) || 0 })} 
+                  className="bg-black/20"
+                />
+              </div>
+            ))}
+          </div>
+
+          <button onClick={handleSave} disabled={saving || !formData.product_code} className="mt-4 w-full h-12 bg-primary text-primary-foreground font-bold rounded-2xl disabled:opacity-50 flex items-center justify-center">
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEdit ? 'Lưu Thay Đổi' : 'Tạo Mới')}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function DuyetQuyCachModal({ onClose }: { onClose: () => void }) {
+  const { data: suggestions = [], isLoading } = useAdminListQuyCachSuggestions();
+  const updateQc = useUpdateDinhMucQuyCach();
+
+  const handleDuyet = async (productCode: string, quyCach: string) => {
+    try {
+      await updateQc.mutateAsync({ productCode, quyCach });
+    } catch(e) {
+      alert('Lỗi: ' + (e as Error).message);
+    }
+  };
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <motion.div
+        className="relative w-full max-w-[430px] bg-card rounded-t-[2rem] border-t border-white/10 shadow-2xl overflow-hidden"
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-zinc-400">
+          <X className="w-4 h-4" />
+        </button>
+        <div className="px-6 pb-28 pt-4 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto hide-scrollbar">
+          <h2 className="text-xl font-bold">Duyệt Quy Cách</h2>
+          
+          {isLoading ? (
+            <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+          ) : suggestions.length === 0 ? (
+            <div className="text-center py-8 text-zinc-500 text-sm">Không có đề xuất quy cách nào.</div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {suggestions.map((s, i) => (
+                <div key={i} className="bg-black/20 border border-white/5 p-4 rounded-2xl flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="font-black text-amber-500">{s.ma_cong_doan}</span>
+                    <span className="text-sm font-semibold text-foreground/80">{s.ten_cong_doan}</span>
+                    <span className="text-xs text-primary font-bold mt-1">QC: {s.quy_cach}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleDuyet(s.ma_cong_doan, s.quy_cach)} disabled={updateQc.isPending} className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 disabled:opacity-50">
+                      {updateQc.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function DinhMucTab() {
+  const { data: list = [], isLoading } = useAdminListDinhMuc();
+  const deleteMutation = useAdminDeleteDinhMuc();
+  
+  const [search, setSearch] = useState('');
+  const [editingDm, setEditingDm] = useState<DinhMuc | undefined>();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDuyetModalOpen, setIsDuyetModalOpen] = useState(false);
+  
+  const { data: suggestions = [] } = useAdminListQuyCachSuggestions();
+
+  const filtered = useMemo(() => {
+    if (!search) return list;
+    const s = search.toLowerCase();
+    return list.filter(dm => dm.product_code.toLowerCase().includes(s) || dm.product_name.toLowerCase().includes(s));
+  }, [list, search]);
+
+  const handleDelete = (code: string) => {
+    if (confirm(`Bạn có chắc muốn xóa định mức ${code}?`)) {
+      deleteMutation.mutate(code);
+    }
+  };
+
+  const openEdit = (dm: DinhMuc) => {
+    setEditingDm(dm);
+    setIsModalOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingDm(undefined);
+    setIsModalOpen(true);
+  };
+
+  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+
+  return (
+    <div className="px-5 flex flex-col gap-5 pb-8 pt-4">
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Input 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm mã / tên công đoạn..." 
+            className="pl-9 bg-black/20 border-white/5 rounded-xl h-11"
+          />
+        </div>
+        <button onClick={() => setIsDuyetModalOpen(true)} className="relative h-11 px-4 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold whitespace-nowrap flex items-center gap-2">
+          Duyệt QC
+          {suggestions.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg">
+              {suggestions.length}
+            </span>
+          )}
+        </button>
+        <button onClick={openCreate} className="h-11 px-4 bg-primary text-primary-foreground rounded-xl font-bold whitespace-nowrap">
+          + Thêm
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {filtered.map(dm => (
+          <div key={dm.product_code} className="bg-card/40 border border-white/5 p-4 rounded-2xl flex flex-col gap-3">
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <span className="font-black text-amber-500">{dm.product_code}</span>
+                <span className="text-sm font-semibold">{dm.product_name}</span>
+                {dm.quy_cach && <span className="text-xs text-zinc-400 font-medium mt-0.5">QC: {dm.quy_cach}</span>}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => openEdit(dm)} className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button onClick={() => handleDelete(dm.product_code)} disabled={deleteMutation.isPending} className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 disabled:opacity-50">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-black/20 p-2 rounded-lg flex flex-col items-center"><span className="text-[10px] text-zinc-500 font-bold">1.0</span><span className="text-xs font-bold">{dm.level_1_0}</span></div>
+              <div className="bg-black/20 p-2 rounded-lg flex flex-col items-center"><span className="text-[10px] text-zinc-500 font-bold">1.1</span><span className="text-xs font-bold">{dm.level_1_1}</span></div>
+              <div className="bg-black/20 p-2 rounded-lg flex flex-col items-center"><span className="text-[10px] text-zinc-500 font-bold">2.0</span><span className="text-xs font-bold">{dm.level_2_0}</span></div>
+              <div className="bg-black/20 p-2 rounded-lg flex flex-col items-center"><span className="text-[10px] text-zinc-500 font-bold">2.1</span><span className="text-xs font-bold">{dm.level_2_1}</span></div>
+              <div className="bg-black/20 p-2 rounded-lg flex flex-col items-center"><span className="text-[10px] text-zinc-500 font-bold">2.2</span><span className="text-xs font-bold">{dm.level_2_2}</span></div>
+              <div className="bg-black/20 p-2 rounded-lg flex flex-col items-center"><span className="text-[10px] text-zinc-500 font-bold">2.5</span><span className="text-xs font-bold">{dm.level_2_5}</span></div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="text-center py-8 text-zinc-500 text-sm">Không tìm thấy định mức nào.</div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {isModalOpen && <DinhMucModal dm={editingDm} onClose={() => setIsModalOpen(false)} />}
+        {isDuyetModalOpen && <DuyetQuyCachModal onClose={() => setIsDuyetModalOpen(false)} />}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 const TABS = [
   { id: 'users', label: 'User', icon: Users },
   { id: 'referral', label: 'Referral', icon: Gift },
+  { id: 'dinhmuc', label: 'Định mức', icon: Briefcase },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -657,7 +918,7 @@ export default function AdminPage() {
           <ShieldAlert className="w-6 h-6 text-rose-500 shrink-0" />
           <span className="text-xl font-black text-foreground tracking-tight">Admin</span>
         </div>
-        <div className="grid grid-cols-2 px-5 pb-0 gap-1">
+        <div className="grid grid-cols-3 px-5 pb-0 gap-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -678,6 +939,7 @@ export default function AdminPage() {
           <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
             {activeTab === 'users' && <UsersTab />}
             {activeTab === 'referral' && <ReferralTab />}
+            {activeTab === 'dinhmuc' && <DinhMucTab />}
           </motion.div>
         </AnimatePresence>
       </motion.div>

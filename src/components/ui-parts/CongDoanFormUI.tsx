@@ -35,6 +35,9 @@ export function CongDoanFormUI({
   const [bacLuong, setBacLuong] = useState<string>('');
   const [tenCongDoan, setTenCongDoan] = useState(defaultValues?.ten_cong_doan || '');
   const [dinhMuc, setDinhMuc] = useState<number | string>(defaultValues?.dinh_muc || '');
+  const [quyCachSl, setQuyCachSl] = useState(qcParsed.sl || '');
+  const [quyCachUnit, setQuyCachUnit] = useState(qcParsed.unit || 'hộp');
+  const [isQuyCachLocked, setIsQuyCachLocked] = useState(false);
 
   // Debounce logic
   useEffect(() => {
@@ -78,9 +81,19 @@ export function CongDoanFormUI({
           setDinhMuc(val);
         }
       }
+      
+      if (dinhMucData.quy_cach) {
+        const parsed = parseQuyCach(dinhMucData.quy_cach);
+        setQuyCachSl(parsed.sl);
+        setQuyCachUnit(parsed.unit);
+        setIsQuyCachLocked(true);
+      } else {
+        setIsQuyCachLocked(false);
+      }
     } else if (!isEditing && !readOnly) {
       setTenCongDoan('');
       setDinhMuc('');
+      setIsQuyCachLocked(false);
     }
   }, [dinhMucData, bacLuong, isEditing, defaultValues, readOnly]);
 
@@ -105,12 +118,12 @@ export function CongDoanFormUI({
           <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Mã</label>
           <input 
             required 
-            readOnly={readOnly}
+            readOnly={readOnly || isEditing}
             name="ma_cong_doan" 
             value={maCongDoan}
             onChange={(e) => setMaCongDoan(e.target.value)}
             placeholder={readOnly ? "5.2" : undefined}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner" 
+            className={`w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground transition-all placeholder:text-zinc-600 font-medium shadow-inner ${readOnly || isEditing ? 'opacity-70 cursor-not-allowed outline-none' : 'outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50'}`} 
           />
         </div>
         <div className="col-span-1">
@@ -162,25 +175,28 @@ export function CongDoanFormUI({
           />
         </div>
         <div className="col-span-2">
-          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Quy cách</label>
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Quy cách (VD: 270 / hộp)</label>
           <div className="flex gap-2">
             <input 
-              readOnly={readOnly}
-              type={readOnly ? "text" : "number"} 
+              required={!isQuyCachLocked && !readOnly}
+              readOnly={readOnly || isQuyCachLocked}
+              type={readOnly || isQuyCachLocked ? "text" : "number"} 
               name="quy_cach_sl" 
-              defaultValue={isEditing || readOnly ? qcParsed.sl : "270"} 
-              placeholder={readOnly ? "270" : "Số lượng"} 
-              className="w-2/3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+              value={quyCachSl}
+              onChange={e => setQuyCachSl(e.target.value)}
+              placeholder="Số lượng"
+              className={`w-2/3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm transition-all placeholder:text-zinc-600 font-medium shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${readOnly || isQuyCachLocked ? 'text-foreground/70 outline-none cursor-not-allowed opacity-80' : 'text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50'}`} 
             />
-            {readOnly ? (
-               <div className="w-1/3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground flex items-center justify-between font-medium">
-                 <span className="capitalize">{qcParsed.unit}</span>
+            <input type="hidden" name="quy_cach_unit" value={quyCachUnit} />
+            {readOnly || isQuyCachLocked ? (
+               <div className="w-1/3 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground/70 flex items-center justify-between font-medium cursor-not-allowed opacity-80">
+                 <span className="capitalize">{quyCachUnit}</span>
                </div>
             ) : (
               <div className="w-1/3 relative">
                 <select 
-                  name="quy_cach_unit" 
-                  defaultValue={qcParsed.unit} 
+                  value={quyCachUnit}
+                  onChange={e => setQuyCachUnit(e.target.value)}
                   className="w-full h-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-medium appearance-none shadow-inner cursor-pointer"
                 >
                   <option value="hộp" className="bg-background">Hộp</option>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, addDays } from 'date-fns';
 import { ChevronLeft, Info, PackageOpen, Target, Zap, Clock, Coffee, AlertTriangle } from 'lucide-react';
-import { useGetSanLuongDashboard, useListCongDoan, getListCongDoanQueryKey } from '@/api';
+import { useGetSanLuongDashboard, useListCongDoan, getListCongDoanQueryKey, useGetDinhMucByCode } from '@/api';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { minutesToCong } from '@/lib/work-rules';
 import { parseQuyCach } from '@/components/ui-parts/CongDoanFormUI';
@@ -19,6 +19,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
 
   const { data: dashboard, isLoading: isLoadingDashboard } = useGetSanLuongDashboard();
   const { data: congDoanList = [], isLoading: isLoadingCd } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
+  const { data: dinhMucData } = useGetDinhMucByCode(selectedCongDoan);
 
   const stats = dashboard?.stats;
   const todayEntries = dashboard?.todayEntries || [];
@@ -54,7 +55,8 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
   const missingCong = Math.max(0, totalRequiredCong - totalAchievedCong);
 
   const selectedCdObj = congDoanList.find(c => c.ma_cong_doan === selectedCongDoan);
-  const parsedQc = selectedCdObj ? parseQuyCach(selectedCdObj.quy_cach) : { sl: '1', unit: 'Sản phẩm' };
+  const activeQuyCach = dinhMucData?.quy_cach || selectedCdObj?.quy_cach;
+  const parsedQc = activeQuyCach ? parseQuyCach(activeQuyCach) : { sl: '1', unit: 'Sản phẩm' };
   const pcsPerUnit = parseFloat(parsedQc.sl) || 1;
 
   function getReverseCalcPcs(targetCong: number, cd: typeof selectedCdObj): number {
@@ -102,16 +104,6 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
         {isLoadingDashboard || isLoadingCd ? (
           <div className="flex justify-center p-8">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : !hasLoggedToday ? (
-          <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-5 flex flex-col items-center text-center gap-3.5 shadow-sm">
-            <div className="w-14 h-14 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)] border border-rose-500/30">
-              <AlertTriangle className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-foreground text-base">Chưa cập nhật hôm nay</h3>
-            <p className="text-[13px] text-zinc-400 font-medium px-2">
-              Vui lòng nhập đầy đủ sản lượng của ngày hôm nay trước khi sử dụng công cụ dự báo để đảm bảo số liệu tính toán bắt đầu từ "ngày mai" là chính xác tuyệt đối.
-            </p>
           </div>
         ) : (
           <motion.div
