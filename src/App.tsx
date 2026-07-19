@@ -28,12 +28,40 @@ const queryClient = new QueryClient({
   },
 });
 
+const FullPageLoader = () => (
+  <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-background relative overflow-hidden">
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
+    
+    <div className="relative z-10 flex flex-col items-center gap-6">
+      <div className="relative w-24 h-24 flex items-center justify-center">
+        <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+        <div className="absolute inset-0 border-4 border-t-primary border-r-primary border-b-transparent border-l-transparent rounded-full animate-[spin_1.5s_linear_infinite] shadow-[0_0_20px_rgba(245,158,11,0.3)]" />
+        <div className="absolute inset-2 border-4 border-l-amber-500 border-b-amber-500 border-t-transparent border-r-transparent rounded-full animate-[spin_2s_linear_infinite_reverse]" />
+        <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center animate-pulse backdrop-blur-md">
+          <span className="text-2xl drop-shadow-lg">👷</span>
+        </div>
+      </div>
+      
+      <div className="flex flex-col items-center gap-2">
+        <h3 className="text-lg font-bold bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent animate-pulse tracking-wide">
+          Đang tải dữ liệu
+        </h3>
+        <div className="flex gap-1.5 items-center mt-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary/80 animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   if (isLoading) {
-    return <div className="min-h-[100dvh] flex items-center justify-center bg-background text-primary">Đang tải...</div>;
+    return <FullPageLoader />;
   }
 
   if (!user) {
@@ -48,7 +76,7 @@ function Router() {
 
 
   return (
-    <Suspense fallback={<div className="min-h-[100dvh] flex items-center justify-center bg-background text-primary"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<FullPageLoader />}>
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/"><ProtectedRoute component={Home} /></Route>
