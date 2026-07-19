@@ -11,7 +11,6 @@ const SanLuong = lazy(() => import('@/pages/san-luong'));
 const CongTuan = lazy(() => import('@/pages/cong-tuan'));
 const CaiDat = lazy(() => import('@/pages/cai-dat'));
 const Login = lazy(() => import('@/pages/login'));
-const HuongDan = lazy(() => import('@/pages/huong-dan'));
 const AdminPage = lazy(() => import('@/pages/admin'));
 
 // Tool Pages
@@ -56,7 +55,6 @@ function Router() {
         <Route path="/san-luong"><ProtectedRoute component={SanLuong} /></Route>
         <Route path="/cong-tuan"><ProtectedRoute component={CongTuan} /></Route>
         <Route path="/cai-dat"><ProtectedRoute component={CaiDat} /></Route>
-        <Route path="/huong-dan"><ProtectedRoute component={HuongDan} /></Route>
         <Route path="/admin"><ProtectedRoute component={AdminPage} /></Route>
         
         {/* Tool Routes */}

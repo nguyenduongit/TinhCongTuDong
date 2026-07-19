@@ -3,34 +3,31 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldAlert, Search, Crown, X, Check, Loader2,
   Calendar, Briefcase, VenusIcon, MarsIcon, User as UserIcon,
-  Users, BarChart3, Building2, Pencil, Gift, ArrowRight,
+  Users, Pencil, Gift, ArrowRight,
   Clock, ChevronLeft, Eye, ChevronDown
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import {
   useGetAllUsers, useAdminUpdateUserPlan, AdminUser,
-  useGetSalaryTiers, SalaryTier,
-  useCompanyConfig, useUpdateCompanyConfig,
   useAdminGetReferrals, useAdminGetUserDailyEntries,
   ReferralInfo, DailyEntry,
 } from '@/api';
-import { CompanyConfig, COMPANY_CONFIG_META } from '@/lib/company-config';
 import { Input } from '@/components/ui/input';
 import { format, addMonths } from 'date-fns';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
-function Avatar({ src, size }: { src?: string | null; size: number }) {
+function Avatar({ src, size, className = '' }: { src?: string | null; size: number; className?: string }) {
   const [error, setError] = useState(false);
   const px = `${size}px`;
   if (src && !error) {
     return (
       <img src={src} alt="avatar" onError={() => setError(true)}
-        style={{ width: px, height: px }} className="rounded-full object-cover shrink-0" />
+        style={{ width: px, height: px }} className={`rounded-full object-cover shrink-0 ${className}`} />
     );
   }
   return (
-    <div style={{ width: px, height: px }} className="rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+    <div style={{ width: px, height: px }} className={`rounded-full bg-primary/10 flex items-center justify-center shrink-0 ${className}`}>
       <UserIcon style={{ width: size * 0.45, height: size * 0.45 }} className="text-primary" />
     </div>
   );
@@ -179,11 +176,35 @@ function UsersTab() {
               const meta = u.raw_user_metadata || {};
               const plan: 'free' | 'pro' = meta.plan === 'pro' || meta.subscription?.plan === 'pro' ? 'pro' : 'free';
               const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
+              const isAdminUser = meta.isAdmin === true || meta.isAdmin === 'true' || meta.isadmin === true || meta.isadmin === 'true';
               return (
                 <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
                   className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors"
                   onClick={() => setSelectedUser(u)}>
-                  <Avatar src={meta.avatar_url || meta.picture} size={36} />
+                  {isAdminUser ? (
+                    <div className="relative flex items-center justify-center shrink-0 w-[40px] h-[40px]">
+                      {/* Lớp blur phát sáng */}
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                        className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 blur-sm opacity-80"
+                      />
+                      {/* Lớp viền gradient sắc nét */}
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                        className="absolute inset-[1px] rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500"
+                      />
+                      {/* Nền đen bên trong để cắt viền */}
+                      <div className="absolute inset-[3px] bg-background rounded-full z-0" />
+                      {/* Avatar */}
+                      <div className="relative z-10 flex items-center justify-center">
+                        <Avatar src={meta.avatar_url || meta.picture} size={34} />
+                      </div>
+                    </div>
+                  ) : (
+                    <Avatar src={meta.avatar_url || meta.picture} size={36} />
+                  )}
                   <div className="flex flex-col min-w-0">
                     <span className="font-semibold text-foreground text-sm truncate leading-tight">{name}</span>
                     <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{u.email}</span>
@@ -208,195 +229,6 @@ function UsersTab() {
     </div>
   );
 }
-
-// ─── Tab 2: Bậc lương ─────────────────────────────────────────────────────────
-function SalaryTiersTab() {
-  const { data: tiers, isLoading } = useGetSalaryTiers();
-  const [editTier, setEditTier] = useState<SalaryTier | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [savedCode, setSavedCode] = useState<string | null>(null);
-
-  const handleEdit = (t: SalaryTier) => {
-    setEditTier(t);
-    setEditValue(new Intl.NumberFormat('vi-VN').format(t.base_salary));
-  };
-
-  const handleSave = async () => {
-    if (!editTier) return;
-    setSaving(true);
-    const numVal = Number(editValue.replace(/\D/g, ''));
-    const { createClient } = await import('@supabase/supabase-js');
-    const { supabase } = await import('@/lib/supabase');
-    const { error } = await supabase.from('salary_tiers').update({ base_salary: numVal }).eq('tier_code', editTier.tier_code);
-    setSaving(false);
-    if (!error) {
-      setSavedCode(editTier.tier_code);
-      setTimeout(() => setSavedCode(null), 1500);
-      setEditTier(null);
-    }
-  };
-
-  return (
-    <div className="px-5 pt-4 flex flex-col gap-3">
-      {isLoading ? (
-        <div className="text-center py-10 text-muted-foreground animate-pulse">Đang tải...</div>
-      ) : (
-        <>
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Bảng bậc lương cơ bản</p>
-          <div className="flex flex-col divide-y divide-white/5 bg-card/30 border border-white/5 rounded-2xl overflow-hidden">
-            {(tiers ?? []).map((t) => (
-              <div key={t.tier_code} className="flex items-center justify-between px-4 py-3">
-                <span className="font-semibold text-foreground text-sm">Bậc {t.tier_code}</span>
-                <div className="flex items-center gap-3">
-                  {savedCode === t.tier_code ? (
-                    <span className="text-xs text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Đã lưu</span>
-                  ) : (
-                    <span className="text-sm font-bold text-foreground">{new Intl.NumberFormat('vi-VN').format(t.base_salary)} đ</span>
-                  )}
-                  <button onClick={() => handleEdit(t)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-foreground">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Edit modal */}
-      <AnimatePresence>
-        {editTier && (
-          <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditTier(null)}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div className="relative w-full max-w-[430px] bg-card rounded-t-[2rem] border-t border-white/10 p-6 pb-28 flex flex-col gap-4"
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-              onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-center mb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
-              <p className="font-bold text-foreground">Chỉnh sửa — Bậc {editTier.tier_code}</p>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Lương cơ bản (đ)</label>
-                <Input value={editValue} inputMode="numeric"
-                  onChange={(e) => { const raw = e.target.value.replace(/\D/g, ''); setEditValue(raw ? new Intl.NumberFormat('vi-VN').format(Number(raw)) : ''); }}
-                  className="h-12 rounded-2xl bg-black/20 border-white/10 text-foreground font-bold" />
-              </div>
-              <button onClick={handleSave} disabled={saving}
-                className="h-12 rounded-2xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2">
-                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</> : <><Check className="w-4 h-4" /> Lưu</>}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ─── Tab 3: Company Config ────────────────────────────────────────────────────
-const formatConfigValue = (key: keyof CompanyConfig, value: number) => {
-  const unit = COMPANY_CONFIG_META[key]?.unit || '';
-  if (unit === '%') return `${(value * 100).toFixed(1)}%`;
-  if (unit.includes('đ')) return `${new Intl.NumberFormat('vi-VN').format(value)} đ`;
-  return `${value} ${unit}`;
-};
-
-function CompanyTab() {
-  const { config, isLoading } = useCompanyConfig();
-  const updateMutation = useUpdateCompanyConfig();
-  const [editKey, setEditKey] = useState<keyof CompanyConfig | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [savedKey, setSavedKey] = useState<string | null>(null);
-
-  const handleEdit = (key: keyof CompanyConfig) => {
-    setEditKey(key);
-    const unit = COMPANY_CONFIG_META[key]?.unit || '';
-    setEditValue(unit === '%' ? String((config[key] * 100).toFixed(2)) : String(config[key]));
-  };
-
-  const handleSave = async () => {
-    if (!editKey) return;
-    const unit = COMPANY_CONFIG_META[editKey]?.unit || '';
-    const numVal = unit === '%' ? Number(editValue) / 100 : Number(editValue.replace(/\D/g, ''));
-    await updateMutation.mutateAsync({ key: editKey, value: numVal });
-    setSavedKey(editKey);
-    setTimeout(() => setSavedKey(null), 1500);
-    setEditKey(null);
-  };
-
-  const groups: { label: string; keys: (keyof CompanyConfig)[] }[] = [
-    { label: 'Phụ cấp', keys: ['meal_allowance_per_day', 'compliance_allowance'] },
-    { label: 'Thưởng', keys: ['loyalty_bonus_per_year', 'skill_bonus_threshold_months', 'skill_bonus_amount'] },
-    { label: 'Tăng ca', keys: ['ot_normal_multiplier', 'ot_rest_multiplier'] },
-    { label: 'Bảo hiểm', keys: ['insurance_bhxh_rate', 'insurance_bhyt_rate', 'insurance_bhtn_rate'] },
-  ];
-
-  return (
-    <div className="px-5 pt-4 flex flex-col gap-5">
-      {isLoading ? (
-        <div className="text-center py-10 text-muted-foreground animate-pulse">Đang tải...</div>
-      ) : (
-        groups.map((group) => (
-          <div key={group.label} className="flex flex-col gap-2">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{group.label}</p>
-            <div className="flex flex-col divide-y divide-white/5 bg-card/30 border border-white/5 rounded-2xl overflow-hidden">
-              {group.keys.map((key) => (
-                <div key={key} className="flex items-center justify-between px-4 py-3">
-                  <div className="flex flex-col min-w-0 flex-1 mr-3">
-                    <span className="text-sm font-semibold text-foreground truncate">{COMPANY_CONFIG_META[key].label}</span>
-                    {COMPANY_CONFIG_META[key].description && (
-                      <span className="text-[10px] text-zinc-500">{COMPANY_CONFIG_META[key].description}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    {savedKey === key ? (
-                      <span className="text-xs text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" /> Đã lưu</span>
-                    ) : (
-                      <span className="text-sm font-bold text-foreground">{formatConfigValue(key, config[key])}</span>
-                    )}
-                    <button onClick={() => handleEdit(key)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-foreground">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))
-      )}
-
-      {/* Edit modal */}
-      <AnimatePresence>
-        {editKey && (
-          <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditKey(null)}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <motion.div className="relative w-full max-w-[430px] bg-card rounded-t-[2rem] border-t border-white/10 p-6 pb-28 flex flex-col gap-4"
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-              onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-center mb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
-              <p className="font-bold text-foreground">{COMPANY_CONFIG_META[editKey].label}</p>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
-                  Giá trị ({COMPANY_CONFIG_META[editKey].unit})
-                </label>
-                <Input value={editValue} inputMode="decimal"
-                  onChange={(e) => setEditValue(e.target.value)}
-                  className="h-12 rounded-2xl bg-black/20 border-white/10 text-foreground font-bold" />
-                {COMPANY_CONFIG_META[editKey].description && (
-                  <p className="text-xs text-zinc-500">{COMPANY_CONFIG_META[editKey].description}</p>
-                )}
-              </div>
-              <button onClick={handleSave} disabled={updateMutation.isPending}
-                className="h-12 rounded-2xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2">
-                {updateMutation.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang lưu...</> : <><Check className="w-4 h-4" /> Lưu</>}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 
 // ─── Tab 4: Referral ──────────────────────────────────────────────────────────
 
@@ -807,8 +639,6 @@ function ReferralTab() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'users', label: 'User', icon: Users },
-  { id: 'salary', label: 'Bậc lương', icon: BarChart3 },
-  { id: 'company', label: 'Company', icon: Building2 },
   { id: 'referral', label: 'Referral', icon: Gift },
 ] as const;
 
@@ -827,7 +657,7 @@ export default function AdminPage() {
           <ShieldAlert className="w-6 h-6 text-rose-500 shrink-0" />
           <span className="text-xl font-black text-foreground tracking-tight">Admin</span>
         </div>
-        <div className="grid grid-cols-4 px-5 pb-0 gap-1">
+        <div className="grid grid-cols-2 px-5 pb-0 gap-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -847,8 +677,6 @@ export default function AdminPage() {
         <AnimatePresence mode="wait">
           <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
             {activeTab === 'users' && <UsersTab />}
-            {activeTab === 'salary' && <SalaryTiersTab />}
-            {activeTab === 'company' && <CompanyTab />}
             {activeTab === 'referral' && <ReferralTab />}
           </motion.div>
         </AnimatePresence>

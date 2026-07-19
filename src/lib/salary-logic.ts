@@ -285,7 +285,7 @@ export function computeSalaryBreakdown(
           paidLeaveWorkdays, annualLeaveWorkdays,
           otNormalMins, otRestMins } = input;
 
-  const safeStdDays = standardWorkdays || 26;
+  const safeStdDays = standardWorkdays || 1;
   const hourlyRate  = basicSalary / (safeStdDays * 8);
   const dailySalary = hourlyRate * 8;
 
