@@ -521,7 +521,6 @@ export const useGetCongTuan = (params: { month: string }, options: any = {}) => 
 export type DinhMuc = {
   product_code: string;
   product_name: string;
-  level_0_9: number;
   level_1_0: number;
   level_1_1: number;
   level_2_0: number;

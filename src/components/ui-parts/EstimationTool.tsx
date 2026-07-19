@@ -81,7 +81,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
             </button>
           )}
           <h2 className="text-lg font-bold text-foreground">
-            Dự báo Sản lượng
+            Dự tính Sản lượng
           </h2>
         </div>
       </div>

@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2, ChevronLeft } from 'lucide-react';
-import { useSearchDinhMuc } from '@/api';
+import { useSearchDinhMuc, DinhMuc } from '@/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 
 export default function QuotaLookupPage() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedItem, setSelectedItem] = useState<DinhMuc | null>(null);
 
   // Debounce logic
   useEffect(() => {
@@ -110,7 +112,8 @@ export default function QuotaLookupPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-card/40 backdrop-blur-sm border border-white/5 rounded-3xl p-5 shadow-lg relative overflow-hidden group hover:border-amber-500/30 hover:bg-card/60 transition-all"
+                    onClick={() => setSelectedItem(item)}
+                    className="bg-card/40 backdrop-blur-sm border border-white/5 rounded-3xl p-5 shadow-lg relative overflow-hidden group hover:border-amber-500/30 hover:bg-card/60 transition-all cursor-pointer"
                   >
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-500/50 to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="flex justify-between items-start mb-4 gap-3">
@@ -150,6 +153,67 @@ export default function QuotaLookupPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-0"
+            onClick={() => setSelectedItem(null)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-[430px] bg-zinc-900 border border-white/10 rounded-[2rem] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85dvh]"
+            >
+              <div className="flex justify-between items-center p-5 border-b border-white/5 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-10">
+                <h3 className="text-lg font-bold text-foreground">Chi tiết định mức</h3>
+                <button 
+                  onClick={() => setSelectedItem(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-5 overflow-y-auto hide-scrollbar flex flex-col gap-5">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col gap-2">
+                  <span className="inline-flex self-start items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 uppercase tracking-wider">
+                    {selectedItem.product_code}
+                  </span>
+                  <h4 className="font-bold text-foreground text-base leading-snug">
+                    {selectedItem.product_name}
+                  </h4>
+                </div>
+
+                <div className="space-y-3">
+                  <h5 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest pl-1">Định mức theo bậc lương</h5>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Bậc 1.0', val: selectedItem.level_1_0 },
+                      { label: 'Bậc 1.1', val: selectedItem.level_1_1 },
+                      { label: 'Bậc 2.0', val: selectedItem.level_2_0 },
+                      { label: 'Bậc 2.1', val: selectedItem.level_2_1 },
+                      { label: 'Bậc 2.2', val: selectedItem.level_2_2 },
+                      { label: 'Bậc 2.5', val: selectedItem.level_2_5 },
+                    ].map((lv) => (
+                      <div key={lv.label} className="bg-black/20 border border-white/5 rounded-2xl p-3 flex flex-col items-center justify-center">
+                        <span className="text-[10px] uppercase font-bold text-zinc-400 mb-1">{lv.label}</span>
+                        <span className="text-base font-black text-amber-400">{lv.val || '-'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
