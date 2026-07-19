@@ -478,7 +478,7 @@ export default function SalaryCalculatorPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedOtNormal" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">OT Thường dự tính (Giờ)</Label>
+                    <Label htmlFor="estimatedOtNormal" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Tăng ca ngày thường</Label>
                     <Input
                       id="estimatedOtNormal"
                       value={estimatedOtNormal}
@@ -489,7 +489,7 @@ export default function SalaryCalculatorPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedOtRest" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">OT Nghỉ dự tính (Giờ)</Label>
+                    <Label htmlFor="estimatedOtRest" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Tăng ca ngày nghỉ</Label>
                     <Input
                       id="estimatedOtRest"
                       value={estimatedOtRest}
