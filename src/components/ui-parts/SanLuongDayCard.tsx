@@ -137,10 +137,7 @@ export function SanLuongDayCard({
                     <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-xl shadow-inner">
                       {icon}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-rose-400 font-bold text-[10px] uppercase tracking-wider mb-0.5">
-                        Lý do nghỉ
-                      </span>
+                    <div className="flex flex-col justify-center">
                       <span className="text-[15px] font-semibold text-foreground/90">
                         {label}
                       </span>
