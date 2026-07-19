@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { CongDoan } from '@/api';
-import { useGetDinhMucByCode } from '@/api';
+import { useGetDinhMucByCode, useGetThongTinLuong } from '@/api';
+import { toast } from 'sonner';
 
 export interface CongDoanFormUIProps {
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -32,7 +33,8 @@ export function CongDoanFormUI({
 
   const [maCongDoan, setMaCongDoan] = useState(defaultValues?.ma_cong_doan || '');
   const [debouncedMaCongDoan, setDebouncedMaCongDoan] = useState(maCongDoan);
-  const [bacLuong, setBacLuong] = useState<string>('');
+  const { data: profile } = useGetThongTinLuong();
+  const [bacLuong, setBacLuong] = useState<string>(profile?.bac_luong || '');
   const [tenCongDoan, setTenCongDoan] = useState(defaultValues?.ten_cong_doan || '');
   const [dinhMuc, setDinhMuc] = useState<number | string>(defaultValues?.dinh_muc || '');
   const [quyCachSl, setQuyCachSl] = useState(qcParsed.sl || '');
@@ -54,32 +56,19 @@ export function CongDoanFormUI({
     if (dinhMucData) {
       setTenCongDoan(dinhMucData.product_name);
       
-      // Auto guess bacLuong in edit mode if not yet set
-      if (isEditing && !bacLuong && defaultValues?.dinh_muc) {
-        let guessedBac = '1.0';
-        if (dinhMucData.level_1_0 === defaultValues.dinh_muc) guessedBac = '1.0';
-        else if (dinhMucData.level_1_1 === defaultValues.dinh_muc) guessedBac = '1.1';
-        else if (dinhMucData.level_2_0 === defaultValues.dinh_muc) guessedBac = '2.0';
-        else if (dinhMucData.level_2_1 === defaultValues.dinh_muc) guessedBac = '2.1';
-        else if (dinhMucData.level_2_2 === defaultValues.dinh_muc) guessedBac = '2.2';
-        else if (dinhMucData.level_2_5 === defaultValues.dinh_muc) guessedBac = '2.5';
-        
-        setBacLuong(guessedBac);
-        setDinhMuc(defaultValues.dinh_muc);
+      const activeBacLuong = profile?.bac_luong || bacLuong;
+      if (!activeBacLuong) {
+        setBacLuong('1.0');
+        setDinhMuc(dinhMucData.level_1_0);
       } else {
-        if (!bacLuong) {
-          setBacLuong('1.0');
-          setDinhMuc(dinhMucData.level_1_0);
-        } else {
-          let val = 0;
-          if (bacLuong === '1.0') val = dinhMucData.level_1_0;
-          else if (bacLuong === '1.1') val = dinhMucData.level_1_1;
-          else if (bacLuong === '2.0') val = dinhMucData.level_2_0;
-          else if (bacLuong === '2.1') val = dinhMucData.level_2_1;
-          else if (bacLuong === '2.2') val = dinhMucData.level_2_2;
-          else if (bacLuong === '2.5') val = dinhMucData.level_2_5;
-          setDinhMuc(val);
-        }
+        let val = 0;
+        if (activeBacLuong === '1.0') val = dinhMucData.level_1_0;
+        else if (activeBacLuong === '1.1') val = dinhMucData.level_1_1;
+        else if (activeBacLuong === '2.0') val = dinhMucData.level_2_0;
+        else if (activeBacLuong === '2.1') val = dinhMucData.level_2_1;
+        else if (activeBacLuong === '2.2') val = dinhMucData.level_2_2;
+        else if (activeBacLuong === '2.5') val = dinhMucData.level_2_5;
+        setDinhMuc(val);
       }
       
       if (dinhMucData.quy_cach) {
@@ -128,9 +117,17 @@ export function CongDoanFormUI({
         </div>
         <div className="col-span-1">
           <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Bậc lương</label>
-          {readOnly ? (
-            <div className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground flex items-center font-medium opacity-70">
-              -
+          <input type="hidden" name="bac_luong" value={bacLuong} />
+          {readOnly || profile?.bac_luong ? (
+            <div 
+              onClick={() => {
+                if (profile?.bac_luong && !readOnly) {
+                  toast.info("Muốn đổi bậc lương hãy vào Hồ sơ cá nhân");
+                }
+              }}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground flex items-center font-medium opacity-70 cursor-not-allowed"
+            >
+              {bacLuong || '-'}
             </div>
           ) : (
             <div className="relative">

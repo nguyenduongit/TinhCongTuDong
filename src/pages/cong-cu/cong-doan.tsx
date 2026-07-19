@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Plus, ChevronLeft, Trash2, Pencil } from 'lucide-react';
+import { Search, Plus, ChevronLeft, Trash2 } from 'lucide-react';
 import {
   useListCongDoan,
   useCreateCongDoan,
-  useUpdateCongDoan,
   useDeleteCongDoan,
+  useGetThongTinLuong,
+  useUpdateProfile,
   type CongDoan
 } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,11 +35,12 @@ export default function CongDoanPage() {
 
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
+  const { data: profile } = useGetThongTinLuong();
+  const updateProfile = useUpdateProfile();
+
   const createMutation = useCreateCongDoan();
-  const updateMutation = useUpdateCongDoan();
   const deleteMutation = useDeleteCongDoan();
 
   const filteredList = list.filter(c =>
@@ -51,6 +53,7 @@ export default function CongDoanPage() {
     const formData = new FormData(e.currentTarget);
     const ma_cong_doan = formData.get('ma_cong_doan') as string;
     const quy_cach = formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '';
+    const bac_luong = formData.get('bac_luong') as string;
     
     await createMutation.mutateAsync({
       data: {
@@ -61,28 +64,19 @@ export default function CongDoanPage() {
       }
     });
 
+    if (!profile?.bac_luong && bac_luong) {
+      // Lưu lại bậc lương này làm mặc định cho user
+      await updateProfile.mutateAsync({
+        ngay_vao_cong_ty: profile?.ngay_vao_cong_ty || null,
+        ngay_ky_hop_dong: profile?.ngay_ky_hop_dong || null,
+        gioi_tinh: profile?.gioi_tinh || null,
+        bac_luong,
+        menstrual_dates: profile?.menstrual_dates || {}
+      });
+    }
+
     queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
     setIsAdding(false);
-  };
-
-  const handleUpdate = async (id: number, e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const ma_cong_doan = formData.get('ma_cong_doan') as string;
-    const quy_cach = formData.get('quy_cach_sl') ? `${formData.get('quy_cach_sl')}pcs/${formData.get('quy_cach_unit')}` : '';
-
-    await updateMutation.mutateAsync({
-      id,
-      data: {
-        ma_cong_doan,
-        ten_cong_doan: formData.get('ten_cong_doan') as string,
-        dinh_muc: Number(formData.get('dinh_muc')),
-        quy_cach,
-      }
-    });
-
-    queryClient.invalidateQueries({ queryKey: getListCongDoanQueryKey() });
-    setEditingId(null);
   };
 
   const handleDelete = async () => {
@@ -187,23 +181,12 @@ export default function CongDoanPage() {
                 </div>
               ) : (
                 filteredList.map(c => (
-                  editingId === c.id ? (
-                    <div key={c.id} className="mb-1">
-                      <CongDoanFormUI 
-                        onSubmit={(e) => handleUpdate(c.id, e)}
-                        onCancel={() => setEditingId(null)}
-                        isPending={updateMutation.isPending}
-                        defaultValues={c}
-                        isEditing={true}
-                      />
-                    </div>
-                  ) : (
                     <div
                       key={c.id}
                       onClick={() => handleRowClick(c)}
                       className={cn(
                         "bg-card/40 backdrop-blur-sm border border-white/5 rounded-3xl p-4 flex items-center justify-between group transition-all relative overflow-hidden mb-1",
-                        !manageMode && editingId === null && "cursor-pointer hover:border-primary/50 hover:bg-card/60 active:scale-[0.98]"
+                        !manageMode && "cursor-pointer hover:border-primary/50 hover:bg-card/60 active:scale-[0.98]"
                       )}
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/50 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -226,15 +209,11 @@ export default function CongDoanPage() {
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                        <button onClick={() => setEditingId(c.id)} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 border border-transparent hover:border-blue-400/20 transition-all">
-                          <Pencil className="w-4.5 h-4.5" />
-                        </button>
                         <button onClick={() => setDeleteConfirmId(c.id)} disabled={deleteMutation.isPending} className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-rose-400 hover:bg-rose-400/10 border border-transparent hover:border-rose-400/20 transition-all">
                           <Trash2 className="w-4.5 h-4.5" />
                         </button>
                       </div>
                     </div>
-                  )
                 ))
               )}
             </div>
@@ -245,7 +224,7 @@ export default function CongDoanPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-bold">Xác nhận xóa</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Bạn có chắc chắn muốn xóa công đoạn này không? Hành động này không thể hoàn tác.
+              Đang có sản lượng cho công đoạn này. Bạn có thực sự muốn xóa ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 flex gap-2">
