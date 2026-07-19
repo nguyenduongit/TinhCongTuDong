@@ -711,7 +711,7 @@ export default function SalaryCalculatorPage() {
                   <div className="h-px w-full bg-white/5 my-1" />
 
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-emerald-400 uppercase tracking-widest text-[11px]">Thưởng Tự Động</span>
+                    <span className="font-bold text-emerald-400 uppercase tracking-widest text-[11px]">Thưởng Quý</span>
                     <span className="font-black text-emerald-400 text-lg">{formatVND(loyaltyBonus + skillBonus)}</span>
                   </div>
                 </div>
