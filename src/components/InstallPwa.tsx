@@ -26,7 +26,7 @@ export function InstallPwa() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm z-10 flex flex-col items-center text-center"
       >
-        <div className="w-24 h-24 mb-8 shadow-[0_8px_30px_rgba(244,63,94,0.3)] rounded-[24px] overflow-hidden bg-background p-1 border border-white/10">
+        <div className="w-24 h-24 mb-8 shadow-[0_8px_30px_rgba(245,158,11,0.3)] rounded-[24px] overflow-hidden bg-background p-1 border border-white/10">
           <img src="/icon-192.png" alt="App Logo" className="w-full h-full object-cover rounded-[20px]" />
         </div>
 
