@@ -63,6 +63,8 @@ export default function SalaryCalculatorPage() {
   const [customPaidLeaveDays, setCustomPaidLeaveDays] = useState<string>('');
   const [customAnnualLeaveDays, setCustomAnnualLeaveDays] = useState<string>('');
   const [customActualWorkdays, setCustomActualWorkdays] = useState<string>('');
+  const [estimatedOtNormal, setEstimatedOtNormal] = useState<string>('');
+  const [estimatedOtRest, setEstimatedOtRest] = useState<string>('');
 
   // Phụ cấp states
   const [customMealDays, setCustomMealDays] = useState<string>('');
@@ -99,6 +101,8 @@ export default function SalaryCalculatorPage() {
     setCustomPaidLeaveDays('');
     setCustomAnnualLeaveDays('');
     setCustomActualWorkdays('');
+    setEstimatedOtNormal('');
+    setEstimatedOtRest('');
 
     setKindergartenSupport('');
     setShift2Allowance('');
@@ -151,17 +155,20 @@ export default function SalaryCalculatorPage() {
   const numActualWorkdays = customActualWorkdays !== '' ? (Number(customActualWorkdays) || 0) : calculatedActualWorkdays;
 
   // ─── Tính lương (dùng salary-logic + config từ DB) ────────────────────
+  const activeOtNormalMins = estimatedOtNormal !== '' ? (Number(estimatedOtNormal) || 0) * 60 : autoOtNormalMins;
+  const activeOtRestMins = estimatedOtRest !== '' ? (Number(estimatedOtRest) || 0) * 60 : autoOtWeeklyRestMins;
+
   const salaryBreakdown = useMemo(() => computeSalaryBreakdown({
     basicSalary: numBasicSalary,
     standardWorkdays: numStandardWorkdays,
     actualWorkdays: numActualWorkdays,
     paidLeaveWorkdays: numPaidLeaveDays,
     annualLeaveWorkdays: numAnnualLeaveDays,
-    otNormalMins: autoOtNormalMins,
-    otRestMins: autoOtWeeklyRestMins,
+    otNormalMins: activeOtNormalMins,
+    otRestMins: activeOtRestMins,
   }, config), [numBasicSalary, numStandardWorkdays, numActualWorkdays,
     numPaidLeaveDays, numAnnualLeaveDays,
-    autoOtNormalMins, autoOtWeeklyRestMins, config]);
+    activeOtNormalMins, activeOtRestMins, config]);
 
   const { hourlyRate, dailySalary, regularWorkdayPay, paidLeaveAmount,
     annualLeaveAmount, otNormalPay, otRestPay: otWeeklyRestPay,
@@ -469,6 +476,30 @@ export default function SalaryCalculatorPage() {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedOtNormal" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Tăng ca ngày thường</Label>
+                    <Input
+                      id="estimatedOtNormal"
+                      value={estimatedOtNormal}
+                      onChange={(e) => setEstimatedOtNormal(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder={(autoOtNormalMins / 60).toFixed(1)}
+                      inputMode="decimal"
+                      className="h-12 rounded-2xl bg-black/20 border-white/10 font-bold text-foreground focus-visible:ring-amber-500/50 shadow-inner"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="estimatedOtRest" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Tăng ca ngày nghỉ</Label>
+                    <Input
+                      id="estimatedOtRest"
+                      value={estimatedOtRest}
+                      onChange={(e) => setEstimatedOtRest(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder={(autoOtWeeklyRestMins / 60).toFixed(1)}
+                      inputMode="decimal"
+                      className="h-12 rounded-2xl bg-black/20 border-white/10 font-bold text-foreground focus-visible:ring-amber-500/50 shadow-inner"
+                    />
+                  </div>
+                </div>
 
                 <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-5 space-y-3 mt-2">
                   <div className="flex justify-between items-center text-sm">
@@ -487,15 +518,15 @@ export default function SalaryCalculatorPage() {
                       <span className="font-bold text-foreground">{formatVND(annualLeaveAmount)}</span>
                     </div>
                   )}
-                  {autoOtNormalMins > 0 && (
+                  {activeOtNormalMins > 0 && (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-400 font-medium">OT thường ({(autoOtNormalMins / 60).toFixed(1)}h × 1.5)</span>
+                      <span className="text-zinc-400 font-medium">{estimatedOtNormal !== '' ? 'OT thường' : 'OT thường'} ({(activeOtNormalMins / 60).toFixed(1)}h × 1.5)</span>
                       <span className="font-bold text-foreground">{formatVND(otNormalPay)}</span>
                     </div>
                   )}
-                  {autoOtWeeklyRestMins > 0 && (
+                  {activeOtRestMins > 0 && (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-400 font-medium">OT nghỉ ({(autoOtWeeklyRestMins / 60).toFixed(1)}h × 2.0)</span>
+                      <span className="text-zinc-400 font-medium">{estimatedOtRest !== '' ? 'OT nghỉ (dự tính)' : 'OT nghỉ'} ({(activeOtRestMins / 60).toFixed(1)}h × 2.0)</span>
                       <span className="font-bold text-foreground">{formatVND(otWeeklyRestPay)}</span>
                     </div>
                   )}

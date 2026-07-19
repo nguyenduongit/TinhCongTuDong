@@ -1,6 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { minutesToCong } from '@/lib/work-rules';
+import { motion } from 'framer-motion';
 
 export interface WeekGroup {
   weekNum: number;
@@ -16,53 +17,41 @@ export interface WeekGroup {
 
 export interface CongTuanCardProps {
   week: WeekGroup;
-  getCongDoanName: (ma: string) => string;
+  getCongDoanName: (ma: string) => string | null;
   readOnly?: boolean;
 }
 
 export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardProps) {
-  const totalCongDatDuoc = week.totalCongSp + minutesToCong(week.totalHoTroPhut);
-  const congMucTieu = minutesToCong(week.totalTime);
-  const hieuSoCong = totalCongDatDuoc - congMucTieu;
-
+  const isCurrentWeek = week.isCurrentWeek;
+  
   return (
-    <div className={`bg-card/80 backdrop-blur-md border border-white/5 rounded-3xl flex flex-col shadow-lg overflow-hidden relative ${readOnly ? 'pointer-events-none' : ''}`}>
-      {/* Header - compact single row */}
-      <div className={`flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 ${week.isCurrentWeek ? 'bg-gradient-to-r from-amber-500/10 to-transparent' : 'bg-white/5'}`}>
-
-        {/* Left: tên tuần + khoảng ngày */}
-        <div className="flex items-center gap-2 min-w-0">
-          {week.isCurrentWeek && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0 shadow-[0_0_6px_rgba(245,158,11,0.7)]" />}
-          <div className="min-w-0">
-            <span className={`text-sm font-bold ${week.isCurrentWeek ? 'text-amber-400' : 'text-foreground/90'}`}>
-              {week.isCurrentWeek ? 'Tuần này' : week.isLastWeek ? 'Tuần trước' : `Tuần ${week.weekNum}`}
-            </span>
-            <span className="text-zinc-500 font-medium text-[11px] ml-2">
-              {format(week.startDate, 'dd/MM')} – {format(week.endDate, 'dd/MM')}
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`bg-card/80 backdrop-blur-md border border-white/5 rounded-[2rem] flex flex-col shadow-lg overflow-hidden relative ${readOnly ? 'pointer-events-none' : ''}`}
+    >
+      {/* Header Tuần */}
+      <div className={`flex items-center justify-between px-6 py-4 border-b border-white/5 ${isCurrentWeek ? 'bg-gradient-to-r from-primary/10 to-transparent' : 'bg-white/5'}`}>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            {isCurrentWeek && <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.5)]" />}
+            <span className={`text-base font-bold ${isCurrentWeek ? 'text-primary' : 'text-foreground/90'}`}>
+              Tuần {week.weekNum} {isCurrentWeek && '(Hiện tại)'}
             </span>
           </div>
+          <span className="text-xs text-zinc-400 font-medium">
+            {format(week.startDate, 'dd/MM/yyyy')} - {format(week.endDate, 'dd/MM/yyyy')}
+          </span>
         </div>
-
-        {/* Right: tổng công + delta */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Delta pill */}
-          {hieuSoCong !== 0 && (
-            hieuSoCong > 0 ? (
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                +{hieuSoCong.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
+        
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-0.5">Tổng công</span>
+            <div className="flex items-baseline gap-1 bg-gradient-to-r from-amber-500/20 to-primary/20 px-3 py-1 rounded-xl border border-amber-500/20 shadow-inner">
+              <span className="text-amber-400 font-black text-lg leading-none">
+                {(week.totalCongSp + minutesToCong(week.totalHoTroPhut)).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
               </span>
-            ) : (
-              <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
-                -{Math.abs(hieuSoCong).toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
-              </span>
-            )
-          )}
-          {/* Tổng công */}
-          <div className="flex items-baseline gap-1 bg-amber-500/15 px-2.5 py-1 rounded-full border border-amber-500/20">
-            <span className="text-amber-400 font-black text-sm leading-none">
-              {totalCongDatDuoc.toLocaleString('vi-VN', { maximumFractionDigits: 3 })}
-            </span>
-            <span className="text-[9px] text-amber-500/70 font-bold uppercase">công</span>
+            </div>
           </div>
         </div>
       </div>
@@ -75,9 +64,15 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
               <span className="text-amber-500 font-bold text-[10px] bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20 uppercase tracking-wider self-start">
                 {ma_cong_doan}
               </span>
-              <span className="text-[13px] font-semibold text-foreground/90 line-clamp-2 leading-tight">
-                {getCongDoanName(ma_cong_doan)}
-              </span>
+              {(() => {
+                const cdName = getCongDoanName(ma_cong_doan);
+                const isMissing = !cdName;
+                return (
+                  <span className={`text-[13px] font-semibold line-clamp-2 leading-tight ${isMissing ? 'text-rose-400 italic' : 'text-foreground/90'}`}>
+                    {isMissing ? `Hãy thêm mã công đoạn ${ma_cong_doan}` : cdName}
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="flex gap-4 items-center">
@@ -118,6 +113,6 @@ export function CongTuanCard({ week, getCongDoanName, readOnly }: CongTuanCardPr
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

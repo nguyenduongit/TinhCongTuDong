@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CongDoan } from '@/api';
+import { useGetDinhMucByCode } from '@/api';
 
 export interface CongDoanFormUIProps {
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -29,6 +30,60 @@ export function CongDoanFormUI({
 
   const FormWrapper = readOnly ? 'div' : 'form';
 
+  const [maCongDoan, setMaCongDoan] = useState(defaultValues?.ma_cong_doan || '');
+  const [debouncedMaCongDoan, setDebouncedMaCongDoan] = useState(maCongDoan);
+  const [bacLuong, setBacLuong] = useState<string>('');
+  const [tenCongDoan, setTenCongDoan] = useState(defaultValues?.ten_cong_doan || '');
+  const [dinhMuc, setDinhMuc] = useState<number | string>(defaultValues?.dinh_muc || '');
+
+  // Debounce logic
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMaCongDoan(maCongDoan);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [maCongDoan]);
+
+  const { data: dinhMucData } = useGetDinhMucByCode(debouncedMaCongDoan);
+
+  // Auto lookups and reverse-lookups
+  useEffect(() => {
+    if (dinhMucData) {
+      setTenCongDoan(dinhMucData.product_name);
+      
+      // Auto guess bacLuong in edit mode if not yet set
+      if (isEditing && !bacLuong && defaultValues?.dinh_muc) {
+        let guessedBac = '1.0';
+        if (dinhMucData.level_1_0 === defaultValues.dinh_muc) guessedBac = '1.0';
+        else if (dinhMucData.level_1_1 === defaultValues.dinh_muc) guessedBac = '1.1';
+        else if (dinhMucData.level_2_0 === defaultValues.dinh_muc) guessedBac = '2.0';
+        else if (dinhMucData.level_2_1 === defaultValues.dinh_muc) guessedBac = '2.1';
+        else if (dinhMucData.level_2_2 === defaultValues.dinh_muc) guessedBac = '2.2';
+        else if (dinhMucData.level_2_5 === defaultValues.dinh_muc) guessedBac = '2.5';
+        
+        setBacLuong(guessedBac);
+        setDinhMuc(defaultValues.dinh_muc);
+      } else {
+        if (!bacLuong) {
+          setBacLuong('1.0');
+          setDinhMuc(dinhMucData.level_1_0);
+        } else {
+          let val = 0;
+          if (bacLuong === '1.0') val = dinhMucData.level_1_0;
+          else if (bacLuong === '1.1') val = dinhMucData.level_1_1;
+          else if (bacLuong === '2.0') val = dinhMucData.level_2_0;
+          else if (bacLuong === '2.1') val = dinhMucData.level_2_1;
+          else if (bacLuong === '2.2') val = dinhMucData.level_2_2;
+          else if (bacLuong === '2.5') val = dinhMucData.level_2_5;
+          setDinhMuc(val);
+        }
+      }
+    } else if (!isEditing && !readOnly) {
+      setTenCongDoan('');
+      setDinhMuc('');
+    }
+  }, [dinhMucData, bacLuong, isEditing, defaultValues, readOnly]);
+
   return (
     <FormWrapper 
       onSubmit={!readOnly ? (onSubmit as any) : undefined} 
@@ -52,31 +107,58 @@ export function CongDoanFormUI({
             required 
             readOnly={readOnly}
             name="ma_cong_doan" 
-            defaultValue={defaultValues?.ma_cong_doan} 
+            value={maCongDoan}
+            onChange={(e) => setMaCongDoan(e.target.value)}
             placeholder={readOnly ? "5.2" : undefined}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner" 
           />
         </div>
         <div className="col-span-1">
-          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Định mức</label>
-          <input 
-            required 
-            readOnly={readOnly}
-            type={readOnly ? "text" : "number"} 
-            name="dinh_muc" 
-            defaultValue={defaultValues?.dinh_muc || (readOnly ? "1000" : undefined)} 
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-medium shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-          />
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Bậc lương</label>
+          {readOnly ? (
+            <div className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground flex items-center font-medium opacity-70">
+              -
+            </div>
+          ) : (
+            <div className="relative">
+              <select 
+                value={bacLuong}
+                onChange={(e) => setBacLuong(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-medium appearance-none shadow-inner cursor-pointer"
+              >
+                <option value="1.0" className="bg-background">1.0</option>
+                <option value="1.1" className="bg-background">1.1</option>
+                <option value="2.0" className="bg-background">2.0</option>
+                <option value="2.1" className="bg-background">2.1</option>
+                <option value="2.2" className="bg-background">2.2</option>
+                <option value="2.5" className="bg-background">2.5</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+          )}
         </div>
         <div className="col-span-2">
           <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Tên công đoạn</label>
           <input 
             required 
-            readOnly={readOnly}
+            readOnly
             name="ten_cong_doan" 
-            defaultValue={defaultValues?.ten_cong_doan} 
+            value={tenCongDoan} 
             placeholder={readOnly ? "Kiểm tra chất lượng" : undefined}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground outline-none focus:bg-black/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-zinc-600 font-medium shadow-inner" 
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground/70 outline-none transition-all placeholder:text-zinc-600 font-medium shadow-inner cursor-not-allowed opacity-80" 
+          />
+        </div>
+        <div className="col-span-2">
+          <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block font-bold pl-1">Định mức</label>
+          <input 
+            required 
+            readOnly
+            type={readOnly ? "text" : "number"} 
+            name="dinh_muc" 
+            value={dinhMuc} 
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-foreground/70 outline-none transition-all font-medium shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-not-allowed opacity-80" 
           />
         </div>
         <div className="col-span-2">

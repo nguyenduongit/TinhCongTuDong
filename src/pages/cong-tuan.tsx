@@ -32,7 +32,7 @@ export default function CongTuan() {
   }, [congDoanList]);
 
   const getCongDoanName = useCallback((ma: string) => {
-    return congDoanMap.get(ma) || ma;
+    return congDoanMap.get(ma) || null;
   }, [congDoanMap]);
 
 

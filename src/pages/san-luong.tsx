@@ -83,7 +83,7 @@ export default function SanLuong() {
   }, [congDoanList]);
 
   const getCongDoanName = useCallback((ma: string) => {
-    return congDoanMap.get(ma) || ma;
+    return congDoanMap.get(ma) || null;
   }, [congDoanMap]);
 
   const monthEntries = entries; // Data is already filtered by backend

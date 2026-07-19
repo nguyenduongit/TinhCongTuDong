@@ -15,7 +15,7 @@ export interface SanLuongDayCardProps {
   dateStr: string;
   dateHeader: string;
   items: SanLuong[];
-  getCongDoanName: (ma: string) => string;
+  getCongDoanName: (ma: string) => string | null;
   getCongDoanDinhMuc?: (ma: string) => number;
   onEdit?: (entry: SanLuong) => void;
   onDelete?: (id: number) => void;
@@ -157,9 +157,15 @@ export function SanLuongDayCard({
                       <span className="text-amber-500 font-bold text-[10px] bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20 uppercase tracking-wider self-start">
                         {item.cong_doan}
                       </span>
-                      <span className="text-[13px] font-semibold text-foreground/90 line-clamp-2 leading-tight">
-                        {getCongDoanName(item.cong_doan)}
-                      </span>
+                      {(() => {
+                        const cdName = getCongDoanName(item.cong_doan);
+                        const isMissing = !cdName;
+                        return (
+                          <span className={`text-[13px] font-semibold line-clamp-2 leading-tight ${isMissing ? 'text-rose-400 italic' : 'text-foreground/90'}`}>
+                            {isMissing ? `Hãy thêm mã công đoạn ${item.cong_doan}` : cdName}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-3">
                       {(() => {

@@ -82,6 +82,25 @@ export const useUpdateCongDoan = () => {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number, data: any }) => {
+      // 1. Lấy mã công đoạn hiện tại
+      const { data: cd } = await supabase.from('cong_doan').select('ma_cong_doan').eq('id', id).eq('user_id', user?.id).single();
+      if (!cd) throw new Error('Công đoạn không tồn tại');
+
+      // 2. Nếu người dùng đổi mã công đoạn, kiểm tra xem mã cũ đã được dùng trong sản lượng chưa
+      if (data.ma_cong_doan && data.ma_cong_doan !== cd.ma_cong_doan) {
+        const { data: sanLuongUsed, error: slError } = await supabase
+          .from('san_luong')
+          .select('id')
+          .eq('user_id', user?.id)
+          .contains('chi_tiet', [{ cong_doan: cd.ma_cong_doan }])
+          .limit(1);
+
+        if (slError) throw slError;
+        if (sanLuongUsed && sanLuongUsed.length > 0) {
+          throw new Error('Công đoạn này đã được nhập sản lượng, không thể đổi Mã công đoạn!');
+        }
+      }
+
       const { data: result, error } = await supabase.from('cong_doan').update(data).eq('id', id).eq('user_id', user?.id).select().single();
       if (error) throw error;
       return result;
@@ -547,6 +566,25 @@ export const useSearchDinhMuc = (keyword: string) => {
       return data as DinhMuc[];
     },
     enabled: keyword.trim().length > 0,
+  });
+};
+
+export const useGetDinhMucByCode = (productCode: string) => {
+  return useQuery({
+    queryKey: ['dinh-muc', 'detail', productCode],
+    queryFn: async () => {
+      if (!productCode || productCode.trim() === '') return null;
+      
+      const { data, error } = await supabase
+        .from('dinh_muc')
+        .select('*')
+        .eq('product_code', productCode.trim())
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data as DinhMuc | null;
+    },
+    enabled: !!productCode && productCode.trim().length > 0,
   });
 };
 
