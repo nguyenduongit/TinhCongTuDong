@@ -162,7 +162,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
                     <select
                       value={selectedCongDoan}
                       onChange={(e) => setSelectedCongDoan(e.target.value)}
-                      className="w-full appearance-none bg-black/20 border border-white/10 rounded-2xl px-4 py-3.5 text-sm font-bold text-foreground outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-inner cursor-pointer"
+                      className="w-full appearance-none bg-black/20 border border-white/10 rounded-2xl pl-4 pr-11 py-3.5 text-sm font-bold text-foreground outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all shadow-inner cursor-pointer truncate"
                     >
                       {congDoanList.map(cd => (
                         <option key={cd.ma_cong_doan} value={cd.ma_cong_doan} className="bg-background">
