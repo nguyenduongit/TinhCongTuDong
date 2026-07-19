@@ -478,7 +478,7 @@ export default function SalaryCalculatorPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedOtNormal" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Tăng ca ngày thường</Label>
+                    <Label htmlFor="estimatedOtNormal" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">OT Thường dự tính (Giờ)</Label>
                     <Input
                       id="estimatedOtNormal"
                       value={estimatedOtNormal}
@@ -489,7 +489,7 @@ export default function SalaryCalculatorPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedOtRest" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Tăng ca ngày nghỉ</Label>
+                    <Label htmlFor="estimatedOtRest" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">OT Nghỉ dự tính (Giờ)</Label>
                     <Input
                       id="estimatedOtRest"
                       value={estimatedOtRest}
@@ -520,7 +520,7 @@ export default function SalaryCalculatorPage() {
                   )}
                   {activeOtNormalMins > 0 && (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-zinc-400 font-medium">{estimatedOtNormal !== '' ? 'OT thường' : 'OT thường'} ({(activeOtNormalMins / 60).toFixed(1)}h × 1.5)</span>
+                      <span className="text-zinc-400 font-medium">{estimatedOtNormal !== '' ? 'OT thường (dự tính)' : 'OT thường'} ({(activeOtNormalMins / 60).toFixed(1)}h × 1.5)</span>
                       <span className="font-bold text-foreground">{formatVND(otNormalPay)}</span>
                     </div>
                   )}
