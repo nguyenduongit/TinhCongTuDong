@@ -10,6 +10,7 @@ export default function Login() {
   const { user, isLoading } = useAuth();
   const [refCode, setRefCode] = useState('');
   const [showRefInput, setShowRefInput] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   // Lưu ref code từ URL vào localStorage
   useEffect(() => {
@@ -19,6 +20,7 @@ export default function Login() {
       localStorage.setItem('referral_code', refFromUrl.toUpperCase());
       setRefCode(refFromUrl.toUpperCase());
       setShowRefInput(true);
+      setIsLocked(true);
       // Xoá query param khỏi URL
       window.history.replaceState({}, document.title, window.location.pathname);
       toast.success('Đã ghi nhận mã giới thiệu!');
@@ -28,6 +30,7 @@ export default function Login() {
       if (savedRef) {
         setRefCode(savedRef);
         setShowRefInput(true);
+        setIsLocked(true);
       }
     }
   }, []);
@@ -70,8 +73,8 @@ export default function Login() {
     <div className="min-h-[100dvh] w-full bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm flex flex-col gap-8">
         <div className="text-center flex flex-col gap-2">
-          <div className="w-16 h-16 bg-primary/20 rounded-2xl squircle-xl mx-auto flex items-center justify-center mb-4 text-3xl">
-            👷
+          <div className="w-20 h-20 shadow-[0_8px_30px_rgba(245,158,11,0.2)] rounded-[20px] mx-auto mb-4 bg-background p-1 border border-white/10 overflow-hidden">
+            <img src="/icon-192.png" alt="App Logo" className="w-full h-full object-cover rounded-[16px]" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Tính Công Tự Động</h1>
           <p className="text-muted-foreground text-sm">
@@ -118,15 +121,17 @@ export default function Login() {
                   <input
                     type="text"
                     value={refCode}
+                    readOnly={isLocked}
                     onChange={(e) => {
+                      if (isLocked) return;
                       const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
                       setRefCode(val);
                     }}
                     placeholder="VD: ABC123"
                     maxLength={6}
-                    className="w-full h-11 rounded-xl bg-background border border-white/10 text-foreground text-center text-lg font-mono font-bold tracking-[0.3em] px-4 focus:outline-none focus:ring-2 focus:ring-purple-500/40 placeholder:text-zinc-600 placeholder:tracking-normal placeholder:font-normal placeholder:text-sm"
+                    className={`w-full h-11 rounded-xl bg-background border border-white/10 text-foreground text-center text-lg font-mono font-bold tracking-[0.3em] px-4 focus:outline-none focus:ring-2 focus:ring-purple-500/40 placeholder:text-zinc-600 placeholder:tracking-normal placeholder:font-normal placeholder:text-sm ${isLocked ? 'opacity-90 cursor-not-allowed select-none' : ''}`}
                   />
-                  {refCode && (
+                  {refCode && !isLocked && (
                     <button
                       onClick={() => { setRefCode(''); localStorage.removeItem('referral_code'); }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-500 hover:text-foreground text-xs"

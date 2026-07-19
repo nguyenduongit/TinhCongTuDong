@@ -62,7 +62,10 @@ function ReferralCard() {
             </div>
             <div>
               <h4 className="text-sm font-bold text-foreground">Mời bạn bè nhận Pro</h4>
-              <p className="text-[11px] text-muted-foreground">Bạn được tặng 3 tháng Pro khi mời bạn bè sử dụng </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
+                Tặng 3 tháng Pro cho bạn khi mời thành công.<br/>
+                <span className="text-purple-300 font-medium">Điều kiện:</span> Người được mời cần điền sản lượng đầy đủ các ngày làm việc trong 7 ngày đầu.
+              </p>
             </div>
           </div>
 
@@ -128,6 +131,64 @@ function ReferralCard() {
                   <span className="text-emerald-400 font-medium">{completedCount} thành công</span>
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* List of Referrals */}
+          {myReferrals.length > 0 && (
+            <div className="flex flex-col gap-3 mt-2 border-t border-white/10 pt-4">
+              <h5 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Danh sách đã mời</h5>
+              <div className="flex flex-col gap-3">
+                {myReferrals.map(ref => (
+                  <div key={ref.referral_id} className="flex flex-col gap-2 p-3 bg-black/20 rounded-xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        {ref.referee_avatar ? (
+                          <img src={ref.referee_avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                            {ref.referee_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-foreground max-w-[120px] truncate">{ref.referee_name}</span>
+                          <span className="text-[10px] text-muted-foreground max-w-[120px] truncate">{ref.referee_email}</span>
+                        </div>
+                      </div>
+                      
+                      {ref.status === 'completed' ? (
+                        <div className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase rounded-md border border-emerald-500/20 shrink-0">
+                          Thành công
+                        </div>
+                      ) : ref.status === 'failed' ? (
+                        <div className="px-2 py-1 bg-rose-500/20 text-rose-400 text-[10px] font-bold uppercase rounded-md border border-rose-500/20 shrink-0">
+                          Thất bại
+                        </div>
+                      ) : (
+                        <div className="px-2 py-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold uppercase rounded-md border border-amber-500/20 shrink-0">
+                          Theo dõi
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Progress */}
+                    {ref.status === 'tracking' && (
+                      <div className="flex flex-col gap-1.5 mt-1">
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium">
+                          <span>Tiến độ nhập sản lượng</span>
+                          <span className="text-foreground">{ref.days_with_entry} / {ref.total_workdays} ngày</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full transition-all duration-500" 
+                            style={{ width: `${Math.min(100, Math.max(0, (ref.days_with_entry / (ref.total_workdays || 1)) * 100))}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

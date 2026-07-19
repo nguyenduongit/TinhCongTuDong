@@ -111,7 +111,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'already_referred');
   END IF;
   INSERT INTO referrals (referrer_id, referee_id, referral_code, status, tracking_start_date, tracking_end_date)
-  VALUES (v_referrer_id, p_referee_id, p_referral_code, 'tracking', CURRENT_DATE, (CURRENT_DATE + INTERVAL '30 days')::date);
+  VALUES (v_referrer_id, p_referee_id, p_referral_code, 'tracking', CURRENT_DATE, (CURRENT_DATE + INTERVAL '7 days')::date);
   RETURN jsonb_build_object('success', true);
 END;
 $$;
@@ -246,5 +246,49 @@ BEGIN
       UPDATE referrals SET status = 'failed', completed_at = now() WHERE id = v_ref.id;
     END IF;
   END LOOP;
+END;
+$$;
+
+-- 3f. Lấy danh sách referral của user hiện tại
+CREATE OR REPLACE FUNCTION get_my_referrals()
+RETURNS TABLE(
+  referral_id uuid,
+  referee_email text,
+  referee_name text,
+  referee_avatar text,
+  status text,
+  reward_granted boolean,
+  tracking_start_date date,
+  tracking_end_date date,
+  days_with_entry int,
+  total_workdays int
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    r.id AS referral_id,
+    -- Ẩn 1 phần email
+    CASE
+      WHEN strpos(u2.email, '@') > 3 THEN
+        substr(u2.email, 1, 3) || '***' || substr(u2.email, strpos(u2.email, '@'))
+      ELSE
+        substr(u2.email, 1, 1) || '***' || substr(u2.email, strpos(u2.email, '@'))
+    END AS referee_email,
+    COALESCE(u2.raw_user_meta_data->>'full_name', split_part(u2.email, '@', 1))::text AS referee_name,
+    COALESCE(u2.raw_user_meta_data->>'avatar_url', u2.raw_user_meta_data->>'picture')::text AS referee_avatar,
+    r.status,
+    r.reward_granted,
+    r.tracking_start_date,
+    r.tracking_end_date,
+    (SELECT COUNT(DISTINCT sl.ngay)::int FROM san_luong sl WHERE sl.user_id = r.referee_id AND sl.ngay >= r.tracking_start_date AND sl.ngay <= r.tracking_end_date) AS days_with_entry,
+    (SELECT COUNT(*)::int FROM generate_series(r.tracking_start_date, LEAST(r.tracking_end_date, CURRENT_DATE), '1 day'::interval) d WHERE EXTRACT(dow FROM d) BETWEEN 1 AND 6) AS total_workdays
+  FROM referrals r
+  JOIN auth.users u2 ON u2.id = r.referee_id
+  WHERE r.referrer_id = auth.uid()
+  ORDER BY r.created_at DESC;
 END;
 $$;

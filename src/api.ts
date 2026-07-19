@@ -1011,23 +1011,19 @@ export function useGetMyReferrals() {
   return useQuery({
     queryKey: ['my-referrals', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('referrals')
-        .select('*')
-        .eq('referrer_id', user!.id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_my_referrals');
       if (error) throw error;
-      return data as Array<{
-        id: string;
-        referrer_id: string;
-        referee_id: string;
-        referral_code: string;
+      return (data || []) as Array<{
+        referral_id: string;
+        referee_email: string;
+        referee_name: string;
+        referee_avatar: string;
         status: string;
         reward_granted: boolean;
         tracking_start_date: string;
         tracking_end_date: string;
-        created_at: string;
-        completed_at: string | null;
+        days_with_entry: number;
+        total_workdays: number;
       }>;
     },
     enabled: !!user?.id,
