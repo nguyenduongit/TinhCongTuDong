@@ -37,9 +37,6 @@ const FullPageLoader = () => (
         <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
         <div className="absolute inset-0 border-4 border-t-primary border-r-primary border-b-transparent border-l-transparent rounded-full animate-[spin_1.5s_linear_infinite] shadow-[0_0_20px_rgba(245,158,11,0.3)]" />
         <div className="absolute inset-2 border-4 border-l-amber-500 border-b-amber-500 border-t-transparent border-r-transparent rounded-full animate-[spin_2s_linear_infinite_reverse]" />
-        <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center animate-pulse backdrop-blur-md">
-          <span className="text-2xl drop-shadow-lg">👷</span>
-        </div>
       </div>
       
       <div className="flex flex-col items-center gap-2">
