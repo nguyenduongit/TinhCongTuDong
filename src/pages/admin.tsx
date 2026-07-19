@@ -4,7 +4,7 @@ import {
   ShieldAlert, Search, Crown, X, Check, Loader2,
   Calendar, Briefcase, VenusIcon, MarsIcon, User as UserIcon,
   Users, BarChart3, Building2, Pencil, Gift, ArrowRight,
-  Clock, ChevronLeft, Eye
+  Clock, ChevronLeft, Eye, ChevronDown
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import {
@@ -416,6 +416,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
   );
 
   const [selectedDay, setSelectedDay] = useState<DailyEntry | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const statusCfg = STATUS_CONFIG[refData.status] || STATUS_CONFIG.tracking;
 
   // Tính toán stats từ daily entries
@@ -443,8 +444,11 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
         </button>
 
         <div className="px-5 pb-28 flex flex-col gap-5 max-h-[85dvh] overflow-y-auto">
-          {/* Header: Referrer → Referee */}
-          <div className="flex items-center gap-3 pt-1">
+          {/* Header: Referrer → Referee (Accordion Trigger) */}
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-3 pt-1 w-full text-left pr-8"
+          >
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Avatar src={refData.referrer_avatar} size={36} />
               <div className="flex flex-col min-w-0">
@@ -460,43 +464,57 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                 <span className="text-[10px] text-zinc-500">Người được mời</span>
               </div>
             </div>
-          </div>
+            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} className="text-zinc-500 ml-2">
+              <ChevronDown className="w-4 h-4" />
+            </motion.div>
+          </button>
 
-          {/* Status + Progress */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusCfg.bg} ${statusCfg.color} border ${statusCfg.border}`}>
-                {statusCfg.label}
-              </div>
-              <span className="text-xs text-zinc-500">
-                Mã: <span className="font-mono font-bold text-foreground">{refData.referral_code}</span>
-              </span>
-            </div>
+          {/* Status + Progress (Accordion Content) */}
+          <AnimatePresence initial={false}>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+                animate={{ height: 'auto', opacity: 1, marginBottom: 12 }}
+                exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-3 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusCfg.bg} ${statusCfg.color} border ${statusCfg.border}`}>
+                      {statusCfg.label}
+                    </div>
+                    <span className="text-xs text-zinc-500">
+                      Mã: <span className="font-mono font-bold text-foreground">{refData.referral_code}</span>
+                    </span>
+                  </div>
 
-            {/* Progress bar */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-zinc-400">Tiến độ nhập sản lượng</span>
-                <span className="font-bold text-foreground">{stats.entered}/{stats.workdays} ngày LV</span>
-              </div>
-              <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full ${progressPercent === 100 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-zinc-500">
-                  {format(new Date(refData.tracking_start_date), 'dd/MM')} → {format(new Date(refData.tracking_end_date), 'dd/MM/yyyy')}
-                </span>
-                {stats.missed > 0 && (
-                  <span className="text-rose-400 font-medium">{stats.missed} ngày chưa nhập</span>
-                )}
-              </div>
-            </div>
-          </div>
+                  {/* Progress bar */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-zinc-400">Tiến độ nhập sản lượng</span>
+                      <span className="font-bold text-foreground">{stats.entered}/{stats.workdays} ngày LV</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
+                      <motion.div
+                        className={`h-full rounded-full ${progressPercent === 100 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-zinc-500">
+                        {format(new Date(refData.tracking_start_date), 'dd/MM')} → {format(new Date(refData.tracking_end_date), 'dd/MM/yyyy')}
+                      </span>
+                      {stats.missed > 0 && (
+                        <span className="text-rose-400 font-medium">{stats.missed} ngày chưa nhập</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Calendar Heatmap */}
           <div className="flex flex-col gap-2">
@@ -520,7 +538,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                     // Padding cho ngày đầu tiên
                     const firstDow = dailyEntries[0].day_of_week;
                     const paddingCells = Array.from({ length: firstDow }, (_, i) => (
-                      <div key={`pad-${i}`} className="aspect-square" />
+                      <div key={`pad-${i}`} className="aspect-[5/4]" />
                     ));
 
                     const dayCells = dailyEntries.map((entry) => {
@@ -547,7 +565,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                         <button
                           key={entry.ngay}
                           onClick={() => !isFuture && entry.is_workday ? setSelectedDay(entry) : null}
-                          className={`aspect-square rounded-lg flex flex-col items-center justify-center relative text-[11px] font-bold border transition-all ${bgClass} ${isToday ? 'ring-1 ring-primary/50' : 'border-transparent'} ${!isFuture && entry.is_workday ? 'cursor-pointer hover:brightness-125 active:scale-90' : 'cursor-default'}`}
+                          className={`aspect-[5/4] rounded-lg flex flex-col items-center justify-center relative text-[11px] font-bold border transition-all ${bgClass} ${isToday ? 'ring-1 ring-primary/50' : 'border-transparent'} ${!isFuture && entry.is_workday ? 'cursor-pointer hover:brightness-125 active:scale-90' : 'cursor-default'}`}
                         >
                           {dayNum}
                           {dot}
@@ -587,11 +605,11 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-white/5 rounded-2xl border border-white/10 p-4 flex flex-col gap-3">
+                  <div className="bg-white/5 rounded-2xl border border-white/10 p-3 flex flex-col gap-2.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-bold text-foreground">
+                      <span className="text-[13px] font-bold text-foreground">
                         {format(new Date(selectedDay.ngay), 'dd/MM/yyyy')} ({DAY_NAMES[selectedDay.day_of_week]})
                       </span>
                     </div>
@@ -602,21 +620,21 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
 
                   {selectedDay.has_entry ? (
                     <>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-black/20 rounded-xl p-2.5">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="bg-black/20 rounded-xl p-2">
                           <div className="text-[9px] text-zinc-500 font-bold uppercase">Tổng công SP</div>
-                          <div className="text-sm font-bold text-emerald-400">{Number(selectedDay.total_cong_sp).toFixed(3)}</div>
+                          <div className="text-[13px] font-bold text-emerald-400">{Number(selectedDay.total_cong_sp).toFixed(3)}</div>
                         </div>
-                        <div className="bg-black/20 rounded-xl p-2.5">
+                        <div className="bg-black/20 rounded-xl p-2">
                           <div className="text-[9px] text-zinc-500 font-bold uppercase">Thời gian</div>
-                          <div className="text-sm font-bold text-foreground">{selectedDay.total_time} phút</div>
+                          <div className="text-[13px] font-bold text-foreground">{selectedDay.total_time} phút</div>
                         </div>
                       </div>
 
                       {/* Chi tiết từng entry */}
                       {selectedDay.entries.map((entry: any, idx: number) => (
-                        <div key={idx} className="flex flex-col gap-1.5 bg-black/10 rounded-xl p-2.5 border border-white/5">
-                          <div className="flex items-center justify-between text-[10px] text-zinc-500">
+                        <div key={idx} className="flex flex-col gap-1 bg-black/10 rounded-xl p-2 border border-white/5">
+                          <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-0.5">
                             <span>Lần nhập #{idx + 1}</span>
                             <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {entry.thoi_gian_thuc_hien}p + {entry.thoi_gian_ho_tro || 0}p HT</span>
                           </div>
