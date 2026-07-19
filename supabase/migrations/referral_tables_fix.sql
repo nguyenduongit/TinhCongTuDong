@@ -292,3 +292,67 @@ BEGIN
   ORDER BY r.created_at DESC;
 END;
 $$;
+
+-- 3g. Người dùng tự nhấn nút nhận thưởng
+CREATE OR REPLACE FUNCTION claim_referral_reward(p_referral_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_ref RECORD;
+  v_days_with_entry int;
+  v_total_workdays int;
+  v_current_expires timestamptz;
+  v_new_expires timestamptz;
+BEGIN
+  -- Lấy thông tin referral
+  SELECT r.id, r.referrer_id, r.referee_id, r.tracking_start_date, r.tracking_end_date, r.status
+  INTO v_ref
+  FROM referrals r
+  WHERE r.id = p_referral_id AND r.referrer_id = auth.uid()
+  LIMIT 1;
+
+  IF v_ref.id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'referral_not_found_or_unauthorized');
+  END IF;
+
+  IF v_ref.status != 'tracking' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'not_tracking_status');
+  END IF;
+
+  -- Tính số ngày đã có sản lượng
+  SELECT COUNT(DISTINCT sl.ngay)::int INTO v_days_with_entry
+  FROM san_luong sl 
+  WHERE sl.user_id = v_ref.referee_id 
+    AND sl.ngay >= v_ref.tracking_start_date 
+    AND sl.ngay <= v_ref.tracking_end_date;
+
+  -- Tính tổng số ngày làm việc yêu cầu trong CẢ KỲ (VD: 6 ngày làm việc trong 7 ngày)
+  SELECT COUNT(*)::int INTO v_total_workdays
+  FROM generate_series(v_ref.tracking_start_date, v_ref.tracking_end_date, '1 day'::interval) d
+  WHERE EXTRACT(dow FROM d) BETWEEN 1 AND 6;
+
+  -- Đã đạt đủ số ngày làm việc chưa? (VD: 6/6)
+  IF v_days_with_entry >= v_total_workdays AND v_total_workdays > 0 THEN
+    -- Đạt rồi => Tặng thưởng 3 tháng Pro
+    SELECT COALESCE((raw_user_meta_data->'subscription'->>'expires_at')::timestamptz, (raw_user_meta_data->>'pro_expires_at')::timestamptz, now())
+    INTO v_current_expires FROM auth.users WHERE id = v_ref.referrer_id;
+
+    IF v_current_expires < now() THEN v_current_expires := now(); END IF;
+    v_new_expires := v_current_expires + INTERVAL '3 months';
+
+    UPDATE auth.users
+    SET raw_user_meta_data = raw_user_meta_data || jsonb_build_object('plan', 'pro', 'subscription', jsonb_build_object('plan', 'pro', 'expires_at', v_new_expires))
+    WHERE id = v_ref.referrer_id;
+
+    -- Đánh dấu hoàn thành
+    UPDATE referrals SET status = 'completed', reward_granted = true, completed_at = now() WHERE id = v_ref.id;
+    
+    RETURN jsonb_build_object('success', true);
+  ELSE
+    RETURN jsonb_build_object('success', false, 'error', 'conditions_not_met');
+  END IF;
+END;
+$$;

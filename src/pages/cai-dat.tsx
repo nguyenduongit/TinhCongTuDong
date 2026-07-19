@@ -8,13 +8,16 @@ import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
+import { cn } from '@/lib/utils';
+import confetti from 'canvas-confetti';
 
-import { useGetThongTinLuong, useUpdateProfile, useGetSalaryTiers, useGetMyReferralCode, useGetMyReferrals } from '@/api';
+import { useGetThongTinLuong, useUpdateProfile, useGetSalaryTiers, useGetMyReferralCode, useGetMyReferrals, useClaimReferralReward } from '@/api';
 
 // ─── Referral Card Component ──────────────────────────────────────────────────
 function ReferralCard() {
   const { data: referralCode, isLoading: codeLoading } = useGetMyReferralCode();
   const { data: myReferrals = [] } = useGetMyReferrals();
+  const { mutate: claimReward, isPending: isClaiming } = useClaimReferralReward();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -158,7 +161,7 @@ function ReferralCard() {
                       
                       {ref.status === 'completed' ? (
                         <div className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase rounded-md border border-emerald-500/20 shrink-0">
-                          Thành công
+                          Đã nhận phần thưởng
                         </div>
                       ) : ref.status === 'failed' ? (
                         <div className="px-2 py-1 bg-rose-500/20 text-rose-400 text-[10px] font-bold uppercase rounded-md border border-rose-500/20 shrink-0">
@@ -185,6 +188,50 @@ function ReferralCard() {
                           />
                         </div>
                       </div>
+                    )}
+                    
+                    {ref.status === 'tracking' && (
+                      <button
+                        onClick={() => {
+                          if (ref.days_with_entry < ref.total_workdays) {
+                            toast.info(`Người được mời cần nhập đủ ${ref.total_workdays} ngày làm việc. Hiện tại mới đạt ${ref.days_with_entry}/${ref.total_workdays} ngày.`);
+                            return;
+                          }
+                          if (isClaiming) return;
+
+                          claimReward(ref.referral_id, {
+                            onSuccess: () => {
+                              toast.success('Nhận thưởng thành công! Bạn đã được cộng 3 tháng Pro.');
+                              confetti({
+                                particleCount: 150,
+                                spread: 70,
+                                origin: { y: 0.6 },
+                                colors: ['#a855f7', '#06b6d4', '#eab308']
+                              });
+                            },
+                            onError: (err) => {
+                              const msg = err.message;
+                              if (msg === 'conditions_not_met') {
+                                toast.error('Chưa đủ điều kiện nhận phần thưởng.');
+                              } else if (msg === 'not_tracking_status') {
+                                toast.error('Phần thưởng này đã được nhận hoặc đã hết hạn.');
+                              } else {
+                                toast.error('Có lỗi xảy ra, vui lòng thử lại sau.');
+                              }
+                            }
+                          });
+                        }}
+                        className={cn(
+                          "mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300",
+                          ref.days_with_entry >= ref.total_workdays
+                            ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg shadow-purple-500/25 hover:opacity-90 active:scale-[0.98] cursor-pointer"
+                            : "bg-white/5 text-white/40 cursor-pointer hover:bg-white/10"
+                        )}
+                      >
+                        {ref.days_with_entry >= ref.total_workdays
+                          ? (isClaiming ? 'Đang xử lý...' : '🎁 Nhận 3 tháng Pro')
+                          : 'Chưa đủ điều kiện'}
+                      </button>
                     )}
                   </div>
                 ))}

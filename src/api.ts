@@ -1031,6 +1031,31 @@ export function useGetMyReferrals() {
 }
 
 /**
+ * Nhận thưởng khi người được mời đã hoàn thành đủ số ngày làm việc
+ */
+export function useClaimReferralReward() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (referralId: string) => {
+      const { data, error } = await supabase.rpc('claim_referral_reward', {
+        p_referral_id: referralId
+      });
+      if (error) throw error;
+      if (data && typeof data === 'object' && 'success' in data && data.success === false) {
+        throw new Error((data as any).error || 'Lỗi không xác định');
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-referrals', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user', user?.id] }); // Cập nhật lại Pro status
+    }
+  });
+}
+
+/**
  * Áp dụng mã referral cho user hiện tại (người được mời).
  */
 export function useApplyReferralCode() {
