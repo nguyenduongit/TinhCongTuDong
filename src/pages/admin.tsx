@@ -283,7 +283,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   failed: { label: 'Thất bại', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
 };
 
-const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+// Nhãn theo day_of_week gốc từ DB (0 = CN ... 6 = T7, chuẩn JS getDay())
+const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+// Thứ tự hiển thị cột lịch: T2 -> CN
+const WEEKDAY_HEADERS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 function ReferralDetailModal({ referral: refData, onClose }: { referral: ReferralInfo; onClose: () => void }) {
   const { data: dailyEntries, isLoading } = useAdminGetUserDailyEntries(
@@ -409,7 +412,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
               <div className="bg-black/20 rounded-2xl border border-white/5 p-3">
                 {/* Day headers */}
                 <div className="grid grid-cols-7 gap-1 mb-1">
-                  {DAY_NAMES.map(d => (
+                  {WEEKDAY_HEADERS.map(d => (
                     <div key={d} className="text-center text-[9px] text-zinc-600 font-bold">{d}</div>
                   ))}
                 </div>
@@ -419,9 +422,12 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                   {(() => {
                     if (!dailyEntries || dailyEntries.length === 0) return null;
 
-                    // Padding cho ngày đầu tiên
+                    // Padding cho ngày đầu tiên. Lịch hiển thị T2 -> CN nên cần quy đổi
+                    // day_of_week gốc (0=CN...6=T7) sang chỉ số cột Thứ-Hai-là-đầu-tuần
+                    // (T2=0, T3=1, ..., CN=6).
                     const firstDow = dailyEntries[0].day_of_week;
-                    const paddingCells = Array.from({ length: firstDow }, (_, i) => (
+                    const firstColIndex = (firstDow + 6) % 7;
+                    const paddingCells = Array.from({ length: firstColIndex }, (_, i) => (
                       <div key={`pad-${i}`} className="aspect-[5/4]" />
                     ));
 
@@ -429,6 +435,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                       const dayNum = new Date(entry.ngay).getDate();
                       const isToday = entry.ngay === new Date().toISOString().slice(0, 10);
                       const isFuture = new Date(entry.ngay) > new Date();
+                      const isSelected = selectedDay?.ngay === entry.ngay;
 
                       let bgClass = 'bg-white/5 text-zinc-600'; // default / future
                       let dot = null;
@@ -445,11 +452,19 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                         }
                       }
 
+                      // Trạng thái "đang được chọn" phải nổi bật, tách biệt với viền
+                      // trạng thái ngày hôm nay (ring mảnh, mờ hơn).
+                      const ringClass = isSelected
+                        ? 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 scale-105'
+                        : isToday
+                          ? 'ring-1 ring-primary/50'
+                          : 'border-transparent';
+
                       return (
                         <button
                           key={entry.ngay}
                           onClick={() => !isFuture && entry.is_workday ? setSelectedDay(entry) : null}
-                          className={`aspect-[5/4] rounded-lg flex flex-col items-center justify-center relative text-[11px] font-bold border transition-all ${bgClass} ${isToday ? 'ring-1 ring-primary/50' : 'border-transparent'} ${!isFuture && entry.is_workday ? 'cursor-pointer hover:brightness-125 active:scale-90' : 'cursor-default'}`}
+                          className={`aspect-[5/4] rounded-lg flex flex-col items-center justify-center relative text-[11px] font-bold border transition-all ${bgClass} ${ringClass} ${!isFuture && entry.is_workday ? 'cursor-pointer hover:brightness-125 active:scale-90' : 'cursor-default'}`}
                         >
                           {dayNum}
                           {dot}
@@ -494,7 +509,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-primary" />
                       <span className="text-[13px] font-bold text-foreground">
-                        {format(new Date(selectedDay.ngay), 'dd/MM/yyyy')} ({DAY_NAMES[selectedDay.day_of_week]})
+                        {format(new Date(selectedDay.ngay), 'dd/MM/yyyy')} ({DOW_LABELS[selectedDay.day_of_week]})
                       </span>
                     </div>
                     <button onClick={() => setSelectedDay(null)} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-500">
