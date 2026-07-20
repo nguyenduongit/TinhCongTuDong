@@ -18,14 +18,23 @@ import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
  * khoảng bị che bởi bàn phím, rồi gán trực tiếp qua inline style.
  */
 function useVisualViewportInsets() {
+  const [windowHeight, setWindowHeight] = useState(() =>
+    typeof window !== 'undefined' ? window.innerHeight : 0
+  );
   const [insets, setInsets] = useState(() => ({
     height: typeof window !== 'undefined' ? window.innerHeight : 0,
     keyboardHeight: 0,
   }));
 
   useEffect(() => {
+    // window.innerHeight (layout viewport) không bị co lại khi bàn phím mở trên
+    // iOS standalone PWA, nên dùng nó làm mốc "chiều cao toàn màn hình" ổn định.
+    const updateWindowHeight = () => setWindowHeight(window.innerHeight);
+    updateWindowHeight();
+    window.addEventListener('resize', updateWindowHeight);
+
     const vv = window.visualViewport;
-    if (!vv) return;
+    if (!vv) return () => window.removeEventListener('resize', updateWindowHeight);
 
     const update = () => {
       const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
@@ -36,12 +45,13 @@ function useVisualViewportInsets() {
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
     return () => {
+      window.removeEventListener('resize', updateWindowHeight);
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
     };
   }, []);
 
-  return insets;
+  return { ...insets, windowHeight };
 }
 
 export interface SanLuongDrawerProps {
@@ -249,8 +259,14 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
     }
   };
 
-  const { height: viewportHeight, keyboardHeight } = useVisualViewportInsets();
-  const drawerHeight = Math.round(viewportHeight * 0.85);
+  const { windowHeight, height: viewportHeight, keyboardHeight } = useVisualViewportInsets();
+  // Bình thường (bàn phím đóng): cao 85% màn hình để hé lộ nền phía trên.
+  // Khi bàn phím mở và phần hiển thị còn lại nhỏ hơn mức đó: chiếm gần hết phần
+  // còn lại (chỉ chừa 16px) thay vì tiếp tục lấy 85% của phần đã bị hụt.
+  const TOP_GAP_WHEN_CONSTRAINED = 16;
+  const drawerHeight = Math.round(
+    Math.min(windowHeight * 0.85, viewportHeight - TOP_GAP_WHEN_CONSTRAINED)
+  );
 
   return (
     <>
