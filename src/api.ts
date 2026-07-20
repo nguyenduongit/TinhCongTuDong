@@ -754,14 +754,25 @@ export const useUpdateProfile = () => {
       if (fetchError) throw fetchError;
 
       const currentConfig = currentUser?.user_metadata?.profile || {};
-      
-      // Xóa các cấu hình cũ dư thừa, lưu thông tin vào 'profile'
+
+      const resolvedGioiTinh = data.gioi_tinh !== undefined
+        ? data.gioi_tinh
+        : (currentConfig['gioi_tinh'] ?? null);
+
+      // Merge với dữ liệu hiện có: chỉ ghi đè field nào thực sự được gửi lên,
+      // các field không gửi (undefined) sẽ giữ nguyên giá trị cũ thay vì bị xoá.
       const newProfile = {
-        'ngay_vao': data.ngay_vao_cong_ty,
-        'ngay_ky_hd': data.ngay_ky_hop_dong,
-        'gioi_tinh': data.gioi_tinh,
-        'bac_luong': data.bac_luong,
-        'menstrual_dates': data.gioi_tinh === 'nu' 
+        'ngay_vao': data.ngay_vao_cong_ty !== undefined
+          ? data.ngay_vao_cong_ty
+          : (currentConfig['ngay_vao'] ?? null),
+        'ngay_ky_hd': data.ngay_ky_hop_dong !== undefined
+          ? data.ngay_ky_hop_dong
+          : (currentConfig['ngay_ky_hd'] ?? null),
+        'gioi_tinh': resolvedGioiTinh,
+        'bac_luong': data.bac_luong !== undefined
+          ? data.bac_luong
+          : (currentConfig['bac_luong'] ?? null),
+        'menstrual_dates': resolvedGioiTinh === 'nu'
           ? (data.menstrual_dates !== undefined ? data.menstrual_dates : (currentConfig['menstrual_dates'] || {}))
           : {},
       };
