@@ -297,22 +297,23 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
     }
   };
 
-  const { windowHeight, height: viewportHeight, keyboardHeight } = useVisualViewportInsets();
+  const { windowHeight, keyboardHeight } = useVisualViewportInsets();
   const safeAreaTop = useSafeAreaTop();
-  // Bình thường (bàn phím đóng): cao gần hết màn hình, chạm tới safe area trên
-  // (chừa thêm 8px đệm), thay vì chỉ 85% như trước.
-  // Khi bàn phím mở và phần hiển thị còn lại nhỏ hơn mức đó: chiếm gần hết phần
-  // còn lại (chỉ chừa 16px) thay vì tiếp tục lấy theo mốc phía trên.
+  // Mép trên luôn được ghim cố định sát safe-area-inset-top (+ 8px đệm), bất kể
+  // bàn phím đóng hay mở. Chỉ mép dưới (drawerBottom) mới đổi theo bàn phím.
+  // Trước đây chiều cao bị giới hạn theo viewportHeight (vốn đã bị bàn phím thu
+  // nhỏ) RỒI còn bị trừ thêm qua drawerBottom — tức trừ kép, khiến mép trên bị
+  // đẩy xuống thấp hơn mức cần và tạo khoảng đệm thừa phía trên tiêu đề.
+  // Công thức mới: height = windowHeight - top - bottom, tính trực tiếp từ
+  // windowHeight (mốc ổn định) nên mép trên luôn đúng vị trí ghim, không còn
+  // phụ thuộc gián tiếp vào viewportHeight nữa.
   const TOP_EDGE_GAP = 8;
-  const TOP_GAP_WHEN_CONSTRAINED = 16;
-  const fullOpenHeight = windowHeight - safeAreaTop - TOP_EDGE_GAP;
-  const drawerHeight = Math.round(
-    Math.min(fullOpenHeight, viewportHeight - TOP_GAP_WHEN_CONSTRAINED)
-  );
+  const drawerTop = Math.round(safeAreaTop + TOP_EDGE_GAP);
   // Kéo drawer sát bàn phím hơn 30px (chỉ áp dụng khi bàn phím đang mở, không
   // ảnh hưởng vị trí lúc bàn phím đóng).
   const KEYBOARD_OVERLAP_ADJUST = 30;
-  const drawerBottom = Math.max(0, keyboardHeight - KEYBOARD_OVERLAP_ADJUST);
+  const drawerBottom = Math.max(0, Math.round(keyboardHeight - KEYBOARD_OVERLAP_ADJUST));
+  const drawerHeight = Math.max(0, Math.round(windowHeight - drawerTop - drawerBottom));
 
   return (
     <>
