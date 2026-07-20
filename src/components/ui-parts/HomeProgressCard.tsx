@@ -89,7 +89,7 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
                 </span>
                 <span className="text-zinc-500 font-semibold text-sm">công</span>
               </div>
-              <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-widest border-t border-white/5 pt-1 mt-1 w-0 min-w-full">
+              <div className="flex items-center justify-between text-sm font-bold text-zinc-400 uppercase tracking-widest border-t border-white/5 pt-1.5 mt-1 w-0 min-w-full">
                 <span>Mục tiêu</span>
                 <span className="text-emerald-400">{isLoading ? '-' : congNhat.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</span>
               </div>
