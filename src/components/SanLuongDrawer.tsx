@@ -9,6 +9,41 @@ import { getTodayVNString } from '@/lib/date-utils';
 import { getWorkMinutesForDay } from '@/lib/work-rules';
 import { SanLuongFormUI, type CongDoanBlock } from './ui-parts/SanLuongFormUI';
 
+/**
+ * Theo dõi VisualViewport thực tế của trình duyệt (đã trừ phần bị bàn phím che).
+ * Cần thiết vì trên iOS ở chế độ PWA cài màn hình chính (standalone), WebKit KHÔNG
+ * tự co layout viewport khi bàn phím mở (bỏ qua cả `interactive-widget` meta lẫn
+ * đơn vị `dvh`), mà chỉ tự dịch các phần tử `position: fixed` lên một cách không
+ * chính xác. Dùng thẳng VisualViewport API để tự tính chiều cao khả dụng và
+ * khoảng bị che bởi bàn phím, rồi gán trực tiếp qua inline style.
+ */
+function useVisualViewportInsets() {
+  const [insets, setInsets] = useState(() => ({
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    keyboardHeight: 0,
+  }));
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => {
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setInsets({ height: vv.height, keyboardHeight });
+    };
+
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+
+  return insets;
+}
+
 export interface SanLuongDrawerProps {
   entry?: SanLuong | null; // Nếu có truyền entry thì là chế độ Edit, ngược lại là Create
   initialDate?: string; // Ngày mặc định khi thêm mới
@@ -214,12 +249,22 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
     }
   };
 
+  const { height: viewportHeight, keyboardHeight } = useVisualViewportInsets();
+  const drawerHeight = Math.round(viewportHeight * 0.85);
+
   return (
     <>
       <Drawer.Root open={open} onOpenChange={handleDrawerOpenChange} dismissible={!showCongDoanModal}>
         <Drawer.Portal>
           <Drawer.Overlay className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-40 ${showCongDoanModal ? 'pointer-events-none' : ''}`} />
-          <Drawer.Content className="bg-background border-t border-border flex flex-col rounded-t-[2rem] h-[85dvh] mt-24 fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[430px] outline-none before:absolute before:top-0 before:left-0 before:right-0 before:h-24 before:bg-gradient-to-b before:from-primary/5 before:to-transparent before:pointer-events-none">
+          <Drawer.Content
+            className="bg-background border-t border-border flex flex-col rounded-t-[2rem] fixed left-0 right-0 z-50 mx-auto max-w-[430px] outline-none before:absolute before:top-0 before:left-0 before:right-0 before:h-24 before:bg-gradient-to-b before:from-primary/5 before:to-transparent before:pointer-events-none"
+            style={{
+              height: `${drawerHeight}px`,
+              bottom: `${keyboardHeight}px`,
+              transition: 'bottom 0.15s ease-out',
+            }}
+          >
             <div className="p-4 bg-background rounded-t-[2rem] flex-1 flex flex-col relative min-h-0">
               <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-6" />
               
