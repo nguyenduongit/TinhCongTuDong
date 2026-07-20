@@ -67,7 +67,7 @@ function ReferralCard() {
               <h4 className="text-sm font-bold text-foreground">Mời bạn bè nhận Pro</h4>
               <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
                 Tặng 3 tháng Pro cho bạn khi mời thành công.<br/>
-                <span className="text-purple-300 font-medium">Điều kiện:</span> Người được mời cần điền sản lượng đầy đủ các ngày làm việc trong 7 ngày đầu.
+                <span className="text-purple-300 font-medium">Điều kiện:</span> Người được mời cần nhập sản lượng đủ 7 ngày bất kỳ trong tháng đăng ký (kể cả ngày trong quá khứ).
               </p>
             </div>
           </div>
@@ -194,7 +194,7 @@ function ReferralCard() {
                       <button
                         onClick={() => {
                           if (ref.days_with_entry < ref.total_workdays) {
-                            toast.info(`Người được mời cần nhập đủ ${ref.total_workdays} ngày làm việc. Hiện tại mới đạt ${ref.days_with_entry}/${ref.total_workdays} ngày.`);
+                            toast.info(`Người được mời cần nhập sản lượng đủ ${ref.total_workdays} ngày (bất kỳ) trong tháng. Hiện tại mới đạt ${ref.days_with_entry}/${ref.total_workdays} ngày.`);
                             return;
                           }
                           if (isClaiming) return;

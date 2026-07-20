@@ -296,16 +296,20 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
   const [isExpanded, setIsExpanded] = useState(false);
   const statusCfg = STATUS_CONFIG[refData.status] || STATUS_CONFIG.tracking;
 
-  // Tính toán stats từ daily entries
+  // Tính toán stats từ daily entries theo quy tắc mới: chỉ cần đủ 7 NGÀY BẤT KỲ
+  // có nhập sản lượng trong cả Tháng Công, không phân biệt ngày làm việc hay không.
+  const REQUIRED_DAYS = 7;
   const stats = useMemo(() => {
-    if (!dailyEntries) return { workdays: 0, entered: 0, missed: 0 };
-    const workdays = dailyEntries.filter(d => d.is_workday);
-    const entered = workdays.filter(d => d.has_entry).length;
-    const missed = workdays.filter(d => !d.has_entry).length;
-    return { workdays: workdays.length, entered, missed };
+    if (!dailyEntries) return { required: REQUIRED_DAYS, entered: 0, remaining: REQUIRED_DAYS };
+    const entered = dailyEntries.filter(d => d.has_entry).length;
+    return {
+      required: REQUIRED_DAYS,
+      entered: Math.min(entered, REQUIRED_DAYS),
+      remaining: Math.max(0, REQUIRED_DAYS - entered),
+    };
   }, [dailyEntries]);
 
-  const progressPercent = stats.workdays > 0 ? Math.round((stats.entered / stats.workdays) * 100) : 0;
+  const progressPercent = stats.required > 0 ? Math.round((stats.entered / stats.required) * 100) : 0;
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
@@ -369,7 +373,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-zinc-400">Tiến độ nhập sản lượng</span>
-                      <span className="font-bold text-foreground">{stats.entered}/{stats.workdays} ngày LV</span>
+                      <span className="font-bold text-foreground">{stats.entered}/{stats.required} ngày</span>
                     </div>
                     <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
                       <motion.div
@@ -383,8 +387,8 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                       <span className="text-zinc-500">
                         {format(new Date(refData.tracking_start_date), 'dd/MM')} → {format(new Date(refData.tracking_end_date), 'dd/MM/yyyy')}
                       </span>
-                      {stats.missed > 0 && (
-                        <span className="text-rose-400 font-medium">{stats.missed} ngày chưa nhập</span>
+                      {stats.remaining > 0 && (
+                        <span className="text-rose-400 font-medium">Cần thêm {stats.remaining} ngày</span>
                       )}
                     </div>
                   </div>
@@ -663,7 +667,7 @@ function ReferralTab() {
                       />
                     </div>
                     <span className="text-[10px] text-zinc-500 font-medium shrink-0 w-20 text-right">
-                      {ref.days_with_entry}/{ref.total_workdays} ngày LV
+                      {ref.days_with_entry}/{ref.total_workdays} ngày
                     </span>
                   </div>
                 </motion.div>
