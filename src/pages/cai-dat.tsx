@@ -67,7 +67,7 @@ function ReferralCard() {
               <h4 className="text-sm font-bold text-foreground">Mời bạn bè nhận Pro</h4>
               <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
                 Tặng 3 tháng Pro cho bạn khi mời thành công.<br/>
-                <span className="text-purple-300 font-medium">Điều kiện:</span> Người được mời cần nhập sản lượng đủ 7 ngày bất kỳ trong tháng đăng ký (kể cả ngày trong quá khứ).
+                <span className="text-purple-300 font-medium">Điều kiện:</span> Người được mời nhập đủ sản lượng các ngày làm việc trong 1 kỳ lương bất kỳ (21 tháng trước → 20 tháng này), kể từ tháng đăng ký. Không giới hạn thời gian chờ.
               </p>
             </div>
           </div>
@@ -175,64 +175,79 @@ function ReferralCard() {
                     </div>
 
                     {/* Progress */}
-                    {ref.status === 'tracking' && (
-                      <div className="flex flex-col gap-1.5 mt-1">
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium">
-                          <span>Tiến độ nhập sản lượng</span>
-                          <span className="text-foreground">{ref.days_with_entry} / {ref.total_workdays} ngày</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full transition-all duration-500" 
-                            style={{ width: `${Math.min(100, Math.max(0, (ref.days_with_entry / (ref.total_workdays || 1)) * 100))}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {ref.status === 'tracking' && (
-                      <button
-                        onClick={() => {
-                          if (ref.days_with_entry < ref.total_workdays) {
-                            toast.info(`Người được mời cần nhập sản lượng đủ ${ref.total_workdays} ngày (bất kỳ) trong tháng. Hiện tại mới đạt ${ref.days_with_entry}/${ref.total_workdays} ngày.`);
-                            return;
-                          }
-                          if (isClaiming) return;
+                    {ref.status === 'tracking' && (() => {
+                      const periodEnded = new Date(ref.tracking_end_date) <= new Date();
+                      const isComplete = periodEnded && ref.days_with_entry >= ref.total_workdays && ref.total_workdays > 0;
+                      return (
+                        <>
+                          <div className="flex flex-col gap-1.5 mt-1">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium">
+                              <span>
+                                Kỳ lương đang xét: {new Date(ref.tracking_start_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} → {new Date(ref.tracking_end_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+                              </span>
+                              <span className="text-foreground">{ref.days_with_entry} / {ref.total_workdays} ngày</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, Math.max(0, (ref.days_with_entry / (ref.total_workdays || 1)) * 100))}%` }}
+                              />
+                            </div>
+                            {!periodEnded && (
+                              <span className="text-[10px] text-zinc-500">Kỳ lương này chưa kết thúc, tự động kiểm tra sau ngày {new Date(ref.tracking_end_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}. Chưa nhập đủ vẫn còn cơ hội ở các kỳ sau.</span>
+                            )}
+                          </div>
 
-                          claimReward(ref.referral_id, {
-                            onSuccess: () => {
-                              toast.success('Nhận thưởng thành công! Bạn đã được cộng 3 tháng Pro.');
-                              confetti({
-                                particleCount: 150,
-                                spread: 70,
-                                origin: { y: 0.6 },
-                                colors: ['#a855f7', '#06b6d4', '#eab308']
-                              });
-                            },
-                            onError: (err) => {
-                              const msg = err.message;
-                              if (msg === 'conditions_not_met') {
-                                toast.error('Chưa đủ điều kiện nhận phần thưởng.');
-                              } else if (msg === 'not_tracking_status') {
-                                toast.error('Phần thưởng này đã được nhận hoặc đã hết hạn.');
-                              } else {
-                                toast.error('Có lỗi xảy ra, vui lòng thử lại sau.');
+                          <button
+                            onClick={() => {
+                              if (!periodEnded) {
+                                toast.info(`Kỳ lương đang xét chưa kết thúc, chờ sau ngày ${new Date(ref.tracking_end_date).toLocaleDateString('vi-VN')}.`);
+                                return;
                               }
-                            }
-                          });
-                        }}
-                        className={cn(
-                          "mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300",
-                          ref.days_with_entry >= ref.total_workdays
-                            ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg shadow-purple-500/25 hover:opacity-90 active:scale-[0.98] cursor-pointer"
-                            : "bg-white/5 text-white/40 cursor-pointer hover:bg-white/10"
-                        )}
-                      >
-                        {ref.days_with_entry >= ref.total_workdays
-                          ? (isClaiming ? 'Đang xử lý...' : '🎁 Nhận 3 tháng Pro')
-                          : 'Chưa đủ điều kiện'}
-                      </button>
-                    )}
+                              if (!isComplete) {
+                                toast.info(`Kỳ này chưa nhập đủ ${ref.total_workdays} ngày làm việc (hiện ${ref.days_with_entry}/${ref.total_workdays}). Hệ thống sẽ tự chuyển sang kỳ lương kế tiếp.`);
+                                return;
+                              }
+                              if (isClaiming) return;
+
+                              claimReward(ref.referral_id, {
+                                onSuccess: () => {
+                                  toast.success('Nhận thưởng thành công! Bạn đã được cộng 3 tháng Pro.');
+                                  confetti({
+                                    particleCount: 150,
+                                    spread: 70,
+                                    origin: { y: 0.6 },
+                                    colors: ['#a855f7', '#06b6d4', '#eab308']
+                                  });
+                                },
+                                onError: (err) => {
+                                  const msg = err.message;
+                                  if (msg === 'conditions_not_met') {
+                                    toast.info('Kỳ này chưa đủ điều kiện, đã tự động chuyển sang kỳ lương kế tiếp.');
+                                  } else if (msg === 'period_not_ended') {
+                                    toast.error('Kỳ lương đang xét chưa kết thúc.');
+                                  } else if (msg === 'not_tracking_status') {
+                                    toast.error('Phần thưởng này đã được nhận rồi.');
+                                  } else {
+                                    toast.error('Có lỗi xảy ra, vui lòng thử lại sau.');
+                                  }
+                                }
+                              });
+                            }}
+                            className={cn(
+                              "mt-2 w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300",
+                              isComplete
+                                ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg shadow-purple-500/25 hover:opacity-90 active:scale-[0.98] cursor-pointer"
+                                : "bg-white/5 text-white/40 cursor-pointer hover:bg-white/10"
+                            )}
+                          >
+                            {isComplete
+                              ? (isClaiming ? 'Đang xử lý...' : '🎁 Nhận 3 tháng Pro')
+                              : !periodEnded ? 'Kỳ lương đang diễn ra' : 'Chưa đủ điều kiện'}
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
