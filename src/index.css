@@ -277,6 +277,15 @@
 }
 
 @layer base {
+  html {
+    /* Khoá hệ số phóng chữ tự động của Android Chrome/WebView theo cài đặt
+       "Cỡ chữ" hệ thống, tránh chữ bị phóng to đè lên layout.
+       Không ảnh hưởng iOS Safari / desktop vì các nền tảng này không áp dụng
+       kiểu tự-scale này. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   * {
     @apply border-border;
     -ms-overflow-style: none; /* IE and Edge */
