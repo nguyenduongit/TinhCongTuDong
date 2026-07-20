@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Drawer } from 'vaul';
+import { X } from 'lucide-react';
 import { useCreateSanLuong, useUpdateSanLuong, useDeleteSanLuong, useListCongDoan, type CongDoan, type SanLuong } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey } from '@/api';
@@ -52,6 +53,43 @@ function useVisualViewportInsets() {
   }, []);
 
   return { ...insets, windowHeight };
+}
+
+/**
+ * Đo giá trị thực (px) của `env(safe-area-inset-top)` — không thể tính trực
+ * tiếp bằng JS vì đây là hằng số môi trường CSS, nên phải dựng 1 phần tử ẩn
+ * để trình duyệt tự áp giá trị rồi đọc lại qua getComputedStyle.
+ */
+function useSafeAreaTop() {
+  const [safeAreaTop, setSafeAreaTop] = useState(0);
+
+  useEffect(() => {
+    const probe = document.createElement('div');
+    probe.style.position = 'fixed';
+    probe.style.top = '0';
+    probe.style.left = '0';
+    probe.style.height = '0';
+    probe.style.paddingTop = 'env(safe-area-inset-top)';
+    probe.style.visibility = 'hidden';
+    probe.style.pointerEvents = 'none';
+    document.body.appendChild(probe);
+
+    const measure = () => {
+      const value = parseFloat(getComputedStyle(probe).paddingTop) || 0;
+      setSafeAreaTop(value);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+      document.body.removeChild(probe);
+    };
+  }, []);
+
+  return safeAreaTop;
 }
 
 export interface SanLuongDrawerProps {
@@ -260,12 +298,16 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
   };
 
   const { windowHeight, height: viewportHeight, keyboardHeight } = useVisualViewportInsets();
-  // Bình thường (bàn phím đóng): cao 85% màn hình để hé lộ nền phía trên.
+  const safeAreaTop = useSafeAreaTop();
+  // Bình thường (bàn phím đóng): cao gần hết màn hình, chạm tới safe area trên
+  // (chừa thêm 8px đệm), thay vì chỉ 85% như trước.
   // Khi bàn phím mở và phần hiển thị còn lại nhỏ hơn mức đó: chiếm gần hết phần
-  // còn lại (chỉ chừa 16px) thay vì tiếp tục lấy 85% của phần đã bị hụt.
+  // còn lại (chỉ chừa 16px) thay vì tiếp tục lấy theo mốc phía trên.
+  const TOP_EDGE_GAP = 8;
   const TOP_GAP_WHEN_CONSTRAINED = 16;
+  const fullOpenHeight = windowHeight - safeAreaTop - TOP_EDGE_GAP;
   const drawerHeight = Math.round(
-    Math.min(windowHeight * 0.85, viewportHeight - TOP_GAP_WHEN_CONSTRAINED)
+    Math.min(fullOpenHeight, viewportHeight - TOP_GAP_WHEN_CONSTRAINED)
   );
   // Kéo drawer sát bàn phím hơn 30px (chỉ áp dụng khi bàn phím đang mở, không
   // ảnh hưởng vị trí lúc bàn phím đóng).
@@ -288,9 +330,19 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
             <div className="p-4 bg-background rounded-t-[2rem] flex-1 flex flex-col relative min-h-0">
               <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-6" />
               
-              <Drawer.Title className="text-2xl font-bold text-foreground mb-6 px-2 tracking-tight">
-                {isEditMode ? 'Cập nhật sản lượng' : 'Thêm sản lượng'}
-              </Drawer.Title>
+              <div className="flex items-center justify-between mb-6 px-2">
+                <Drawer.Title className="text-2xl font-bold text-foreground tracking-tight">
+                  {isEditMode ? 'Cập nhật sản lượng' : 'Thêm sản lượng'}
+                </Drawer.Title>
+                <button
+                  type="button"
+                  onClick={() => handleDrawerOpenChange(false)}
+                  aria-label="Đóng"
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 text-muted-foreground border border-white/5 hover:text-foreground hover:bg-white/10 transition-colors shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               
               <SanLuongFormUI 
                 readOnly={false}
