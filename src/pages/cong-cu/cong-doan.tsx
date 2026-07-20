@@ -185,7 +185,7 @@ export default function CongDoanPage() {
                       key={c.id}
                       onClick={() => handleRowClick(c)}
                       className={cn(
-                        "bg-card/40 backdrop-blur-sm border border-white/5 rounded-3xl p-4 flex items-center justify-between group transition-all relative overflow-hidden mb-1",
+                        "bg-card/40 backdrop-blur-sm border border-white/5 rounded-3xl p-4 flex items-center justify-between group transition-all relative overflow-hidden mb-1 shrink-0",
                         !manageMode && "cursor-pointer hover:border-primary/50 hover:bg-card/60 active:scale-[0.98]"
                       )}
                     >
