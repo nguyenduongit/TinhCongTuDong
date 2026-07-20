@@ -267,6 +267,10 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
   const drawerHeight = Math.round(
     Math.min(windowHeight * 0.85, viewportHeight - TOP_GAP_WHEN_CONSTRAINED)
   );
+  // Kéo drawer sát bàn phím hơn 30px (chỉ áp dụng khi bàn phím đang mở, không
+  // ảnh hưởng vị trí lúc bàn phím đóng).
+  const KEYBOARD_OVERLAP_ADJUST = 30;
+  const drawerBottom = Math.max(0, keyboardHeight - KEYBOARD_OVERLAP_ADJUST);
 
   return (
     <>
@@ -277,7 +281,7 @@ export function SanLuongDrawer({ entry, initialDate, open, onOpenChange }: SanLu
             className="bg-background border-t border-border flex flex-col rounded-t-[2rem] fixed left-0 right-0 z-50 mx-auto max-w-[430px] outline-none before:absolute before:top-0 before:left-0 before:right-0 before:h-24 before:bg-gradient-to-b before:from-primary/5 before:to-transparent before:pointer-events-none"
             style={{
               height: `${drawerHeight}px`,
-              bottom: `${keyboardHeight}px`,
+              bottom: `${drawerBottom}px`,
               transition: 'bottom 0.15s ease-out',
             }}
           >
