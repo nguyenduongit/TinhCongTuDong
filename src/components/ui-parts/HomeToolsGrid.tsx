@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Search, ChevronRight, Database } from 'lucide-react';
+import { Sparkles, Search, ChevronRight, Database } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -134,7 +134,7 @@ export function HomeToolsGrid({ isPro }: HomeToolsGridProps) {
       onClick: () => handleProTool('/cong-cu/tinh-luong'),
     },
     {
-      icon: <CalendarDays className="w-5 h-5" />,
+      icon: <Sparkles className="w-5 h-5" />,
       label: 'Dự tính sản lượng',
       description: 'Ước tính sản lượng cần làm đến cuối kỳ',
       isPro: true,
