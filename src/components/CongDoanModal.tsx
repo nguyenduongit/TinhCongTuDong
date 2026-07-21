@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Search, Plus, X, Pencil, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import {
   useListCongDoan,
   useCreateCongDoan,
@@ -37,7 +37,6 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
   const queryClient = useQueryClient();
   const { data: list = [], isLoading } = useListCongDoan({ query: { enabled: open, queryKey: getListCongDoanQueryKey() } });
 
-  const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
@@ -45,11 +44,6 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
   const createMutation = useCreateCongDoan();
   const updateMutation = useUpdateCongDoan();
   const deleteMutation = useDeleteCongDoan();
-
-  const filteredList = list.filter(c =>
-    c.ten_cong_doan.toLowerCase().includes(search.toLowerCase()) ||
-    c.ma_cong_doan.toLowerCase().includes(search.toLowerCase())
-  );
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -120,12 +114,6 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
                 {manageMode ? 'Quản lý công đoạn' : 'Chọn công đoạn'}
               </Dialog.Title>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setIsAdding(!isAdding)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors shadow-[0_0_15px_rgba(var(--primary),0.2)]"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
                 <Dialog.Close asChild>
                   <button className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-muted-foreground border border-white/5 hover:text-foreground hover:bg-white/10 transition-colors">
                     <X className="w-5 h-5" />
@@ -134,38 +122,7 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
               </div>
             </header>
 
-            <div className="p-4 border-b border-white/5 shrink-0 relative z-10">
-              <div className="relative group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm mã hoặc tên..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-black/20 border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 focus:bg-black/40 transition-all shadow-inner"
-                />
-              </div>
-            </div>
-
             <div className="flex-1 overflow-y-auto p-4 pb-20 flex flex-col gap-3 relative z-0">
-              <AnimatePresence>
-                {isAdding && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="mb-2 shrink-0"
-                  >
-                    <CongDoanFormUI 
-                      onSubmit={handleCreate}
-                      onCancel={() => setIsAdding(false)}
-                      isPending={createMutation.isPending}
-                      isEditing={false}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               {isLoading ? (
                 <>
                   {[...Array(4)].map((_, i) => (
@@ -181,15 +138,15 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
                     </div>
                   ))}
                 </>
-              ) : filteredList.length === 0 ? (
+              ) : list.length === 0 ? (
                 <div className="text-center p-8 text-muted-foreground text-sm flex flex-col items-center gap-2">
                   <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                    <Search className="w-6 h-6 text-zinc-500" />
+                    <Plus className="w-6 h-6 text-zinc-500" />
                   </div>
-                  Không tìm thấy công đoạn nào.
+                  Chưa có công đoạn nào.
                 </div>
               ) : (
-                filteredList.map(c => (
+                list.map(c => (
                   editingId === c.id ? (
                     <div key={c.id} className="mb-1">
                       <CongDoanFormUI 
@@ -240,6 +197,37 @@ export function CongDoanModal({ open, onOpenChange, onSelect, manageMode = false
                   )
                 ))
               )}
+
+              <AnimatePresence mode="wait" initial={false}>
+                {isAdding ? (
+                  <motion.div
+                    key="add-form"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="mt-1 shrink-0"
+                  >
+                    <CongDoanFormUI
+                      onSubmit={handleCreate}
+                      onCancel={() => setIsAdding(false)}
+                      isPending={createMutation.isPending}
+                      isEditing={false}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="add-button"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    onClick={() => setIsAdding(true)}
+                    className="mt-1 shrink-0 w-full flex items-center justify-center gap-2 rounded-3xl border border-dashed border-primary/30 bg-primary/5 text-primary font-bold text-sm py-4 hover:bg-primary/10 hover:border-primary/50 active:scale-[0.98] transition-all"
+                  >
+                    <Plus className="w-4.5 h-4.5" />
+                    Thêm công đoạn
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </Dialog.Content>
