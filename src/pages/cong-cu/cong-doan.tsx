@@ -112,10 +112,29 @@ export default function CongDoanPage() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 pb-20 flex flex-col gap-3 relative z-0">
+              <AnimatePresence initial={false}>
+                {isAdding && (
+                  <motion.div
+                    key="add-form"
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                    className="shrink-0 overflow-hidden"
+                  >
+                    <CongDoanFormUI
+                      onSubmit={handleCreate}
+                      onCancel={() => setIsAdding(false)}
+                      isPending={createMutation.isPending}
+                      isEditing={false}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {isLoading ? (
                 <>
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="bg-black/20 border border-white/5 rounded-3xl p-4 flex items-center justify-between mb-1">
+                    <div key={i} className="bg-black/20 border border-white/5 rounded-3xl p-4 flex items-center justify-between mb-1 shrink-0">
                       <div className="flex-1 min-w-0 pr-4 pl-1 space-y-2">
                         <Skeleton className="h-5 w-3/4 rounded-md bg-white/5" />
                         <Skeleton className="h-4 w-1/2 rounded-md bg-white/5" />
@@ -128,7 +147,7 @@ export default function CongDoanPage() {
                   ))}
                 </>
               ) : list.length === 0 ? (
-                <div className="text-center p-8 text-muted-foreground text-sm flex flex-col items-center gap-2">
+                <div className="text-center p-8 text-muted-foreground text-sm flex flex-col items-center gap-2 shrink-0">
                   <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
                     <Plus className="w-6 h-6 text-zinc-500" />
                   </div>
@@ -172,36 +191,15 @@ export default function CongDoanPage() {
                 ))
               )}
 
-              <AnimatePresence mode="wait" initial={false}>
-                {isAdding ? (
-                  <motion.div
-                    key="add-form"
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="mt-1 shrink-0"
-                  >
-                    <CongDoanFormUI
-                      onSubmit={handleCreate}
-                      onCancel={() => setIsAdding(false)}
-                      isPending={createMutation.isPending}
-                      isEditing={false}
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    key="add-button"
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    onClick={() => setIsAdding(true)}
-                    className="mt-1 shrink-0 w-full flex items-center justify-center gap-2 rounded-3xl border border-dashed border-primary/30 bg-primary/5 text-primary font-bold text-sm py-4 hover:bg-primary/10 hover:border-primary/50 active:scale-[0.98] transition-all"
-                  >
-                    <Plus className="w-4.5 h-4.5" />
-                    Thêm công đoạn
-                  </motion.button>
-                )}
-              </AnimatePresence>
+              {!isAdding && (
+                <button
+                  onClick={() => setIsAdding(true)}
+                  className="mt-1 shrink-0 w-full flex items-center justify-center gap-2 rounded-3xl border border-dashed border-primary/30 bg-primary/5 text-primary font-bold text-sm py-4 hover:bg-primary/10 hover:border-primary/50 active:scale-[0.98] transition-all"
+                >
+                  <Plus className="w-4.5 h-4.5" />
+                  Thêm công đoạn
+                </button>
+              )}
             </div>
           </div>
           
