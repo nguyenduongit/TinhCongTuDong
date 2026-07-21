@@ -14,7 +14,6 @@ const Login = lazy(() => import('@/pages/login'));
 const AdminPage = lazy(() => import('@/pages/admin'));
 
 // Tool Pages
-const CongDoanPage = lazy(() => import('@/pages/cong-cu/cong-doan'));
 const EstimationPage = lazy(() => import('@/pages/cong-cu/du-tinh'));
 const QuotaLookupPage = lazy(() => import('@/pages/cong-cu/tra-cuu'));
 const SalaryCalculatorPage = lazy(() => import('@/pages/cong-cu/tinh-luong'));
@@ -83,7 +82,6 @@ function Router() {
         <Route path="/admin"><ProtectedRoute component={AdminPage} /></Route>
         
         {/* Tool Routes */}
-        <Route path="/cong-cu/cong-doan"><ProtectedRoute component={CongDoanPage} /></Route>
         <Route path="/cong-cu/du-tinh"><ProtectedRoute component={EstimationPage} /></Route>
         <Route path="/cong-cu/tra-cuu"><ProtectedRoute component={QuotaLookupPage} /></Route>
         <Route path="/cong-cu/tinh-luong"><ProtectedRoute component={SalaryCalculatorPage} /></Route>

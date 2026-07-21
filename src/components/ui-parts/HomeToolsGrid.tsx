@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarDays, Search, ChevronRight, Database } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { pageItemVariants } from '@/lib/animations';
+import { CongDoanModal } from '@/components/CongDoanModal';
 
 interface ToolCardProps {
   icon: React.ReactNode;
@@ -92,6 +94,7 @@ interface HomeToolsGridProps {
 
 export function HomeToolsGrid({ isPro }: HomeToolsGridProps) {
   const [, setLocation] = useLocation();
+  const [showCongDoanModal, setShowCongDoanModal] = useState(false);
 
   const handleProTool = (path: string) => {
     if (isPro) {
@@ -111,7 +114,7 @@ export function HomeToolsGrid({ isPro }: HomeToolsGridProps) {
       bgColor: 'bg-blue-500/5 hover:bg-blue-500/10',
       borderColor: 'border-blue-500/15 hover:border-blue-500/30',
       glowColor: 'bg-blue-500/10',
-      onClick: () => setLocation('/cong-cu/cong-doan'),
+      onClick: () => setShowCongDoanModal(true),
     },
     {
       icon: (
@@ -181,6 +184,12 @@ export function HomeToolsGrid({ isPro }: HomeToolsGridProps) {
           {' '}để mở khoá tất cả công cụ
         </p>
       )}
+
+      <CongDoanModal
+        open={showCongDoanModal}
+        onOpenChange={setShowCongDoanModal}
+        manageMode
+      />
     </motion.div>
   );
 }
