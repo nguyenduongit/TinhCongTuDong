@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { CongDoan } from '@/api';
 import { useGetDinhMucByCode, useGetThongTinLuong } from '@/api';
 import { toast } from 'sonner';
+import { parseQuyCach } from '@/lib/business-logic';
 
 export interface CongDoanFormUIProps {
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -12,12 +13,10 @@ export interface CongDoanFormUIProps {
   readOnly?: boolean;
 }
 
-export function parseQuyCach(qc: string | null | undefined) {
-  if (!qc) return { sl: '', unit: 'hộp' };
-  const match = qc.match(/^(\d+)\s*pcs\/(.+)$/i);
-  if (match) return { sl: match[1], unit: match[2].toLowerCase() };
-  return { sl: qc.replace(/\D/g, ''), unit: 'hộp' };
-}
+// Giữ re-export để không phá vỡ các chỗ đang import parseQuyCach từ đây.
+// Nguồn parse thật sự nằm ở business-logic/quy-cach.ts (dùng chung cả cho
+// tính công), tránh 2 bản định nghĩa lệch nhau.
+export { parseQuyCach };
 
 export function CongDoanFormUI({
   onSubmit,

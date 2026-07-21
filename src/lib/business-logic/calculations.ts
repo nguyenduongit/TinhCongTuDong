@@ -1,4 +1,5 @@
 import { BASKET_SIZE, MINUTES_PER_WORKDAY } from "./constants.js";
+import { isBasketQuyCach } from "./quy-cach.js";
 
 /**
  * Cắt giữ 3 chữ số thập phân mà không làm tròn (cắt bỏ phần đuôi).
@@ -25,7 +26,9 @@ export function round3(num: number): number {
  * Tính công sản phẩm (công SP) cho một công đoạn
  * @param soLuong Số lượng hoàn thành
  * @param dinhMuc Định mức của công đoạn
- * @param isBasketLogic true nếu mã công đoạn bắt đầu bằng '9' (logic rổ 32)
+ * @param isBasketLogic true nếu quy_cách công đoạn là "32pcs/rổ" (logic rổ 32).
+ *   Dùng isBasketQuyCach(quy_cach) từ quy-cach.ts để xác định giá trị này,
+ *   KHÔNG dựa vào mã công đoạn.
  */
 export function computeCongSp(
   soLuong: number, 
@@ -75,7 +78,7 @@ export function reverseCalcPcs(
   const rate = dinhMuc;
 
   if (isBasketLogic) {
-    // Dòng 9: tính theo rổ 32 pcs, rổ chẵn tính bằng [32/rate] cắt 3 số
+    // Quy_cách 32pcs/rổ: tính theo rổ 32 pcs, rổ chẵn tính bằng [32/rate] cắt 3 số
     const congPerBasket = truncate3(BASKET_SIZE / rate);
     
     // Thêm delta nhỏ (1e-9) tránh sai số float gây hụt rổ, vd 2.9999999999 -> 2
@@ -119,20 +122,21 @@ export interface ChiTietItem {
   ma_cong_doan: string;
   so_luong: number;
   dinh_muc: number; // Effective quota
+  quy_cach?: string | null; // Dùng để xác định logic rổ (32pcs/rổ), KHÔNG dựa vào ma_cong_doan
 }
 
 /**
  * Tính tổng công sản phẩm cho một tập hợp các chi tiết (thường là 1 tuần).
- * Tự động gom nhóm số lượng của công đoạn rổ (dòng 9) trước khi tính.
+ * Tự động gom nhóm số lượng của các công đoạn có quy_cách 32pcs/rổ trước khi tính.
  */
 export function computeWeeklyCongSp(items: ChiTietItem[]): number {
   let totalCong = 0;
   
-  // Nhóm các công đoạn rổ theo mã công đoạn
+  // Nhóm các công đoạn rổ (quy_cách 32pcs/rổ) theo mã công đoạn
   const basketGroups: Record<string, { totalSoLuong: number, rate: number }> = {};
   
   for (const item of items) {
-    const isBasketLogic = item.ma_cong_doan.startsWith('9');
+    const isBasketLogic = isBasketQuyCach(item.quy_cach);
     
     if (isBasketLogic) {
       const key = `${item.ma_cong_doan}_${item.dinh_muc}`;
@@ -150,7 +154,7 @@ export function computeWeeklyCongSp(items: ChiTietItem[]): number {
     }
   }
   
-  // Tính công cho các nhóm rổ (dòng 9) sau khi đã gom tổng số lượng
+  // Tính công cho các nhóm rổ (quy_cách 32pcs/rổ) sau khi đã gom tổng số lượng
   for (const key in basketGroups) {
     const group = basketGroups[key];
     const fullBaskets = Math.floor(group.totalSoLuong / BASKET_SIZE);

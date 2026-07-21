@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
-import { computeCongSp, computeCongNhat, computeCongHoTro, computeWeeklyCongSp, truncate3, type ChiTietItem } from '@/lib/business-logic';
+import { computeCongSp, computeCongNhat, computeCongHoTro, computeWeeklyCongSp, truncate3, isBasketQuyCach, type ChiTietItem } from '@/lib/business-logic';
 import { minutesToCong, getWorkMinutesForDay } from '@/lib/work-rules';
 import { getCycleStringFromYearMonth } from '@/lib/date-utils';
 import { type CompanyConfig, DEFAULT_COMPANY_CONFIG, mergeWithDefaults } from '@/lib/company-config';
@@ -160,7 +160,7 @@ export const useCreateSanLuong = () => {
         const cd = allCongDoan?.find(c => c.ma_cong_doan === ct.cong_doan);
         const dinh_muc_goc = cd ? Number(cd.dinh_muc) : 1;
         const dinh_muc = dinh_muc_goc * ((ct.phan_tram_dinh_muc ?? 100) / 100);
-        const cong_sp = computeCongSp(ct.so_luong, dinh_muc, ct.cong_doan.startsWith('9'));
+        const cong_sp = computeCongSp(ct.so_luong, dinh_muc, isBasketQuyCach(cd?.quy_cach));
         return { cong_doan: ct.cong_doan, so_luong: ct.so_luong, dinh_muc, cong_sp };
       });
 
@@ -229,7 +229,7 @@ export const useUpdateSanLuong = () => {
           const cd = allCongDoan?.find(c => c.ma_cong_doan === ct.cong_doan);
           const dinh_muc_goc = cd ? Number(cd.dinh_muc) : 1;
           const dinh_muc = dinh_muc_goc * ((ct.phan_tram_dinh_muc ?? 100) / 100);
-          const cong_sp = computeCongSp(ct.so_luong, dinh_muc, ct.cong_doan.startsWith('9'));
+          const cong_sp = computeCongSp(ct.so_luong, dinh_muc, isBasketQuyCach(cd?.quy_cach));
           return { cong_doan: ct.cong_doan, so_luong: ct.so_luong, dinh_muc, cong_sp };
         });
 
@@ -313,11 +313,14 @@ export const useConfirmNgayNghi = () => {
 
 // --- CALCULATIONS FOR DASHBOARD / BAO CAO ---
 
-function mapDbChiTiet(dbChiTietArray: any[]): ChiTietItem[] {
+// Tra quy_cách theo mã công đoạn, dùng để xác định logic rổ (32pcs/rổ)
+// khi tính lại công từ dữ liệu đã lưu (chi_tiet không lưu sẵn quy_cách).
+function mapDbChiTiet(dbChiTietArray: any[], quyCachByMa: Record<string, string | null | undefined> = {}): ChiTietItem[] {
   return dbChiTietArray.map(ct => ({
     ma_cong_doan: ct.cong_doan,
     so_luong: Number(ct.so_luong) || 0,
-    dinh_muc: Number(ct.dinh_muc) || 1
+    dinh_muc: Number(ct.dinh_muc) || 1,
+    quy_cach: quyCachByMa[ct.cong_doan]
   }));
 }
 
@@ -353,15 +356,23 @@ export const useGetSanLuongDashboard = (options: any = {}) => {
       const minStartStr = cycleStartStr < weekStartStr ? cycleStartStr : weekStartStr;
       const maxEndStr = cycleEndStr > today ? cycleEndStr : today;
 
-      const { data: rows, error } = await supabase.from('san_luong')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('ngay', minStartStr)
-        .lte('ngay', maxEndStr)
-        .order('created_at', { ascending: true });
+      const [{ data: rows, error }, { data: congDoanList }] = await Promise.all([
+        supabase.from('san_luong')
+          .select('*')
+          .eq('user_id', user?.id)
+          .gte('ngay', minStartStr)
+          .lte('ngay', maxEndStr)
+          .order('created_at', { ascending: true }),
+        supabase.from('cong_doan').select('ma_cong_doan, quy_cach').eq('user_id', user?.id),
+      ]);
 
       if (error) throw error;
       if (!rows) return { stats: {}, todayEntries: [] };
+
+      // Tra quy_cách theo mã công đoạn (dùng để xác định logic rổ 32pcs/rổ khi
+      // tính lại công từ dữ liệu đã lưu — chi_tiet không lưu sẵn quy_cách).
+      const quyCachByMa: Record<string, string | null | undefined> = {};
+      (congDoanList || []).forEach(cd => { quyCachByMa[cd.ma_cong_doan] = cd.quy_cach; });
 
       const todayRows = rows.filter(r => r.ngay === today);
       const today_count = todayRows.length;
@@ -380,7 +391,7 @@ export const useGetSanLuongDashboard = (options: any = {}) => {
       for (const r of weekRows) {
         const tk = r.thong_ke_ngay as any;
         if (tk?.tong_cong_ho_tro) weekHoTroCong += Number(tk.tong_cong_ho_tro);
-        if (Array.isArray(r.chi_tiet)) weekItems.push(...mapDbChiTiet(r.chi_tiet));
+        if (Array.isArray(r.chi_tiet)) weekItems.push(...mapDbChiTiet(r.chi_tiet, quyCachByMa));
       }
       const week_total_sl = computeWeeklyCongSp(weekItems) + weekHoTroCong;
 
@@ -398,7 +409,7 @@ export const useGetSanLuongDashboard = (options: any = {}) => {
         
         const tk = r.thong_ke_ngay as any;
         if (tk?.tong_cong_ho_tro) group.hoTro += Number(tk.tong_cong_ho_tro);
-        if (Array.isArray(r.chi_tiet)) group.items.push(...mapDbChiTiet(r.chi_tiet));
+        if (Array.isArray(r.chi_tiet)) group.items.push(...mapDbChiTiet(r.chi_tiet, quyCachByMa));
       }
       
       let month_total_sl = 0;
@@ -432,13 +443,21 @@ export const useGetCongTuan = (params: { month: string }, options: any = {}) => 
 
       const { cycleStartStr, cycleEndStr } = getCycleStringFromYearMonth(cycleYear, cycleMonth);
 
-      const { data: rows, error } = await supabase.from('san_luong')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('ngay', cycleStartStr)
-        .lte('ngay', cycleEndStr);
+      const [{ data: rows, error }, { data: congDoanList }] = await Promise.all([
+        supabase.from('san_luong')
+          .select('*')
+          .eq('user_id', user?.id)
+          .gte('ngay', cycleStartStr)
+          .lte('ngay', cycleEndStr),
+        supabase.from('cong_doan').select('ma_cong_doan, quy_cach').eq('user_id', user?.id),
+      ]);
 
       if (error) throw error;
+
+      // Tra quy_cách theo mã công đoạn (dùng để xác định logic rổ 32pcs/rổ khi
+      // tính lại công từ dữ liệu đã lưu — chi_tiet không lưu sẵn quy_cách).
+      const quyCachByMa: Record<string, string | null | undefined> = {};
+      (congDoanList || []).forEach(cd => { quyCachByMa[cd.ma_cong_doan] = cd.quy_cach; });
       if (!rows) return { weekGroups: [], totalCongMonth: 0 };
 
       function getWeekNumberAndEdges(dateStr: string) {
@@ -511,13 +530,14 @@ export const useGetCongTuan = (params: { month: string }, options: any = {}) => 
             const ma = ct.cong_doan;
             const sl = Number(ct.so_luong) || 0;
             const dm = Number(ct.dinh_muc) || 1;
-            const sp = ct.cong_sp !== undefined ? Number(ct.cong_sp) : computeCongSp(sl, dm, ma.startsWith('9'));
+            const qc = quyCachByMa[ma];
+            const sp = ct.cong_sp !== undefined ? Number(ct.cong_sp) : computeCongSp(sl, dm, isBasketQuyCach(qc));
             
             if (!weekGroup.congDoanStats[ma]) weekGroup.congDoanStats[ma] = { so_luong: 0, cong_sp: 0 };
             weekGroup.congDoanStats[ma].so_luong += sl;
             weekGroup.congDoanStats[ma].cong_sp += sp; 
             
-            weekGroup.items.push({ ma_cong_doan: ma, so_luong: sl, dinh_muc: dm });
+            weekGroup.items.push({ ma_cong_doan: ma, so_luong: sl, dinh_muc: dm, quy_cach: qc });
           });
         }
       }

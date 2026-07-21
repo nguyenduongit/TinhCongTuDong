@@ -5,7 +5,7 @@ import { useGetSanLuongDashboard, useListCongDoan, getListCongDoanQueryKey, useG
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { minutesToCong } from '@/lib/work-rules';
 import { parseQuyCach } from '@/components/ui-parts/CongDoanFormUI';
-import { reverseCalcPcs } from '@/lib/business-logic';
+import { reverseCalcPcs, isBasketQuyCach } from '@/lib/business-logic';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EstimationToolProps {
@@ -62,7 +62,7 @@ export function EstimationTool({ onClose }: EstimationToolProps) {
   function getReverseCalcPcs(targetCong: number, cd: typeof selectedCdObj): number {
     if (!cd || targetCong <= 0) return 0;
     const dinhMuc = Number(cd.dinh_muc) > 0 ? Number(cd.dinh_muc) : 1;
-    return reverseCalcPcs(targetCong, dinhMuc, cd.ma_cong_doan.startsWith('9'));
+    return reverseCalcPcs(targetCong, dinhMuc, isBasketQuyCach(cd.quy_cach));
   }
 
   const totalPcs = getReverseCalcPcs(missingCong, selectedCdObj);
