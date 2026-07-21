@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { parseISO, format, addMonths, subMonths } from 'date-fns';
 import { useLocation } from 'wouter';
-import { getCycleStringFromYearMonth } from '@/lib/date-utils';
+import { getCycleStringFromYearMonth, getCycleMonthFromDate, getNowVNDateLocal } from '@/lib/date-utils';
 import {
   computeCycleWorkdayInfo,
   computeCycleAttendance,
@@ -39,7 +39,9 @@ export default function SalaryCalculatorPage() {
   const joinDate = initialData?.ngay_vao_cong_ty || '';
   const contractDate = initialData?.ngay_ky_hop_dong || '';
 
-  const currentMonthStr = format(new Date(), 'yyyy-MM');
+  // "Tháng lương" mặc định phải theo Tháng Công (21 tháng trước -> 20 tháng này),
+  // không phải tháng dương lịch. Ví dụ hôm nay 21/7 thì đã sang kỳ lương tháng 8.
+  const currentMonthStr = format(getCycleMonthFromDate(getNowVNDateLocal()), 'yyyy-MM');
   const [salaryMonth, setSalaryMonth] = useState<string>(currentMonthStr);
   const isCurrentMonth = salaryMonth === currentMonthStr;
 
