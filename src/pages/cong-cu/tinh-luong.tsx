@@ -604,7 +604,7 @@ export default function SalaryCalculatorPage() {
                 {isFemale && (
                   <div className="space-y-2">
                     <Label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">
-                      Tháng này bạn đã khai báo với PNS chưa?
+                      Bạn đã khai báo chế độ hành kinh chưa?
                     </Label>
                     <div className="grid grid-cols-2 gap-3">
                       {([
