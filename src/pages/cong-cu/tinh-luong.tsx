@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Calculator, Loader2, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
+import { cn } from '@/lib/utils';
 import { useGetThongTinLuong, useListSanLuong, useCompanyConfig, useGetSalaryTiers, useUpdateProfile } from '@/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,7 +75,7 @@ export default function SalaryCalculatorPage() {
   const [complianceOverride, setComplianceOverride] = useState<string>('');
   const [kindergartenSupport, setKindergartenSupport] = useState<string>('');
   const [shift2Allowance, setShift2Allowance] = useState<string>('');
-  const [menstrualStartDate, setMenstrualStartDate] = useState<string>('');
+  const [menstrualDeclared, setMenstrualDeclared] = useState<boolean>(false);
   const [otherAllowances, setOtherAllowances] = useState<DynamicItem[]>([]);
 
   // Thưởng states
@@ -118,12 +119,8 @@ export default function SalaryCalculatorPage() {
   }, [salaryMonth]);
 
   useEffect(() => {
-    if (initialData?.menstrual_dates) {
-      setMenstrualStartDate(initialData.menstrual_dates[salaryMonth] || '');
-    } else {
-      setMenstrualStartDate('');
-    }
-  }, [salaryMonth, initialData?.menstrual_dates]);
+    setMenstrualDeclared(initialData?.menstrual_declared?.[salaryMonth] === true);
+  }, [salaryMonth, initialData?.menstrual_declared]);
 
   const { data: cycleRecords } = useListSanLuong({ startDate: cycleStartStr, endDate: cycleEndStr });
 
@@ -191,29 +188,10 @@ export default function SalaryCalculatorPage() {
 
   // Tính trợ cấp hành kinh
   const isFemale = initialData?.gioi_tinh === 'nu';
-  const validMenstrualDays = useMemo(() => {
-    if (!isFemale || !menstrualStartDate || !cycleRecords) return 0;
-
-    // Tìm 3 ngày làm việc liên tiếp bắt đầu từ menstrualStartDate
-    const dates: string[] = [];
-    let curDate = new Date(menstrualStartDate);
-    while (dates.length < 3) {
-      if (curDate.getDay() !== 0) { // Bỏ qua Chủ Nhật
-        dates.push(format(curDate, 'yyyy-MM-dd'));
-      }
-      curDate.setDate(curDate.getDate() + 1);
-    }
-
-    // Đếm số ngày thực tế có đi làm (thoi_gian_thuc_hien > 0 và không phải ngày nghỉ phép)
-    let validCount = 0;
-    dates.forEach(d => {
-      const record = (cycleRecords as any[]).find(r => r.ngay === d);
-      if (record && record.thoi_gian_thuc_hien > 0 && !record.thong_ke_ngay?.is_ngay_nghi) {
-        validCount++;
-      }
-    });
-    return validCount;
-  }, [isFemale, menstrualStartDate, cycleRecords]);
+  // Điều kiện duy nhất: đã khai báo hành kinh với PNS trong tháng lương này chưa.
+  // Nếu có -> tính đủ 3 ngày (không cần xét ngày làm việc thực tế/lịch sử nữa).
+  // Nếu không -> 0 đồng.
+  const validMenstrualDays = isFemale && menstrualDeclared ? 3 : 0;
 
   const baseDailySalary = numBasicSalary / numStandardWorkdays;
   // 30 phút = 1/16 của ngày 8 tiếng (480 phút)
@@ -625,47 +603,51 @@ export default function SalaryCalculatorPage() {
 
                 {isFemale && (
                   <div className="space-y-2">
-                    <Label htmlFor="menstrualStartDate" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">
-                      Trợ cấp hành kinh (Chọn ngày bắt đầu)
+                    <Label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">
+                      Tháng này bạn đã khai báo với PNS chưa?
                     </Label>
-                    <div className="flex gap-2 items-center">
-                      <Input
-                        id="menstrualStartDate"
-                        type="date"
-                        value={menstrualStartDate}
-                        onChange={async (e) => {
-                          const val = e.target.value;
-                          setMenstrualStartDate(val);
-                          if (initialData) {
-                            const newDates = { ...(initialData.menstrual_dates || {}) };
-                            if (val) newDates[salaryMonth] = val;
-                            else delete newDates[salaryMonth];
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        { value: true, label: 'Có' },
+                        { value: false, label: 'Chưa' },
+                      ] as const).map(opt => (
+                        <button
+                          key={String(opt.value)}
+                          type="button"
+                          onClick={async () => {
+                            setMenstrualDeclared(opt.value);
+                            if (initialData) {
+                              const newDeclared = { ...(initialData.menstrual_declared || {}) };
+                              newDeclared[salaryMonth] = opt.value;
 
-                            try {
-                              await updateMutation.mutateAsync({
-                                ...initialData,
-                                menstrual_dates: newDates
-                              });
-                            } catch (err) {
-                              console.error('Failed to save menstrual_dates', err);
+                              try {
+                                await updateMutation.mutateAsync({
+                                  ...initialData,
+                                  menstrual_declared: newDeclared
+                                });
+                              } catch (err) {
+                                console.error('Failed to save menstrual_declared', err);
+                              }
                             }
-                          }
-                        }}
-                        className="h-12 rounded-2xl bg-black/20 border-white/10 font-bold text-foreground focus-visible:ring-blue-500/50 shadow-inner"
-                      />
-                      {menstrualStartDate && (
-                        <div className="flex flex-col items-end">
-                          <div className="text-[11px] font-bold text-zinc-400 px-2 whitespace-nowrap">
-                            Hợp lệ: <span className="text-blue-400 text-sm">{validMenstrualDays}</span>/3
-                          </div>
-                          {menstrualAllowance > 0 && (
-                            <div className="text-[12px] font-bold text-emerald-400 px-2">
-                              +{formatVND(Math.round(menstrualAllowance))}
-                            </div>
+                          }}
+                          className={cn(
+                            "h-12 rounded-2xl font-bold text-sm border transition-all active:scale-[0.98]",
+                            menstrualDeclared === opt.value
+                              ? "bg-primary/15 border-primary/40 text-primary shadow-inner"
+                              : "bg-black/20 border-white/10 text-zinc-400 hover:bg-white/5"
                           )}
-                        </div>
-                      )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
+                    {menstrualDeclared && menstrualAllowance > 0 && (
+                      <div className="flex justify-end">
+                        <div className="text-[12px] font-bold text-emerald-400 px-2">
+                          Đủ 3 ngày · +{formatVND(Math.round(menstrualAllowance))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

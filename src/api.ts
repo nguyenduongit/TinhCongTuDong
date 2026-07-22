@@ -736,7 +736,8 @@ export type ThongTinLuong = {
   ngay_ky_hop_dong: string | null;
   gioi_tinh: string | null;
   bac_luong: string | null;
-  menstrual_dates?: Record<string, string>;
+  /** Theo tháng lương (yyyy-MM): đã khai báo hành kinh với PNS trong tháng đó hay chưa. */
+  menstrual_declared?: Record<string, boolean>;
 };
 
 export const useGetThongTinLuong = () => {
@@ -754,7 +755,7 @@ export const useGetThongTinLuong = () => {
         ngay_ky_hop_dong: config['ngay_ky_hd'] || null,
         gioi_tinh: config['gioi_tinh'] || null,
         bac_luong: config['bac_luong'] || null,
-        menstrual_dates: config['menstrual_dates'] || {},
+        menstrual_declared: config['menstrual_declared'] || {},
       } as ThongTinLuong;
     },
     enabled: !!user?.id,
@@ -792,8 +793,8 @@ export const useUpdateProfile = () => {
         'bac_luong': data.bac_luong !== undefined
           ? data.bac_luong
           : (currentConfig['bac_luong'] ?? null),
-        'menstrual_dates': resolvedGioiTinh === 'nu'
-          ? (data.menstrual_dates !== undefined ? data.menstrual_dates : (currentConfig['menstrual_dates'] || {}))
+        'menstrual_declared': resolvedGioiTinh === 'nu'
+          ? (data.menstrual_declared !== undefined ? data.menstrual_declared : (currentConfig['menstrual_declared'] || {}))
           : {},
       };
 
