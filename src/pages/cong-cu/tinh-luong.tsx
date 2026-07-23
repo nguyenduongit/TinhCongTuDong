@@ -7,8 +7,10 @@ import { useGetThongTinLuong, useListSanLuong, useCompanyConfig, useGetSalaryTie
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { parseISO, format, addMonths, subMonths } from 'date-fns';
 import { useLocation } from 'wouter';
+import { toast } from 'sonner';
 import { getCycleStringFromYearMonth, getCycleMonthFromDate, getNowVNDateLocal } from '@/lib/date-utils';
 import {
   computeCycleWorkdayInfo,
@@ -75,7 +77,7 @@ export default function SalaryCalculatorPage() {
   const [complianceOverride, setComplianceOverride] = useState<string>('');
   const [kindergartenSupport, setKindergartenSupport] = useState<string>('');
   const [shift2Allowance, setShift2Allowance] = useState<string>('');
-  const [menstrualDeclared, setMenstrualDeclared] = useState<boolean>(false);
+  const [menstrualDeclared, setMenstrualDeclared] = useState<boolean>(true);
   const [otherAllowances, setOtherAllowances] = useState<DynamicItem[]>([]);
 
   // Thưởng states
@@ -119,7 +121,8 @@ export default function SalaryCalculatorPage() {
   }, [salaryMonth]);
 
   useEffect(() => {
-    setMenstrualDeclared(initialData?.menstrual_declared?.[salaryMonth] === true);
+    // Mặc định BẬT (có hưởng chế độ) trừ khi tháng này đã lưu rõ là tắt.
+    setMenstrualDeclared(initialData?.menstrual_declared?.[salaryMonth] !== false);
   }, [salaryMonth, initialData?.menstrual_declared]);
 
   const { data: cycleRecords } = useListSanLuong({ startDate: cycleStartStr, endDate: cycleEndStr });
@@ -602,52 +605,38 @@ export default function SalaryCalculatorPage() {
                 </div>
 
                 {isFemale && (
-                  <div className="space-y-2">
-                    <Label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">
-                      Bạn đã khai báo chế độ hành kinh chưa?
-                    </Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {([
-                        { value: true, label: 'Có' },
-                        { value: false, label: 'Chưa' },
-                      ] as const).map(opt => (
-                        <button
-                          key={String(opt.value)}
-                          type="button"
-                          onClick={async () => {
-                            setMenstrualDeclared(opt.value);
-                            if (initialData) {
-                              const newDeclared = { ...(initialData.menstrual_declared || {}) };
-                              newDeclared[salaryMonth] = opt.value;
-
-                              try {
-                                await updateMutation.mutateAsync({
-                                  ...initialData,
-                                  menstrual_declared: newDeclared
-                                });
-                              } catch (err) {
-                                console.error('Failed to save menstrual_declared', err);
-                              }
-                            }
-                          }}
-                          className={cn(
-                            "h-12 rounded-2xl font-bold text-sm border transition-all active:scale-[0.98]",
-                            menstrualDeclared === opt.value
-                              ? "bg-primary/15 border-primary/40 text-primary shadow-inner"
-                              : "bg-black/20 border-white/10 text-zinc-400 hover:bg-white/5"
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                    {menstrualDeclared && menstrualAllowance > 0 && (
-                      <div className="flex justify-end">
-                        <div className="text-[12px] font-bold text-emerald-400 px-2">
+                  <div className="flex items-center justify-between gap-3 h-12 px-4 rounded-2xl bg-black/20 border border-white/10 shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-foreground leading-tight">Chế độ hành kinh</span>
+                      {menstrualDeclared && menstrualAllowance > 0 && (
+                        <span className="text-[11px] font-bold text-emerald-400 leading-tight mt-0.5">
                           Đủ 3 ngày · +{formatVND(Math.round(menstrualAllowance))}
-                        </div>
-                      </div>
-                    )}
+                        </span>
+                      )}
+                    </div>
+                    <Switch
+                      checked={menstrualDeclared}
+                      onCheckedChange={(checked) => {
+                        // Cập nhật UI ngay lập tức (không chờ mạng) để không bị giật/lag.
+                        setMenstrualDeclared(checked);
+                        if (initialData) {
+                          const newDeclared = { ...(initialData.menstrual_declared || {}) };
+                          newDeclared[salaryMonth] = checked;
+                          // Lưu nền; mutation đã patch thẳng cache (setQueryData) thay vì
+                          // invalidate/refetch nên không gây nháy lại giao diện khi lưu xong.
+                          updateMutation.mutate({
+                            ...initialData,
+                            menstrual_declared: newDeclared
+                          }, {
+                            onError: () => {
+                              // Lưu thất bại -> hoàn tác lại UI về trạng thái trước đó, báo lỗi.
+                              setMenstrualDeclared(!checked);
+                              toast.error('Không lưu được, vui lòng thử lại');
+                            }
+                          });
+                        }
+                      }}
+                    />
                   </div>
                 )}
 

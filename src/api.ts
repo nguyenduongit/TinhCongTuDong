@@ -811,10 +811,21 @@ export const useUpdateProfile = () => {
       });
 
       if (error) throw error;
-      return true;
+
+      // Trả về đúng shape của ThongTinLuong (đã biết chắc chắn giá trị mới,
+      // không cần refetch lại toàn bộ) để cache có thể được vá trực tiếp
+      // (setQueryData) thay vì invalidate -> tránh nháy/giật giao diện khi
+      // các thao tác toggle nhanh (VD bật/tắt chế độ hành kinh).
+      return {
+        ngay_vao_cong_ty: newProfile.ngay_vao,
+        ngay_ky_hop_dong: newProfile.ngay_ky_hd,
+        gioi_tinh: newProfile.gioi_tinh,
+        bac_luong: newProfile.bac_luong,
+        menstrual_declared: newProfile.menstrual_declared,
+      } as ThongTinLuong;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['thong-tin-luong'] });
+    onSuccess: (result) => {
+      queryClient.setQueryData(['thong-tin-luong'], result);
       refetchUser();
     }
   });
