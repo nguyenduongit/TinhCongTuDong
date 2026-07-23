@@ -1151,3 +1151,24 @@ export function useAdminGetUserDailyEntries(
     enabled: !!userId && !!startDate && !!endDate,
   });
 }
+
+/**
+ * Admin: Lấy danh sách công đoạn của 1 user bất kỳ (dùng để hiển thị tên
+ * công đoạn khi xem lại sản lượng của user đó qua SanLuongDayCard).
+ */
+export function useAdminGetUserCongDoan(userId: string | null) {
+  return useQuery({
+    queryKey: ['admin-user-cong-doan', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_get_user_cong_doan', {
+        p_user_id: userId!,
+      });
+      if (error) {
+        console.error('Error fetching user cong_doan:', error);
+        return [] as CongDoan[];
+      }
+      return (data ?? []) as CongDoan[];
+    },
+    enabled: !!userId,
+  });
+}

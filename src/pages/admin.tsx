@@ -4,13 +4,14 @@ import {
   ShieldAlert, Search, Crown, X, Check, Loader2,
   Calendar, Briefcase, VenusIcon, MarsIcon, User as UserIcon,
   Users, Pencil, Gift, ArrowRight, Trash2,
-  Clock, ChevronLeft, ChevronRight, BarChart3
+  ChevronLeft, ChevronRight, BarChart3
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
+import { SanLuongDayCard } from '@/components/ui-parts/SanLuongDayCard';
 import {
   useGetAllUsers, useAdminUpdateUserPlan, AdminUser, useAdminDeleteUser,
-  useAdminGetReferrals, useAdminGetUserDailyEntries,
-  ReferralInfo, DailyEntry,
+  useAdminGetReferrals, useAdminGetUserDailyEntries, useAdminGetUserCongDoan,
+  ReferralInfo, SanLuong, CongDoan,
   useAdminListDinhMuc, useAdminCreateDinhMuc, useAdminUpdateDinhMuc, useAdminDeleteDinhMuc, DinhMuc,
   useUpdateDinhMucQuyCach, useAdminListQuyCachSuggestions
 } from '@/api';
@@ -22,8 +23,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { format, addMonths } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
-import { getCycleMonthFromDate, getCycleStringFromYearMonth, getNowVNDateLocal } from '@/lib/date-utils';
+import { getCycleMonthFromDate, getCycleStringFromYearMonth, getNowVNDateLocal, getTodayVNString } from '@/lib/date-utils';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 function Avatar({ src, size, className = '' }: { src?: string | null; size: number; className?: string }) {
@@ -53,11 +55,6 @@ function InfoCard({ icon, label, value, className = '' }: { icon: React.ReactNod
     </div>
   );
 }
-
-// Nhãn theo day_of_week gốc từ DB (0 = CN ... 6 = T7, chuẩn JS getDay())
-const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-// Thứ tự hiển thị cột lịch: T2 -> CN
-const WEEKDAY_HEADERS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 // ─── Tab 1: Users ─────────────────────────────────────────────────────────────
 function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
@@ -189,9 +186,23 @@ function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
   );
 }
 
-// Modal xem lịch nhập sản lượng của 1 user bất kỳ (chuyển từ tab Referral sang).
+// Modal xem sản lượng của 1 user bất kỳ (chuyển từ tab Referral sang).
 // Không còn gắn với kỳ theo dõi referral -- cho phép admin xem theo từng Tháng
-// Công (21 -> 20), điều hướng qua lại giữa các tháng.
+// Công (21 -> 20), điều hướng qua lại giữa các tháng. Hiển thị lại bằng đúng
+// SanLuongDayCard (giống trang Sản lượng của chính user) ở chế độ readOnly,
+// thay vì lưới lịch thu gọn trước đây.
+function formatAdminDateHeader(dateStr: string): string {
+  const today = getTodayVNString();
+  const d = new Date(dateStr + 'T00:00:00');
+  const yest = getNowVNDateLocal();
+  yest.setDate(yest.getDate() - 1);
+  const yesterdayStr = format(yest, 'yyyy-MM-dd');
+
+  if (dateStr === today) return 'Hôm nay';
+  if (dateStr === yesterdayStr) return 'Hôm qua';
+  return format(d, 'EEEE, dd/MM', { locale: vi });
+}
+
 function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
   const meta = u.raw_user_metadata || {};
   const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
@@ -202,16 +213,32 @@ function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }
   const { cycleStartStr, cycleEndStr } = getCycleStringFromYearMonth(cycleYear, cycleMonth);
 
   const { data: dailyEntries, isLoading } = useAdminGetUserDailyEntries(u.id, cycleStartStr, cycleEndStr);
-  const [selectedDay, setSelectedDay] = useState<DailyEntry | null>(null);
+  const { data: congDoanList = [] } = useAdminGetUserCongDoan(u.id);
 
-  const goPrevMonth = () => { setSelectedDay(null); setCycleDate(d => addMonths(d, -1)); };
-  const goNextMonth = () => { setSelectedDay(null); setCycleDate(d => addMonths(d, 1)); };
+  const goPrevMonth = () => setCycleDate(d => addMonths(d, -1));
+  const goNextMonth = () => setCycleDate(d => addMonths(d, 1));
+
+  const congDoanMap = useMemo(() => {
+    const map = new Map<string, CongDoan>();
+    congDoanList.forEach(c => map.set(c.ma_cong_doan, c));
+    return map;
+  }, [congDoanList]);
+  const getCongDoanName = (ma: string) => congDoanMap.get(ma)?.ten_cong_doan || null;
+  const getCongDoanDinhMuc = (ma: string) => Number(congDoanMap.get(ma)?.dinh_muc) || 1;
+
+  // Chỉ hiển thị các ngày trong quá khứ/hôm nay và có ít nhất 1 lần nhập
+  // (readOnly nên không cần hiện thẻ trống với nút Nghỉ/Nhập của user thường).
+  const todayStr = getTodayVNString();
+  const daysWithEntries = useMemo(() => {
+    if (!dailyEntries) return [];
+    return dailyEntries.filter(d => d.has_entry && d.ngay <= todayStr);
+  }, [dailyEntries, todayStr]);
 
   const stats = useMemo(() => {
     if (!dailyEntries) return { total: 0, entered: 0 };
-    const relevant = dailyEntries.filter(d => d.is_workday && new Date(d.ngay) <= new Date());
+    const relevant = dailyEntries.filter(d => d.is_workday && d.ngay <= todayStr);
     return { total: relevant.length, entered: relevant.filter(d => d.has_entry).length };
-  }, [dailyEntries]);
+  }, [dailyEntries, todayStr]);
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
@@ -258,156 +285,29 @@ function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }
             <span className="font-bold text-foreground">{stats.entered}/{stats.total} ngày LV</span>
           </div>
 
-          {/* Calendar Heatmap */}
-          <div className="flex flex-col gap-2">
-            <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Lịch nhập sản lượng</p>
+          {/* Danh sách theo ngày (dùng lại SanLuongDayCard, giống trang Sản lượng) */}
+          <div className="flex flex-col gap-3">
             {isLoading ? (
               <div className="text-center py-6 text-muted-foreground animate-pulse text-sm">Đang tải...</div>
+            ) : daysWithEntries.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">Chưa có dữ liệu trong tháng công này.</div>
             ) : (
-              <div className="bg-black/20 rounded-2xl border border-white/5 p-3">
-                {/* Day headers */}
-                <div className="grid grid-cols-7 gap-1 mb-1">
-                  {WEEKDAY_HEADERS.map(d => (
-                    <div key={d} className="text-center text-[9px] text-zinc-600 font-bold">{d}</div>
-                  ))}
-                </div>
-
-                {/* Calendar grid */}
-                <div className="grid grid-cols-7 gap-1">
-                  {(() => {
-                    if (!dailyEntries || dailyEntries.length === 0) return null;
-
-                    const firstDow = dailyEntries[0].day_of_week;
-                    const firstColIndex = (firstDow + 6) % 7;
-                    const paddingCells = Array.from({ length: firstColIndex }, (_, i) => (
-                      <div key={`pad-${i}`} className="aspect-[5/4]" />
-                    ));
-
-                    const dayCells = dailyEntries.map((entry) => {
-                      const dayNum = new Date(entry.ngay).getDate();
-                      const isToday = entry.ngay === new Date().toISOString().slice(0, 10);
-                      const isFuture = new Date(entry.ngay) > new Date();
-                      const isSelected = selectedDay?.ngay === entry.ngay;
-
-                      let bgClass = 'bg-white/5 text-zinc-600'; // default / future
-                      let dot = null;
-
-                      if (!isFuture) {
-                        if (!entry.is_workday) {
-                          bgClass = 'bg-zinc-800/50 text-zinc-600'; // Sunday / off day
-                        } else if (entry.has_entry) {
-                          bgClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'; // ✅ đã nhập
-                          dot = <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-emerald-400" />;
-                        } else {
-                          bgClass = 'bg-rose-500/15 text-rose-400 border-rose-500/25'; // ❌ chưa nhập
-                          dot = <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-rose-400" />;
-                        }
-                      }
-
-                      const ringClass = isSelected
-                        ? 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 scale-105'
-                        : isToday
-                          ? 'ring-1 ring-primary/50'
-                          : 'border-transparent';
-
-                      return (
-                        <button
-                          key={entry.ngay}
-                          onClick={() => !isFuture && entry.is_workday ? setSelectedDay(entry) : null}
-                          className={`aspect-[5/4] rounded-lg flex flex-col items-center justify-center relative text-[11px] font-bold border transition-all ${bgClass} ${ringClass} ${!isFuture && entry.is_workday ? 'cursor-pointer hover:brightness-125 active:scale-90' : 'cursor-default'}`}
-                        >
-                          {dayNum}
-                          {dot}
-                        </button>
-                      );
-                    });
-
-                    return [...paddingCells, ...dayCells];
-                  })()}
-                </div>
-
-                {/* Legend */}
-                <div className="flex items-center justify-center gap-4 mt-3 pt-2 border-t border-white/5">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-500/40" />
-                    <span className="text-[9px] text-zinc-500">Đã nhập</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-rose-500/25 border border-rose-500/35" />
-                    <span className="text-[9px] text-zinc-500">Chưa nhập</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-zinc-800/50" />
-                    <span className="text-[9px] text-zinc-500">Nghỉ</span>
-                  </div>
-                </div>
-              </div>
+              daysWithEntries.map((day) => {
+                const items: SanLuong[] = (day.entries || []).map((e: any) => ({ ...e, ngay: day.ngay }));
+                return (
+                  <SanLuongDayCard
+                    key={day.ngay}
+                    dateStr={day.ngay}
+                    dateHeader={formatAdminDateHeader(day.ngay)}
+                    items={items}
+                    getCongDoanName={getCongDoanName}
+                    getCongDoanDinhMuc={getCongDoanDinhMuc}
+                    readOnly
+                  />
+                );
+              })
             )}
           </div>
-
-          {/* Selected Day Detail */}
-          <AnimatePresence>
-            {selectedDay && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="bg-white/5 rounded-2xl border border-white/10 p-3 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      <span className="text-[13px] font-bold text-foreground">
-                        {format(new Date(selectedDay.ngay), 'dd/MM/yyyy')} ({DOW_LABELS[selectedDay.day_of_week]})
-                      </span>
-                    </div>
-                    <button onClick={() => setSelectedDay(null)} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-zinc-500">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-
-                  {selectedDay.has_entry ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <div className="bg-black/20 rounded-xl p-2">
-                          <div className="text-[9px] text-zinc-500 font-bold uppercase">Tổng công SP</div>
-                          <div className="text-[13px] font-bold text-emerald-400">{Number(selectedDay.total_cong_sp).toFixed(3)}</div>
-                        </div>
-                        <div className="bg-black/20 rounded-xl p-2">
-                          <div className="text-[9px] text-zinc-500 font-bold uppercase">Thời gian</div>
-                          <div className="text-[13px] font-bold text-foreground">{selectedDay.total_time} phút</div>
-                        </div>
-                      </div>
-
-                      {selectedDay.entries.map((entry: any, idx: number) => (
-                        <div key={idx} className="flex flex-col gap-1 bg-black/10 rounded-xl p-2 border border-white/5">
-                          <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-0.5">
-                            <span>Lần nhập #{idx + 1}</span>
-                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {entry.thoi_gian_thuc_hien}p + {entry.thoi_gian_ho_tro || 0}p HT</span>
-                          </div>
-                          {Array.isArray(entry.chi_tiet) && entry.chi_tiet.length > 0 && (
-                            <div className="flex flex-col gap-0.5">
-                              {entry.chi_tiet.map((ct: any, j: number) => (
-                                <div key={j} className="flex items-center justify-between text-[11px]">
-                                  <span className="text-zinc-400 font-mono">{ct.cong_doan}</span>
-                                  <span className="text-foreground font-semibold">SL: {ct.so_luong} → {Number(ct.cong_sp).toFixed(3)} công</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="text-center py-3 text-rose-400 text-sm font-medium">
-                      ❌ Chưa nhập sản lượng ngày này
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </motion.div>
     </motion.div>
