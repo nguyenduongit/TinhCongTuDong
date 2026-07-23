@@ -15,6 +15,12 @@ import {
   useUpdateDinhMucQuyCach, useAdminListQuyCachSuggestions
 } from '@/api';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { format, addMonths } from 'date-fns';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
 import { getCycleMonthFromDate, getCycleStringFromYearMonth, getNowVNDateLocal } from '@/lib/date-utils';
@@ -408,73 +414,11 @@ function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }
   );
 }
 
-// Menu hiện ra khi nhấn giữ 1 dòng user: chọn xem Profile hay Sản lượng.
-function UserActionSheet({ u, onClose, onSelectProfile, onSelectSanLuong }: {
-  u: AdminUser;
-  onClose: () => void;
-  onSelectProfile: () => void;
-  onSelectSanLuong: () => void;
-}) {
-  const meta = u.raw_user_metadata || {};
-  const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
-
-  return (
-    <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <motion.div
-        className="relative w-full max-w-[430px] bg-card rounded-t-[2rem] border-t border-white/10 shadow-2xl overflow-hidden pb-8"
-        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
-        <div className="px-5 pt-2 pb-4 flex items-center gap-3 border-b border-white/5">
-          <Avatar src={meta.avatar_url || meta.picture} size={40} />
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-foreground truncate">{name}</span>
-            <span className="text-[11px] text-zinc-500 truncate">{u.email}</span>
-          </div>
-        </div>
-        <div className="px-5 pt-3 flex flex-col gap-2">
-          <button
-            onClick={onSelectProfile}
-            className="h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 px-4 text-left hover:bg-white/10 active:scale-[0.98] transition-all"
-          >
-            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
-              <UserIcon className="w-4.5 h-4.5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-foreground">Profile</span>
-              <span className="text-[11px] text-zinc-500">Thông tin, gói Pro, xóa tài khoản</span>
-            </div>
-          </button>
-          <button
-            onClick={onSelectSanLuong}
-            className="h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 px-4 text-left hover:bg-white/10 active:scale-[0.98] transition-all"
-          >
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-4.5 h-4.5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-foreground">Sản lượng</span>
-              <span className="text-[11px] text-zinc-500">Lịch theo dõi nhập sản lượng theo tháng</span>
-            </div>
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 function UsersTab() {
   const { data: users, isLoading, isError } = useGetAllUsers();
   const [searchTerm, setSearchTerm] = useState('');
-  const [menuUser, setMenuUser] = useState<AdminUser | null>(null);
   const [profileUser, setProfileUser] = useState<AdminUser | null>(null);
   const [sanLuongUser, setSanLuongUser] = useState<AdminUser | null>(null);
-
-  const handleOpenMenu = (u: AdminUser) => {
-    setMenuUser(u);
-  };
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];
@@ -517,45 +461,64 @@ function UsersTab() {
               const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
               const isAdminUser = meta.isAdmin === true || meta.isAdmin === 'true' || meta.isadmin === true || meta.isadmin === 'true';
               return (
-                <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
-                  className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors"
-                  onClick={() => handleOpenMenu(u)}>
-                  {isAdminUser ? (
-                    <div className="relative flex items-center justify-center shrink-0 w-[40px] h-[40px]">
-                      {/* Lớp blur phát sáng */}
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                        className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 blur-sm opacity-80"
-                      />
-                      {/* Lớp viền gradient sắc nét */}
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                        className="absolute inset-[1px] rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500"
-                      />
-                      {/* Nền đen bên trong để cắt viền */}
-                      <div className="absolute inset-[3px] bg-background rounded-full z-0" />
-                      {/* Avatar */}
-                      <div className="relative z-10 flex items-center justify-center">
-                        <Avatar src={meta.avatar_url || meta.picture} size={34} />
+                <DropdownMenu key={u.id}>
+                  <DropdownMenuTrigger asChild>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
+                      className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors outline-none">
+                      {isAdminUser ? (
+                        <div className="relative flex items-center justify-center shrink-0 w-[40px] h-[40px]">
+                          {/* Lớp blur phát sáng */}
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                            className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 blur-sm opacity-80"
+                          />
+                          {/* Lớp viền gradient sắc nét */}
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                            className="absolute inset-[1px] rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500"
+                          />
+                          {/* Nền đen bên trong để cắt viền */}
+                          <div className="absolute inset-[3px] bg-background rounded-full z-0" />
+                          {/* Avatar */}
+                          <div className="relative z-10 flex items-center justify-center">
+                            <Avatar src={meta.avatar_url || meta.picture} size={34} />
+                          </div>
+                        </div>
+                      ) : (
+                        <Avatar src={meta.avatar_url || meta.picture} size={36} />
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-foreground text-sm truncate leading-tight">{name}</span>
+                        <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{u.email}</span>
                       </div>
-                    </div>
-                  ) : (
-                    <Avatar src={meta.avatar_url || meta.picture} size={36} />
-                  )}
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-semibold text-foreground text-sm truncate leading-tight">{name}</span>
-                    <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{u.email}</span>
-                  </div>
-                  <div className="flex justify-end">
-                    {plan === 'pro' ? (
-                      <div className="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase flex items-center gap-1 whitespace-nowrap"><Crown className="w-3 h-3" /> PRO</div>
-                    ) : (
-                      <div className="bg-white/5 text-zinc-500 text-[10px] font-bold px-2 py-1 rounded-md uppercase whitespace-nowrap">FREE</div>
-                    )}
-                  </div>
-                </motion.div>
+                      <div className="flex justify-end">
+                        {plan === 'pro' ? (
+                          <div className="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase flex items-center gap-1 whitespace-nowrap"><Crown className="w-3 h-3" /> PRO</div>
+                        ) : (
+                          <div className="bg-white/5 text-zinc-500 text-[10px] font-bold px-2 py-1 rounded-md uppercase whitespace-nowrap">FREE</div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-44 rounded-xl shadow-2xl border-white/10 bg-zinc-900/95 backdrop-blur-xl p-1">
+                    <DropdownMenuItem
+                      onClick={() => setProfileUser(u)}
+                      className="gap-2.5 cursor-pointer rounded-lg py-2 focus:bg-white/10"
+                    >
+                      <UserIcon className="w-4 h-4 text-blue-400" />
+                      <span className="font-semibold text-sm">Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setSanLuongUser(u)}
+                      className="gap-2.5 cursor-pointer rounded-lg py-2 focus:bg-white/10"
+                    >
+                      <BarChart3 className="w-4 h-4 text-emerald-400" />
+                      <span className="font-semibold text-sm">Sản lượng</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               );
             })}
           </div>
@@ -563,14 +526,6 @@ function UsersTab() {
       )}
 
       <AnimatePresence>
-        {menuUser && (
-          <UserActionSheet
-            u={menuUser}
-            onClose={() => setMenuUser(null)}
-            onSelectProfile={() => { setProfileUser(menuUser); setMenuUser(null); }}
-            onSelectSanLuong={() => { setSanLuongUser(menuUser); setMenuUser(null); }}
-          />
-        )}
         {profileUser && <UserModal u={profileUser} onClose={() => setProfileUser(null)} />}
         {sanLuongUser && <UserSanLuongModal u={sanLuongUser} onClose={() => setSanLuongUser(null)} />}
       </AnimatePresence>
