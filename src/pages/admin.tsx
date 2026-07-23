@@ -4,7 +4,7 @@ import {
   ShieldAlert, Search, Crown, X, Check, Loader2,
   Calendar, Briefcase, VenusIcon, MarsIcon, User as UserIcon,
   Users, Pencil, Gift, ArrowRight, Trash2,
-  Clock, ChevronLeft, Eye, ChevronDown
+  Clock, ChevronLeft, ChevronRight, BarChart3
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import {
@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { format, addMonths } from 'date-fns';
 import { pageContainerVariants, pageItemVariants } from '@/lib/animations';
+import { getCycleMonthFromDate, getCycleStringFromYearMonth, getNowVNDateLocal } from '@/lib/date-utils';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 function Avatar({ src, size, className = '' }: { src?: string | null; size: number; className?: string }) {
@@ -46,6 +47,11 @@ function InfoCard({ icon, label, value, className = '' }: { icon: React.ReactNod
     </div>
   );
 }
+
+// Nhãn theo day_of_week gốc từ DB (0 = CN ... 6 = T7, chuẩn JS getDay())
+const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+// Thứ tự hiển thị cột lịch: T2 -> CN
+const WEEKDAY_HEADERS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 // ─── Tab 1: Users ─────────────────────────────────────────────────────────────
 function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
@@ -177,144 +183,29 @@ function UserModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
   );
 }
 
-function UsersTab() {
-  const { data: users, isLoading, isError } = useGetAllUsers();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+// Modal xem lịch nhập sản lượng của 1 user bất kỳ (chuyển từ tab Referral sang).
+// Không còn gắn với kỳ theo dõi referral -- cho phép admin xem theo từng Tháng
+// Công (21 -> 20), điều hướng qua lại giữa các tháng.
+function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }) {
+  const meta = u.raw_user_metadata || {};
+  const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
 
-  const filteredUsers = useMemo(() => {
-    if (!users) return [];
-    return users.filter((u) => {
-      const email = u.email?.toLowerCase() || '';
-      const name = u.raw_user_metadata?.full_name?.toLowerCase() || '';
-      const term = searchTerm.toLowerCase();
-      return email.includes(term) || name.includes(term);
-    });
-  }, [users, searchTerm]);
+  const [cycleDate, setCycleDate] = useState<Date>(() => getCycleMonthFromDate(getNowVNDateLocal()));
+  const cycleYear = cycleDate.getFullYear();
+  const cycleMonth = cycleDate.getMonth() + 1;
+  const { cycleStartStr, cycleEndStr } = getCycleStringFromYearMonth(cycleYear, cycleMonth);
 
-  return (
-    <div className="flex flex-col gap-0">
-      <div className="px-5 pt-4 pb-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input placeholder="Tìm kiếm email, tên..." className="pl-10 h-12 bg-card/40 border-white/5 rounded-2xl"
-            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="text-center py-10 text-muted-foreground animate-pulse px-5">Đang tải...</div>
-      ) : isError ? (
-        <div className="mx-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl p-5 text-sm text-rose-400">⚠️ Chưa tạo RPC function trên Supabase.</div>
-      ) : (
-        <>
-          <div className="px-5 mb-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-            Danh sách ({filteredUsers.length})
-          </div>
-          <div className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-2 border-b border-white/5">
-            <div />
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Tên / Email</div>
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Gói</div>
-          </div>
-          <div className="divide-y divide-white/5">
-            {filteredUsers.map((u, i) => {
-              const meta = u.raw_user_metadata || {};
-              const plan: 'free' | 'pro' = meta.plan === 'pro' || meta.subscription?.plan === 'pro' ? 'pro' : 'free';
-              const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
-              const isAdminUser = meta.isAdmin === true || meta.isAdmin === 'true' || meta.isadmin === true || meta.isadmin === 'true';
-              return (
-                <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
-                  className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors"
-                  onClick={() => setSelectedUser(u)}>
-                  {isAdminUser ? (
-                    <div className="relative flex items-center justify-center shrink-0 w-[40px] h-[40px]">
-                      {/* Lớp blur phát sáng */}
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                        className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 blur-sm opacity-80"
-                      />
-                      {/* Lớp viền gradient sắc nét */}
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                        className="absolute inset-[1px] rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500"
-                      />
-                      {/* Nền đen bên trong để cắt viền */}
-                      <div className="absolute inset-[3px] bg-background rounded-full z-0" />
-                      {/* Avatar */}
-                      <div className="relative z-10 flex items-center justify-center">
-                        <Avatar src={meta.avatar_url || meta.picture} size={34} />
-                      </div>
-                    </div>
-                  ) : (
-                    <Avatar src={meta.avatar_url || meta.picture} size={36} />
-                  )}
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-semibold text-foreground text-sm truncate leading-tight">{name}</span>
-                    <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{u.email}</span>
-                  </div>
-                  <div className="flex justify-end">
-                    {plan === 'pro' ? (
-                      <div className="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase flex items-center gap-1 whitespace-nowrap"><Crown className="w-3 h-3" /> PRO</div>
-                    ) : (
-                      <div className="bg-white/5 text-zinc-500 text-[10px] font-bold px-2 py-1 rounded-md uppercase whitespace-nowrap">FREE</div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      <AnimatePresence>
-        {selectedUser && <UserModal u={selectedUser} onClose={() => setSelectedUser(null)} />}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ─── Tab 4: Referral ──────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  tracking: { label: 'Đang theo dõi', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-  completed: { label: 'Hoàn thành', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  failed: { label: 'Thất bại', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
-};
-
-// Nhãn theo day_of_week gốc từ DB (0 = CN ... 6 = T7, chuẩn JS getDay())
-const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-// Thứ tự hiển thị cột lịch: T2 -> CN
-const WEEKDAY_HEADERS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
-function ReferralDetailModal({ referral: refData, onClose }: { referral: ReferralInfo; onClose: () => void }) {
-  const { data: dailyEntries, isLoading } = useAdminGetUserDailyEntries(
-    refData.referee_id,
-    refData.tracking_start_date,
-    refData.tracking_end_date
-  );
-
+  const { data: dailyEntries, isLoading } = useAdminGetUserDailyEntries(u.id, cycleStartStr, cycleEndStr);
   const [selectedDay, setSelectedDay] = useState<DailyEntry | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const statusCfg = STATUS_CONFIG[refData.status] || STATUS_CONFIG.tracking;
 
-  // Tính toán stats từ daily entries theo quy tắc mới: cần nhập đủ TẤT CẢ các
-  // ngày làm việc (T2-T7) trong kỳ lương đang xét (21 tháng trước -> 20 tháng
-  // này), không còn mốc cứng 7 ngày. Chỉ tính đến hôm nay nếu kỳ chưa kết thúc.
-  const periodEnded = new Date(refData.tracking_end_date) <= new Date();
+  const goPrevMonth = () => { setSelectedDay(null); setCycleDate(d => addMonths(d, -1)); };
+  const goNextMonth = () => { setSelectedDay(null); setCycleDate(d => addMonths(d, 1)); };
+
   const stats = useMemo(() => {
-    if (!dailyEntries) return { required: 0, entered: 0, remaining: 0 };
+    if (!dailyEntries) return { total: 0, entered: 0 };
     const relevant = dailyEntries.filter(d => d.is_workday && new Date(d.ngay) <= new Date());
-    const entered = relevant.filter(d => d.has_entry).length;
-    return {
-      required: relevant.length,
-      entered,
-      remaining: Math.max(0, relevant.length - entered),
-    };
+    return { total: relevant.length, entered: relevant.filter(d => d.has_entry).length };
   }, [dailyEntries]);
-
-  const progressPercent = stats.required > 0 ? Math.round((stats.entered / stats.required) * 100) : 0;
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
@@ -330,78 +221,36 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
         </button>
 
         <div className="px-5 pb-28 flex flex-col gap-5 max-h-[85dvh] overflow-y-auto">
-          {/* Header: Referrer → Referee (Accordion Trigger) */}
-          <button 
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-3 pt-1 w-full text-left pr-8"
-          >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Avatar src={refData.referrer_avatar} size={36} />
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-foreground truncate">{refData.referrer_name}</span>
-                <span className="text-[10px] text-zinc-500">Người mời</span>
-              </div>
+          {/* Header: user info */}
+          <div className="flex items-center gap-3 pt-1 pr-8">
+            <Avatar src={meta.avatar_url || meta.picture} size={40} />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-foreground truncate">{name}</span>
+              <span className="text-[11px] text-zinc-500 truncate">{u.email}</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-zinc-600 shrink-0" />
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Avatar src={refData.referee_avatar} size={36} />
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-foreground truncate">{refData.referee_name}</span>
-                <span className="text-[10px] text-zinc-500">Người được mời</span>
-              </div>
+          </div>
+
+          {/* Month navigator */}
+          <div className="flex items-center justify-between bg-white/5 rounded-2xl p-1.5">
+            <button onClick={goPrevMonth} className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-foreground transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-bold text-foreground">Tháng công {cycleMonth}/{cycleYear}</span>
+              <span className="text-[10px] text-zinc-500">
+                {format(new Date(cycleStartStr), 'dd/MM')} → {format(new Date(cycleEndStr), 'dd/MM/yyyy')}
+              </span>
             </div>
-            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} className="text-zinc-500 ml-2">
-              <ChevronDown className="w-4 h-4" />
-            </motion.div>
-          </button>
+            <button onClick={goNextMonth} className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-foreground transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
-          {/* Status + Progress (Accordion Content) */}
-          <AnimatePresence initial={false}>
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0, marginBottom: 0 }}
-                animate={{ height: 'auto', opacity: 1, marginBottom: 12 }}
-                exit={{ height: 0, opacity: 0, marginBottom: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-col gap-3 pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusCfg.bg} ${statusCfg.color} border ${statusCfg.border}`}>
-                      {statusCfg.label}
-                    </div>
-                    <span className="text-xs text-zinc-500">
-                      Mã: <span className="font-mono font-bold text-foreground">{refData.referral_code}</span>
-                    </span>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-zinc-400">Tiến độ nhập sản lượng (kỳ lương)</span>
-                      <span className="font-bold text-foreground">{stats.entered}/{stats.required} ngày LV</span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
-                      <motion.div
-                        className={`h-full rounded-full ${progressPercent === 100 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-purple-500 to-cyan-500'}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progressPercent}%` }}
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-zinc-500">
-                        Kỳ lương: {format(new Date(refData.tracking_start_date), 'dd/MM')} → {format(new Date(refData.tracking_end_date), 'dd/MM/yyyy')}
-                        {!periodEnded && ' (chưa kết thúc)'}
-                      </span>
-                      {stats.remaining > 0 && (
-                        <span className="text-rose-400 font-medium">Còn thiếu {stats.remaining} ngày</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Simple stat */}
+          <div className="flex items-center justify-between text-[11px] px-1">
+            <span className="text-zinc-400">Đã nhập sản lượng</span>
+            <span className="font-bold text-foreground">{stats.entered}/{stats.total} ngày LV</span>
+          </div>
 
           {/* Calendar Heatmap */}
           <div className="flex flex-col gap-2">
@@ -422,9 +271,6 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                   {(() => {
                     if (!dailyEntries || dailyEntries.length === 0) return null;
 
-                    // Padding cho ngày đầu tiên. Lịch hiển thị T2 -> CN nên cần quy đổi
-                    // day_of_week gốc (0=CN...6=T7) sang chỉ số cột Thứ-Hai-là-đầu-tuần
-                    // (T2=0, T3=1, ..., CN=6).
                     const firstDow = dailyEntries[0].day_of_week;
                     const firstColIndex = (firstDow + 6) % 7;
                     const paddingCells = Array.from({ length: firstColIndex }, (_, i) => (
@@ -452,8 +298,6 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                         }
                       }
 
-                      // Trạng thái "đang được chọn" phải nổi bật, tách biệt với viền
-                      // trạng thái ngày hôm nay (ring mảnh, mờ hơn).
                       const ringClass = isSelected
                         ? 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 scale-105'
                         : isToday
@@ -504,7 +348,7 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                  <div className="bg-white/5 rounded-2xl border border-white/10 p-3 flex flex-col gap-2.5">
+                <div className="bg-white/5 rounded-2xl border border-white/10 p-3 flex flex-col gap-2.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-primary" />
@@ -530,7 +374,6 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
                         </div>
                       </div>
 
-                      {/* Chi tiết từng entry */}
                       {selectedDay.entries.map((entry: any, idx: number) => (
                         <div key={idx} className="flex flex-col gap-1 bg-black/10 rounded-xl p-2 border border-white/5">
                           <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-0.5">
@@ -565,10 +408,192 @@ function ReferralDetailModal({ referral: refData, onClose }: { referral: Referra
   );
 }
 
+// Menu hiện ra khi nhấn giữ 1 dòng user: chọn xem Profile hay Sản lượng.
+function UserActionSheet({ u, onClose, onSelectProfile, onSelectSanLuong }: {
+  u: AdminUser;
+  onClose: () => void;
+  onSelectProfile: () => void;
+  onSelectSanLuong: () => void;
+}) {
+  const meta = u.raw_user_metadata || {};
+  const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <motion.div
+        className="relative w-full max-w-[430px] bg-card rounded-t-[2rem] border-t border-white/10 shadow-2xl overflow-hidden pb-8"
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
+        <div className="px-5 pt-2 pb-4 flex items-center gap-3 border-b border-white/5">
+          <Avatar src={meta.avatar_url || meta.picture} size={40} />
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold text-foreground truncate">{name}</span>
+            <span className="text-[11px] text-zinc-500 truncate">{u.email}</span>
+          </div>
+        </div>
+        <div className="px-5 pt-3 flex flex-col gap-2">
+          <button
+            onClick={onSelectProfile}
+            className="h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 px-4 text-left hover:bg-white/10 active:scale-[0.98] transition-all"
+          >
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+              <UserIcon className="w-4.5 h-4.5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-foreground">Profile</span>
+              <span className="text-[11px] text-zinc-500">Thông tin, gói Pro, xóa tài khoản</span>
+            </div>
+          </button>
+          <button
+            onClick={onSelectSanLuong}
+            className="h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 px-4 text-left hover:bg-white/10 active:scale-[0.98] transition-all"
+          >
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4.5 h-4.5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-foreground">Sản lượng</span>
+              <span className="text-[11px] text-zinc-500">Lịch theo dõi nhập sản lượng theo tháng</span>
+            </div>
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function UsersTab() {
+  const { data: users, isLoading, isError } = useGetAllUsers();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [menuUser, setMenuUser] = useState<AdminUser | null>(null);
+  const [profileUser, setProfileUser] = useState<AdminUser | null>(null);
+  const [sanLuongUser, setSanLuongUser] = useState<AdminUser | null>(null);
+
+  // Phát hiện "nhấn giữ" (long-press) bằng sự kiện contextmenu -- trình duyệt
+  // di động (Chrome Android, Safari iOS) tự bắn sự kiện này khi người dùng giữ
+  // tay trên màn hình đủ lâu, không cần tự viết timer thủ công.
+  const handleLongPress = (e: React.MouseEvent, u: AdminUser) => {
+    e.preventDefault();
+    setMenuUser(u);
+  };
+
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    return users.filter((u) => {
+      const email = u.email?.toLowerCase() || '';
+      const name = u.raw_user_metadata?.full_name?.toLowerCase() || '';
+      const term = searchTerm.toLowerCase();
+      return email.includes(term) || name.includes(term);
+    });
+  }, [users, searchTerm]);
+
+  return (
+    <div className="flex flex-col gap-0">
+      <div className="px-5 pt-4 pb-1">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input placeholder="Tìm kiếm email, tên..." className="pl-10 h-12 bg-card/40 border-white/5 rounded-2xl"
+            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+      </div>
+      <div className="px-5 pb-2 text-[11px] text-zinc-500">Nhấn giữ vào một người dùng để xem tùy chọn</div>
+
+      {isLoading ? (
+        <div className="text-center py-10 text-muted-foreground animate-pulse px-5">Đang tải...</div>
+      ) : isError ? (
+        <div className="mx-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl p-5 text-sm text-rose-400">⚠️ Chưa tạo RPC function trên Supabase.</div>
+      ) : (
+        <>
+          <div className="px-5 mb-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            Danh sách ({filteredUsers.length})
+          </div>
+          <div className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-2 border-b border-white/5">
+            <div />
+            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Tên / Email</div>
+            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider text-right">Gói</div>
+          </div>
+          <div className="divide-y divide-white/5">
+            {filteredUsers.map((u, i) => {
+              const meta = u.raw_user_metadata || {};
+              const plan: 'free' | 'pro' = meta.plan === 'pro' || meta.subscription?.plan === 'pro' ? 'pro' : 'free';
+              const name = meta.full_name || u.email?.split('@')[0] || 'Unknown';
+              const isAdminUser = meta.isAdmin === true || meta.isAdmin === 'true' || meta.isadmin === true || meta.isadmin === 'true';
+              return (
+                <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
+                  className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors select-none [-webkit-touch-callout:none]"
+                  onContextMenu={(e) => handleLongPress(e, u)}>
+                  {isAdminUser ? (
+                    <div className="relative flex items-center justify-center shrink-0 w-[40px] h-[40px]">
+                      {/* Lớp blur phát sáng */}
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                        className="absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 blur-sm opacity-80"
+                      />
+                      {/* Lớp viền gradient sắc nét */}
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                        className="absolute inset-[1px] rounded-full bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500"
+                      />
+                      {/* Nền đen bên trong để cắt viền */}
+                      <div className="absolute inset-[3px] bg-background rounded-full z-0" />
+                      {/* Avatar */}
+                      <div className="relative z-10 flex items-center justify-center">
+                        <Avatar src={meta.avatar_url || meta.picture} size={34} />
+                      </div>
+                    </div>
+                  ) : (
+                    <Avatar src={meta.avatar_url || meta.picture} size={36} />
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-foreground text-sm truncate leading-tight">{name}</span>
+                    <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{u.email}</span>
+                  </div>
+                  <div className="flex justify-end">
+                    {plan === 'pro' ? (
+                      <div className="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase flex items-center gap-1 whitespace-nowrap"><Crown className="w-3 h-3" /> PRO</div>
+                    ) : (
+                      <div className="bg-white/5 text-zinc-500 text-[10px] font-bold px-2 py-1 rounded-md uppercase whitespace-nowrap">FREE</div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <AnimatePresence>
+        {menuUser && (
+          <UserActionSheet
+            u={menuUser}
+            onClose={() => setMenuUser(null)}
+            onSelectProfile={() => { setProfileUser(menuUser); setMenuUser(null); }}
+            onSelectSanLuong={() => { setSanLuongUser(menuUser); setMenuUser(null); }}
+          />
+        )}
+        {profileUser && <UserModal u={profileUser} onClose={() => setProfileUser(null)} />}
+        {sanLuongUser && <UserSanLuongModal u={sanLuongUser} onClose={() => setSanLuongUser(null)} />}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Tab 4: Referral ──────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  tracking: { label: 'Đang theo dõi', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  completed: { label: 'Hoàn thành', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  failed: { label: 'Thất bại', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' },
+};
+
 function ReferralTab() {
   const { data: referrals, isLoading, isError } = useAdminGetReferrals();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRef, setSelectedRef] = useState<ReferralInfo | null>(null);
 
   const filteredRefs = useMemo(() => {
     if (!referrals) return [];
@@ -647,9 +672,6 @@ function ReferralTab() {
           <div className="divide-y divide-white/5">
             {filteredRefs.map((ref, i) => {
               const statusCfg = STATUS_CONFIG[ref.status] || STATUS_CONFIG.tracking;
-              const progress = ref.total_workdays > 0
-                ? Math.round((ref.days_with_entry / ref.total_workdays) * 100)
-                : 0;
 
               return (
                 <motion.div
@@ -657,11 +679,10 @@ function ReferralTab() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.04 }}
-                  className="px-5 py-3.5 cursor-pointer active:bg-white/5 transition-colors"
-                  onClick={() => setSelectedRef(ref)}
+                  className="px-5 py-3.5"
                 >
                   {/* Row: Referrer → Referee + Status */}
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 flex-1 min-w-0">
                       <Avatar src={ref.referrer_avatar} size={28} />
                       <span className="text-xs font-semibold text-foreground truncate">{ref.referrer_name}</span>
@@ -675,29 +696,12 @@ function ReferralTab() {
                       {statusCfg.label}
                     </div>
                   </div>
-
-                  {/* Progress bar */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? 'bg-emerald-400' : 'bg-purple-500'}`}
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-zinc-500 font-medium shrink-0 w-20 text-right">
-                      {ref.days_with_entry}/{ref.total_workdays} ngày
-                    </span>
-                  </div>
                 </motion.div>
               );
             })}
           </div>
         </>
       )}
-
-      <AnimatePresence>
-        {selectedRef && <ReferralDetailModal referral={selectedRef} onClose={() => setSelectedRef(null)} />}
-      </AnimatePresence>
     </div>
   );
 }
