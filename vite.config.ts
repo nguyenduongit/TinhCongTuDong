@@ -59,27 +59,6 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist'),
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        // Tách các thư viện lớn khỏi bundle chính (trước đây gộp hết vào 1
-        // chunk ~700KB mà TRANG NÀO CŨNG PHẢI TẢI, kể cả trang đơn giản như
-        // login). Giờ mỗi nhóm là 1 file riêng, trình duyệt cache độc lập --
-        // sau lần đầu, các lần deploy sau chỉ tải lại phần code thực sự đổi
-        // (vd sửa 1 trang) thay vì phải tải lại cả cụm thư viện không đổi.
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-          if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'vendor-react';
-          if (id.includes('framer-motion')) return 'vendor-motion';
-          if (id.includes('@radix-ui')) return 'vendor-radix';
-          if (id.includes('recharts') || id.includes('/d3-')) return 'vendor-charts';
-          if (id.includes('@supabase')) return 'vendor-supabase';
-          if (id.includes('date-fns')) return 'vendor-date';
-          if (id.includes('lucide-react')) return 'vendor-icons';
-          if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('/zod/')) return 'vendor-forms';
-          return 'vendor';
-        },
-      },
-    },
   },
   server: {
     port,
