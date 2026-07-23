@@ -472,11 +472,7 @@ function UsersTab() {
   const [profileUser, setProfileUser] = useState<AdminUser | null>(null);
   const [sanLuongUser, setSanLuongUser] = useState<AdminUser | null>(null);
 
-  // Phát hiện "nhấn giữ" (long-press) bằng sự kiện contextmenu -- trình duyệt
-  // di động (Chrome Android, Safari iOS) tự bắn sự kiện này khi người dùng giữ
-  // tay trên màn hình đủ lâu, không cần tự viết timer thủ công.
-  const handleLongPress = (e: React.MouseEvent, u: AdminUser) => {
-    e.preventDefault();
+  const handleOpenMenu = (u: AdminUser) => {
     setMenuUser(u);
   };
 
@@ -492,14 +488,13 @@ function UsersTab() {
 
   return (
     <div className="flex flex-col gap-0">
-      <div className="px-5 pt-4 pb-1">
+      <div className="px-5 pt-4 pb-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input placeholder="Tìm kiếm email, tên..." className="pl-10 h-12 bg-card/40 border-white/5 rounded-2xl"
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
-      <div className="px-5 pb-2 text-[11px] text-zinc-500">Nhấn giữ vào một người dùng để xem tùy chọn</div>
 
       {isLoading ? (
         <div className="text-center py-10 text-muted-foreground animate-pulse px-5">Đang tải...</div>
@@ -523,8 +518,8 @@ function UsersTab() {
               const isAdminUser = meta.isAdmin === true || meta.isAdmin === 'true' || meta.isadmin === true || meta.isadmin === 'true';
               return (
                 <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
-                  className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors select-none [-webkit-touch-callout:none]"
-                  onContextMenu={(e) => handleLongPress(e, u)}>
+                  className="grid grid-cols-[40px_1fr_60px] items-center gap-3 px-5 py-3 cursor-pointer active:bg-white/5 transition-colors"
+                  onClick={() => handleOpenMenu(u)}>
                   {isAdminUser ? (
                     <div className="relative flex items-center justify-center shrink-0 w-[40px] h-[40px]">
                       {/* Lớp blur phát sáng */}
