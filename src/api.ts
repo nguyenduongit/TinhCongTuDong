@@ -431,6 +431,111 @@ export const useGetSanLuongDashboard = (options: any = {}) => {
   });
 };
 
+// Logic gom nhóm sản lượng thô theo tuần + tính công tuần (bao gồm dư/thiếu ở
+// phía UI dùng totalCongSp/totalTime). Tách riêng để dùng chung cho cả
+// useGetCongTuan (chính chủ) và useAdminGetUserCongTuan (admin xem user khác)
+// -- tránh viết lại logic gom tuần/rổ 32 hai lần.
+function computeCongTuanFromRows(
+  rows: any[],
+  cycleStartStr: string,
+  cycleEndStr: string,
+  quyCachByMa: Record<string, string | null | undefined>
+) {
+  if (!rows || rows.length === 0) return { weekGroups: [] as any[], totalCongMonth: 0 };
+
+  function getWeekNumberAndEdges(dateStr: string) {
+    const d = new Date(dateStr + "T00:00:00Z");
+    const cycleStart = new Date(cycleStartStr + "T00:00:00Z");
+    const cycleEnd = new Date(cycleEndStr + "T00:00:00Z");
+
+    const day = d.getUTCDay() || 7;
+    const wStart = new Date(d);
+    wStart.setUTCDate(wStart.getUTCDate() - (day - 1));
+
+    const wEnd = new Date(wStart);
+    wEnd.setUTCDate(wEnd.getUTCDate() + 6);
+
+    const start = wStart < cycleStart ? cycleStart : wStart;
+    const end = wEnd > cycleEnd ? cycleEnd : wEnd;
+
+    const cycleStartDay = cycleStart.getUTCDay() || 7;
+    const startWeekStart = new Date(cycleStart);
+    startWeekStart.setUTCDate(startWeekStart.getUTCDate() - (cycleStartDay - 1));
+
+    const weekNum = Math.round((wStart.getTime() - startWeekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+    return { weekNum, start, end };
+  }
+
+  const now = new Date();
+  const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+  vnTime.setUTCHours(0, 0, 0, 0);
+  const vnDay = vnTime.getUTCDay() || 7;
+  const currentWeekStart = new Date(vnTime);
+  currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() - (vnDay - 1));
+
+  const lastWeekStart = new Date(currentWeekStart);
+  lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7);
+
+  const weekMap = new Map<number, any>();
+
+  for (const entry of rows) {
+    const { weekNum, start, end } = getWeekNumberAndEdges(entry.ngay);
+
+    if (!weekMap.has(weekNum)) {
+      const wStartForCheck = new Date(entry.ngay + "T00:00:00Z");
+      const d = wStartForCheck.getUTCDay() || 7;
+      wStartForCheck.setUTCDate(wStartForCheck.getUTCDate() - (d - 1));
+
+      const isCurrentWeek = wStartForCheck.getTime() === currentWeekStart.getTime();
+      const isLastWeek = wStartForCheck.getTime() === lastWeekStart.getTime();
+
+      weekMap.set(weekNum, {
+        weekNum,
+        startDate: start.toISOString().slice(0, 10),
+        endDate: end.toISOString().slice(0, 10),
+        isCurrentWeek,
+        isLastWeek,
+        totalCongSp: 0,
+        totalHoTroPhut: 0,
+        totalTime: 0,
+        items: [] as ChiTietItem[],
+        congDoanStats: {} as Record<string, { so_luong: number; cong_sp: number }>
+      });
+    }
+
+    const weekGroup = weekMap.get(weekNum)!;
+    weekGroup.totalHoTroPhut += (entry.thoi_gian_ho_tro || 0);
+    weekGroup.totalTime += (entry.thoi_gian_thuc_hien || 0) + (entry.thoi_gian_ho_tro || 0);
+
+    if (Array.isArray(entry.chi_tiet)) {
+      entry.chi_tiet.forEach((ct: any) => {
+        const ma = ct.cong_doan;
+        const sl = Number(ct.so_luong) || 0;
+        const dm = Number(ct.dinh_muc) || 1;
+        const qc = quyCachByMa[ma];
+        const sp = ct.cong_sp !== undefined ? Number(ct.cong_sp) : computeCongSp(sl, dm, isBasketQuyCach(qc));
+
+        if (!weekGroup.congDoanStats[ma]) weekGroup.congDoanStats[ma] = { so_luong: 0, cong_sp: 0 };
+        weekGroup.congDoanStats[ma].so_luong += sl;
+        weekGroup.congDoanStats[ma].cong_sp += sp;
+
+        weekGroup.items.push({ ma_cong_doan: ma, so_luong: sl, dinh_muc: dm, quy_cach: qc });
+      });
+    }
+  }
+
+  const weekGroups = Array.from(weekMap.values());
+  weekGroups.forEach(week => {
+    week.totalCongSp = computeWeeklyCongSp(week.items);
+  });
+  weekGroups.sort((a, b) => b.weekNum - a.weekNum);
+
+  const totalCongMonth = weekGroups.reduce((sum, week) => sum + week.totalCongSp + minutesToCong(week.totalHoTroPhut), 0);
+
+  return { weekGroups, totalCongMonth };
+}
+
 export const useGetCongTuan = (params: { month: string }, options: any = {}) => {
   const { user } = useAuth();
   return useQuery({
@@ -458,101 +563,43 @@ export const useGetCongTuan = (params: { month: string }, options: any = {}) => 
       // tính lại công từ dữ liệu đã lưu — chi_tiet không lưu sẵn quy_cách).
       const quyCachByMa: Record<string, string | null | undefined> = {};
       (congDoanList || []).forEach(cd => { quyCachByMa[cd.ma_cong_doan] = cd.quy_cach; });
-      if (!rows) return { weekGroups: [], totalCongMonth: 0 };
 
-      function getWeekNumberAndEdges(dateStr: string) {
-        const d = new Date(dateStr + "T00:00:00Z");
-        const cycleStart = new Date(cycleStartStr + "T00:00:00Z");
-        const cycleEnd = new Date(cycleEndStr + "T00:00:00Z");
-        
-        const day = d.getUTCDay() || 7;
-        const wStart = new Date(d);
-        wStart.setUTCDate(wStart.getUTCDate() - (day - 1));
-        
-        const wEnd = new Date(wStart);
-        wEnd.setUTCDate(wEnd.getUTCDate() + 6);
-        
-        const start = wStart < cycleStart ? cycleStart : wStart;
-        const end = wEnd > cycleEnd ? cycleEnd : wEnd;
-
-        const cycleStartDay = cycleStart.getUTCDay() || 7;
-        const startWeekStart = new Date(cycleStart);
-        startWeekStart.setUTCDate(startWeekStart.getUTCDate() - (cycleStartDay - 1));
-        
-        const weekNum = Math.round((wStart.getTime() - startWeekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
-
-        return { weekNum, start, end };
-      }
-
-      const now = new Date();
-      const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-      vnTime.setUTCHours(0, 0, 0, 0);
-      const vnDay = vnTime.getUTCDay() || 7;
-      const currentWeekStart = new Date(vnTime);
-      currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() - (vnDay - 1));
-      
-      const lastWeekStart = new Date(currentWeekStart);
-      lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7);
-
-      const weekMap = new Map<number, any>();
-
-      for (const entry of rows) {
-        const { weekNum, start, end } = getWeekNumberAndEdges(entry.ngay);
-        
-        if (!weekMap.has(weekNum)) {
-          const wStartForCheck = new Date(entry.ngay + "T00:00:00Z");
-          const d = wStartForCheck.getUTCDay() || 7;
-          wStartForCheck.setUTCDate(wStartForCheck.getUTCDate() - (d - 1));
-
-          const isCurrentWeek = wStartForCheck.getTime() === currentWeekStart.getTime();
-          const isLastWeek = wStartForCheck.getTime() === lastWeekStart.getTime();
-
-          weekMap.set(weekNum, {
-            weekNum,
-            startDate: start.toISOString().slice(0, 10),
-            endDate: end.toISOString().slice(0, 10),
-            isCurrentWeek,
-            isLastWeek,
-            totalCongSp: 0,
-            totalHoTroPhut: 0,
-            totalTime: 0,
-            items: [] as ChiTietItem[],
-            congDoanStats: {} as Record<string, { so_luong: number; cong_sp: number }>
-          });
-        }
-
-        const weekGroup = weekMap.get(weekNum)!;
-        weekGroup.totalHoTroPhut += (entry.thoi_gian_ho_tro || 0);
-        weekGroup.totalTime += (entry.thoi_gian_thuc_hien || 0) + (entry.thoi_gian_ho_tro || 0);
-
-        if (Array.isArray(entry.chi_tiet)) {
-          entry.chi_tiet.forEach((ct: any) => {
-            const ma = ct.cong_doan;
-            const sl = Number(ct.so_luong) || 0;
-            const dm = Number(ct.dinh_muc) || 1;
-            const qc = quyCachByMa[ma];
-            const sp = ct.cong_sp !== undefined ? Number(ct.cong_sp) : computeCongSp(sl, dm, isBasketQuyCach(qc));
-            
-            if (!weekGroup.congDoanStats[ma]) weekGroup.congDoanStats[ma] = { so_luong: 0, cong_sp: 0 };
-            weekGroup.congDoanStats[ma].so_luong += sl;
-            weekGroup.congDoanStats[ma].cong_sp += sp; 
-            
-            weekGroup.items.push({ ma_cong_doan: ma, so_luong: sl, dinh_muc: dm, quy_cach: qc });
-          });
-        }
-      }
-
-      const weekGroups = Array.from(weekMap.values());
-      weekGroups.forEach(week => {
-        week.totalCongSp = computeWeeklyCongSp(week.items);
-      });
-      weekGroups.sort((a, b) => b.weekNum - a.weekNum);
-
-      const totalCongMonth = weekGroups.reduce((sum, week) => sum + week.totalCongSp + minutesToCong(week.totalHoTroPhut), 0);
-
-      return { weekGroups, totalCongMonth };
+      return computeCongTuanFromRows(rows || [], cycleStartStr, cycleEndStr, quyCachByMa);
     },
     enabled: !!user?.id && (options.query?.enabled !== false),
+  });
+};
+
+/**
+ * Admin: Lấy công tuần (bao gồm dư/thiếu) của 1 user bất kỳ trong 1 Tháng
+ * Công, dùng chung logic tính toán với useGetCongTuan (computeCongTuanFromRows).
+ */
+export const useAdminGetUserCongTuan = (userId: string | null, month: string) => {
+  return useQuery({
+    queryKey: ['admin-cong-tuan', userId, month],
+    queryFn: async () => {
+      const [yearStr, mStr] = month.split('-');
+      const cycleYear = parseInt(yearStr, 10);
+      const cycleMonth = parseInt(mStr, 10);
+      const { cycleStartStr, cycleEndStr } = getCycleStringFromYearMonth(cycleYear, cycleMonth);
+
+      const [{ data: rows, error }, { data: congDoanList }] = await Promise.all([
+        supabase.rpc('admin_get_user_san_luong', {
+          p_user_id: userId!,
+          p_start_date: cycleStartStr,
+          p_end_date: cycleEndStr,
+        }),
+        supabase.rpc('admin_get_user_cong_doan', { p_user_id: userId! }),
+      ]);
+
+      if (error) throw error;
+
+      const quyCachByMa: Record<string, string | null | undefined> = {};
+      (congDoanList || []).forEach((cd: CongDoan) => { quyCachByMa[cd.ma_cong_doan] = cd.quy_cach; });
+
+      return computeCongTuanFromRows(rows || [], cycleStartStr, cycleEndStr, quyCachByMa);
+    },
+    enabled: !!userId && !!month,
   });
 };
 

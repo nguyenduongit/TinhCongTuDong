@@ -8,9 +8,10 @@ import {
 } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { SanLuongDayCard } from '@/components/ui-parts/SanLuongDayCard';
+import { CongTuanCard, type WeekGroup } from '@/components/ui-parts/CongTuanCard';
 import {
   useGetAllUsers, useAdminUpdateUserPlan, AdminUser, useAdminDeleteUser,
-  useAdminGetReferrals, useAdminGetUserDailyEntries, useAdminGetUserCongDoan,
+  useAdminGetReferrals, useAdminGetUserDailyEntries, useAdminGetUserCongDoan, useAdminGetUserCongTuan,
   ReferralInfo, SanLuong, CongDoan,
   useAdminListDinhMuc, useAdminCreateDinhMuc, useAdminUpdateDinhMuc, useAdminDeleteDinhMuc, DinhMuc,
   useUpdateDinhMucQuyCach, useAdminListQuyCachSuggestions
@@ -214,6 +215,15 @@ function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }
 
   const { data: dailyEntries, isLoading } = useAdminGetUserDailyEntries(u.id, cycleStartStr, cycleEndStr);
   const { data: congDoanList = [] } = useAdminGetUserCongDoan(u.id);
+  const monthStrForApi = format(cycleDate, 'yyyy-MM');
+  const { data: congTuanData, isLoading: isLoadingCongTuan } = useAdminGetUserCongTuan(u.id, monthStrForApi);
+  const weekGroups: WeekGroup[] = useMemo(() => {
+    return (congTuanData?.weekGroups || []).map((w: any) => ({
+      ...w,
+      startDate: new Date(w.startDate + 'T00:00:00'),
+      endDate: new Date(w.endDate + 'T00:00:00'),
+    }));
+  }, [congTuanData]);
 
   const goPrevMonth = () => setCycleDate(d => addMonths(d, -1));
   const goNextMonth = () => setCycleDate(d => addMonths(d, 1));
@@ -285,8 +295,25 @@ function UserSanLuongModal({ u, onClose }: { u: AdminUser; onClose: () => void }
             <span className="font-bold text-foreground">{stats.entered}/{stats.total} ngày LV</span>
           </div>
 
+          {/* Công tuần (bao gồm dư/thiếu) -- dùng lại CongTuanCard, giống trang Công tuần */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider px-1">Công tuần</p>
+            {isLoadingCongTuan ? (
+              <div className="text-center py-6 text-muted-foreground animate-pulse text-sm">Đang tải...</div>
+            ) : weekGroups.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground text-sm">Chưa có dữ liệu trong tháng công này.</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {weekGroups.map(week => (
+                  <CongTuanCard key={week.weekNum} week={week} getCongDoanName={getCongDoanName} readOnly />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Danh sách theo ngày (dùng lại SanLuongDayCard, giống trang Sản lượng) */}
           <div className="flex flex-col gap-3">
+            <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider px-1">Chi tiết theo ngày</p>
             {isLoading ? (
               <div className="text-center py-6 text-muted-foreground animate-pulse text-sm">Đang tải...</div>
             ) : daysWithEntries.length === 0 ? (
