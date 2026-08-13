@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { SanLuong } from '@/api';
 import { minutesToCong } from '@/lib/work-rules';
+import { computeDeficitLeave } from '@/lib/salary-logic';
 
 export interface SanLuongDayCardProps {
   dateStr: string;
@@ -23,6 +24,8 @@ export interface SanLuongDayCardProps {
   onAdd?: (dateStr: string) => void;
   onLeave?: (dateStr: string, loaiNghi: string) => void;
   isSavingLeave?: boolean;
+  /** Đổi loại nghỉ cho phần THIẾU giờ tự động phát hiện (khác onLeave -- đó là nghỉ nguyên ngày) */
+  onChangeDeficitLeave?: (id: number, loaiNghi: string) => void;
 }
 
 export function SanLuongDayCard({
@@ -36,6 +39,7 @@ export function SanLuongDayCard({
   onAdd,
   onLeave,
   isSavingLeave,
+  onChangeDeficitLeave,
   readOnly
 }: SanLuongDayCardProps) {
   const dayCongSp = items.reduce((s, e) => s + ((e.thong_ke_ngay as any)?.tong_cong_sp || 0), 0);
@@ -256,6 +260,77 @@ export function SanLuongDayCard({
               </div>
             );
           })}
+
+          {/* Thiếu giờ tự động phát hiện -> quy đổi ngày nghỉ (bấm để đổi loại) */}
+          {(() => {
+            const workEntry = items.find(e => !(e.thong_ke_ngay as any)?.is_ngay_nghi);
+            if (!workEntry) return null;
+
+            const tkWork = workEntry.thong_ke_ngay as any;
+            const deficit = computeDeficitLeave(
+              dateStr,
+              workEntry.thoi_gian_thuc_hien,
+              (workEntry as any).thoi_gian_ho_tro || 0,
+              tkWork?.deficit_loai_nghi
+            );
+            if (!deficit) return null;
+
+            const label = deficit.loaiNghi === 'nghi_phep' ? 'Nghỉ phép năm'
+                        : deficit.loaiNghi === 'nghi_huong_luong' ? 'Nghỉ hưởng lương'
+                        : 'Nghỉ không lương';
+            const icon = deficit.loaiNghi === 'nghi_phep' ? '🌴'
+                       : deficit.loaiNghi === 'nghi_huong_luong' ? '💰'
+                       : '☕';
+
+            const rowContent = (
+              <div className="flex items-center justify-between w-full pl-5 pr-3 py-3.5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20 text-xl shadow-inner shrink-0">
+                    {icon}
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-[15px] font-semibold text-foreground/90">{label}</span>
+                    <span className="text-[11px] text-zinc-500">Thiếu giờ tự động phát hiện</span>
+                  </div>
+                </div>
+                <span className="text-[12px] font-black text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20 shrink-0">
+                  {deficit.ngayNghi.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} ngày
+                </span>
+              </div>
+            );
+
+            if (readOnly) {
+              return (
+                <div className="flex border-t border-white/5 border-dashed">
+                  {rowContent}
+                </div>
+              );
+            }
+
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full text-left border-t border-white/5 border-dashed hover:bg-white/5 transition-colors outline-none"
+                  >
+                    {rowContent}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-[200px]">
+                  <DropdownMenuItem onClick={() => onChangeDeficitLeave?.(workEntry.id, 'nghi_phep')}>
+                    🌴 Nghỉ phép năm
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onChangeDeficitLeave?.(workEntry.id, 'nghi_huong_luong')}>
+                    💰 Nghỉ hưởng lương
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onChangeDeficitLeave?.(workEntry.id, 'nghi_khong_luong')}>
+                    ☕ Nghỉ không lương
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
         </div>
       )}
     </motion.div>

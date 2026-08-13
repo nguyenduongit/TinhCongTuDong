@@ -5,7 +5,7 @@ import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, ge
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil, MoreHorizontal, Clock, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { useListSanLuong, useDeleteSanLuong, useListCongDoan, useConfirmNgayNghi } from '@/api';
+import { useListSanLuong, useDeleteSanLuong, useListCongDoan, useConfirmNgayNghi, useUpdateDeficitLeaveType } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetSanLuongDashboardQueryKey, getListSanLuongQueryKey, getListCongDoanQueryKey } from '@/api';
 import type { SanLuong } from '@/api';
@@ -75,6 +75,7 @@ export default function SanLuong() {
   const { data: congDoanList = [] } = useListCongDoan({ query: { queryKey: getListCongDoanQueryKey() } });
   const deleteMutation = useDeleteSanLuong();
   const confirmNghiMutation = useConfirmNgayNghi();
+  const updateDeficitLeaveMutation = useUpdateDeficitLeaveType();
 
   const congDoanMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -109,6 +110,16 @@ export default function SanLuong() {
       queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
     } finally {
       setSavingLeaveDates(prev => ({ ...prev, [dateStr]: false }));
+    }
+  };
+
+  const handleChangeDeficitLeave = async (id: number, loaiNghi: string) => {
+    try {
+      await updateDeficitLeaveMutation.mutateAsync({ id, loaiNghi });
+      queryClient.invalidateQueries({ queryKey: getGetSanLuongDashboardQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListSanLuongQueryKey() });
+    } catch (err) {
+      console.error('Failed to update deficit leave type', err);
     }
   };
 
@@ -195,6 +206,7 @@ export default function SanLuong() {
                           }}
                           onLeave={handleConfirmNghi}
                           isSavingLeave={savingLeaveDates[date]}
+                          onChangeDeficitLeave={handleChangeDeficitLeave}
                         />
                       </div>
                   ))}

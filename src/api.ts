@@ -243,14 +243,19 @@ export const useUpdateSanLuong = () => {
         });
         Object.keys(chi_tiet_cong).forEach(k => { chi_tiet_cong[k] = truncate3(chi_tiet_cong[k]); });
 
-        const { data: existing } = await supabase.from('san_luong').select('thoi_gian_thuc_hien, thoi_gian_ho_tro').eq('id', id).single();
+        const { data: existing } = await supabase.from('san_luong').select('thoi_gian_thuc_hien, thoi_gian_ho_tro, thong_ke_ngay').eq('id', id).single();
         const t_thuc_hien = data.thoi_gian_thuc_hien ?? existing?.thoi_gian_thuc_hien ?? 0;
         const t_ho_tro = data.thoi_gian_ho_tro ?? existing?.thoi_gian_ho_tro ?? 0;
 
         const cong_nhat = computeCongNhat(t_thuc_hien, t_ho_tro);
         const tong_cong_ho_tro = computeCongHoTro(t_ho_tro);
 
+        // Giữ lại lựa chọn loại nghỉ cho phần thiếu giờ (nếu người dùng đã
+        // từng đổi khỏi mặc định) -- thong_ke_ngay bị tính lại toàn bộ mỗi khi
+        // sửa chi_tiết nên phải merge lại field này, không thì bị mất.
+        const existingDeficitLoaiNghi = (existing?.thong_ke_ngay as any)?.deficit_loai_nghi;
         thong_ke_ngay = { tong_cong_sp, cong_nhat, tong_cong_ho_tro, chi_tiet_cong };
+        if (existingDeficitLoaiNghi) thong_ke_ngay.deficit_loai_nghi = existingDeficitLoaiNghi;
       }
 
       const updatePayload: any = {};
@@ -304,6 +309,34 @@ export const useConfirmNgayNghi = () => {
       }).select().single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['san-luong'] });
+    }
+  });
+};
+
+/**
+ * Đổi loại nghỉ (phép / hưởng lương / không lương) cho phần THIẾU GIỜ được
+ * tự động phát hiện ở 1 ngày đã có nhập sản lượng (khác useConfirmNgayNghi --
+ * đó là đánh dấu nghỉ NGUYÊN ngày, tạo bản ghi riêng). Chỉ merge đúng 1 field
+ * deficit_loai_nghi vào thong_ke_ngay hiện có, không đụng tới chi_tiet.
+ */
+export const useUpdateDeficitLeaveType = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, loaiNghi }: { id: number, loaiNghi: string }) => {
+      const { data: existing, error: fetchError } = await supabase
+        .from('san_luong').select('thong_ke_ngay').eq('id', id).eq('user_id', user?.id).single();
+      if (fetchError) throw fetchError;
+
+      const mergedThongKeNgay = { ...(existing?.thong_ke_ngay as any || {}), deficit_loai_nghi: loaiNghi };
+
+      const { error } = await supabase.from('san_luong')
+        .update({ thong_ke_ngay: mergedThongKeNgay })
+        .eq('id', id).eq('user_id', user?.id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['san-luong'] });

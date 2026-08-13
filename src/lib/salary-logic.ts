@@ -16,7 +16,7 @@
  */
 
 import { differenceInYears, differenceInMonths, parseISO } from 'date-fns';
-import { getWorkMinutesForDay } from './work-rules.js';
+import { getWorkMinutesForDay, minutesToCong } from './work-rules.js';
 import { getCycleStringFromYearMonth } from './date-utils.js';
 import type { CompanyConfig } from './company-config.js';
 
@@ -24,14 +24,66 @@ import type { CompanyConfig } from './company-config.js';
 // TYPES
 // ---------------------------------------------------------------------------
 
+export type LoaiNghi = 'nghi_huong_luong' | 'nghi_phep' | 'nghi_khong_luong';
+
 export interface DailyRecord {
   ngay: string;
   thoi_gian_thuc_hien: number;
   thoi_gian_ho_tro?: number;
   thong_ke_ngay?: {
     is_ngay_nghi?: boolean;
-    loai_nghi?: 'nghi_huong_luong' | 'nghi_phep' | string;
+    loai_nghi?: LoaiNghi | string;
+    /** Loại nghỉ do người dùng chọn cho phần THIẾU giờ tự động phát hiện
+     * (khác với is_ngay_nghi -- ngày này vẫn có chi_tiết/thời gian làm việc
+     * thật, chỉ chưa đủ định mức chuẩn). Mặc định 'nghi_phep' nếu chưa chọn. */
+    deficit_loai_nghi?: LoaiNghi | string;
   };
+}
+
+export interface DeficitLeaveResult {
+  /** Số ngày nghỉ quy đổi, bội số của 0.5 (theo quy định tối thiểu của công ty) */
+  ngayNghi: number;
+  loaiNghi: LoaiNghi;
+}
+
+/**
+ * Tự động phát hiện phần thời gian còn THIẾU trong ngày (so với định mức
+ * chuẩn theo thứ: 480' T2-T6, 240' T7, 0' CN) và quy đổi thành ngày nghỉ.
+ * Áp dụng cho ngày ĐÃ CÓ nhập dữ liệu (thoi_gian_thuc_hien/ho_tro) nhưng
+ * chưa làm đủ và CHƯA được đánh dấu nghỉ nguyên ngày (is_ngay_nghi) -- đó là
+ * cơ chế khác, tách biệt.
+ *
+ * Quy định công ty: đơn vị nghỉ tối thiểu là 0.5 ngày (không có "nghỉ 10
+ * phút") -- làm tròn phần thiếu về bội số gần nhất của 0.5 ngày. Nhờ vậy sai
+ * số vài phút (dưới 0.25 ngày ~ 120') tự động làm tròn về 0 (không tính thiếu).
+ *
+ * @param overrideLoaiNghi Loại nghỉ người dùng đã chọn cho ngày này (nếu có),
+ *   mặc định 'nghi_phep' khi chưa chọn.
+ * @returns null nếu là Chủ Nhật hoặc không thiếu giờ nào (làm đủ/dư giờ).
+ */
+export function computeDeficitLeave(
+  ngay: string,
+  thoiGianThucHien: number,
+  thoiGianHoTro: number,
+  overrideLoaiNghi?: LoaiNghi | string | null
+): DeficitLeaveResult | null {
+  const dayOfWeek = new Date(ngay + 'T00:00:00').getDay();
+  const standardMins = getWorkMinutesForDay(dayOfWeek);
+  if (standardMins <= 0) return null; // Chủ Nhật: không có định mức chuẩn
+
+  const workedMins = (thoiGianThucHien || 0) + (thoiGianHoTro || 0);
+  const deficitMins = Math.max(0, standardMins - workedMins);
+  if (deficitMins <= 0) return null;
+
+  const deficitNgay = Math.round(minutesToCong(deficitMins) * 2) / 2;
+  if (deficitNgay <= 0) return null;
+
+  const loaiNghi: LoaiNghi =
+    overrideLoaiNghi === 'nghi_huong_luong' || overrideLoaiNghi === 'nghi_khong_luong'
+      ? overrideLoaiNghi
+      : 'nghi_phep';
+
+  return { ngayNghi: deficitNgay, loaiNghi };
 }
 
 export interface CycleAttendanceSummary {
@@ -41,14 +93,18 @@ export interface CycleAttendanceSummary {
   otNormalMins: number;
   /** Số phút tăng ca ngày nghỉ/cuối tuần */
   otRestMins: number;
-  /** Số ngày công nghỉ hưởng lương (Thứ 7 = 0.5) */
+  /** Số ngày công nghỉ hưởng lương (Thứ 7 = 0.5) -- gồm cả nghỉ nguyên ngày và phần thiếu giờ tự phát hiện */
   paidLeaveWorkdays: number;
-  /** Số ngày công nghỉ phép (Thứ 7 = 0.5) */
+  /** Số ngày công nghỉ phép (Thứ 7 = 0.5) -- gồm cả nghỉ nguyên ngày và phần thiếu giờ tự phát hiện */
   annualLeaveWorkdays: number;
+  /** Số ngày công nghỉ không lương (Thứ 7 = 0.5) -- gồm cả nghỉ nguyên ngày và phần thiếu giờ tự phát hiện */
+  unpaidLeaveWorkdays: number;
   /** Số ngày vật lý nghỉ hưởng lương (để tính tiền cơm) */
   paidLeavePhysical: number;
   /** Số ngày vật lý nghỉ phép (để tính tiền cơm) */
   annualLeavePhysical: number;
+  /** Số ngày vật lý nghỉ không lương (để tính tiền cơm) */
+  unpaidLeavePhysical: number;
 }
 
 export interface CycleWorkdayInfo {
@@ -113,36 +169,49 @@ export interface SalaryBreakdown {
  */
 export function computeCycleAttendance(records: DailyRecord[]): CycleAttendanceSummary {
   let actualWk = 0, otNorm = 0, otRest = 0;
-  let pw = 0, aw = 0, pp = 0, ap = 0;
+  let pw = 0, aw = 0, uw = 0, pp = 0, ap = 0, up = 0;
 
   for (const r of records) {
     const date = new Date(r.ngay);
     const day = date.getDay();
 
     if (r.thong_ke_ngay?.is_ngay_nghi) {
-      const val = day === 6 ? 0.5 : 1;
+      // Nghỉ nguyên ngày (đánh dấu thủ công qua nút Nghỉ) -- KHÔNG đi qua
+      // computeDeficitLeave vì cơ chế này độc lập, đã có loai_nghi rõ ràng.
+      const val = day === 6 ? 0.5 : (day >= 1 && day <= 5 ? 1 : 0);
       if (r.thong_ke_ngay.loai_nghi === 'nghi_huong_luong') {
         pw += val; pp += 1;
       } else if (r.thong_ke_ngay.loai_nghi === 'nghi_phep') {
         aw += val; ap += 1;
+      } else if (r.thong_ke_ngay.loai_nghi === 'nghi_khong_luong') {
+        uw += val; up += 1;
       }
+      continue;
     }
 
-    if (r.thoi_gian_thuc_hien > 0) {
-      if (day >= 1 && day <= 5) {
-        actualWk += 1;
-        const stdMins = getWorkMinutesForDay(day);
-        if (r.thoi_gian_thuc_hien > stdMins) {
-          otNorm += r.thoi_gian_thuc_hien - stdMins;
-        }
-      } else if (day === 6) {
-        actualWk += 0.5;
-        const stdMins = getWorkMinutesForDay(day);
-        if (r.thoi_gian_thuc_hien > stdMins) {
-          otRest += r.thoi_gian_thuc_hien - stdMins;
-        }
-      } else if (day === 0) {
-        otRest += r.thoi_gian_thuc_hien;
+    if (day === 0) {
+      // Chủ Nhật: không có định mức chuẩn, mọi giờ làm đều là tăng ca.
+      if (r.thoi_gian_thuc_hien > 0) otRest += r.thoi_gian_thuc_hien;
+      continue;
+    }
+
+    const dayValue = day === 6 ? 0.5 : 1; // Thứ 2-6 = 1 công chuẩn, Thứ 7 = 0.5
+    const stdMins = getWorkMinutesForDay(day);
+    const deficit = computeDeficitLeave(r.ngay, r.thoi_gian_thuc_hien, r.thoi_gian_ho_tro || 0, r.thong_ke_ngay?.deficit_loai_nghi);
+
+    if (deficit) {
+      // Làm chưa đủ, phần thiếu tự động quy đổi thành ngày nghỉ theo loại đã
+      // chọn (mặc định Nghỉ phép) -- phần còn lại vẫn tính là công thực tế.
+      actualWk += Math.max(0, dayValue - deficit.ngayNghi);
+      if (deficit.loaiNghi === 'nghi_huong_luong') { pw += deficit.ngayNghi; }
+      else if (deficit.loaiNghi === 'nghi_khong_luong') { uw += deficit.ngayNghi; }
+      else { aw += deficit.ngayNghi; }
+    } else if (r.thoi_gian_thuc_hien > 0) {
+      // Làm đủ hoặc dư giờ -> tính đủ 1 công chuẩn của ngày đó, phần dư là tăng ca.
+      actualWk += dayValue;
+      if (r.thoi_gian_thuc_hien > stdMins) {
+        if (day === 6) otRest += r.thoi_gian_thuc_hien - stdMins;
+        else otNorm += r.thoi_gian_thuc_hien - stdMins;
       }
     }
   }
@@ -153,8 +222,10 @@ export function computeCycleAttendance(records: DailyRecord[]): CycleAttendanceS
     otRestMins: otRest,
     paidLeaveWorkdays: pw,
     annualLeaveWorkdays: aw,
+    unpaidLeaveWorkdays: uw,
     paidLeavePhysical: pp,
     annualLeavePhysical: ap,
+    unpaidLeavePhysical: up,
   };
 }
 

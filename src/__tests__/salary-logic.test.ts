@@ -5,6 +5,8 @@ import {
   computeSalaryBreakdown,
   computeCycleWorkdayInfo,
   computeQuarterlyBonus,
+  computeCycleAttendance,
+  computeDeficitLeave,
 } from '../lib/salary-logic';
 import type { CompanyConfig } from '../lib/company-config';
 
@@ -167,6 +169,118 @@ describe('salary-logic', () => {
       expect(result.isPayoutMonth).toBe(true);
       expect(result.accumulatedLoyaltyBonus).toBe(600000); 
       expect(result.loyaltyBonus).toBe(600000); 
+    });
+  });
+
+  describe('computeDeficitLeave', () => {
+    // 2024-05-06 = Thứ 2, 2024-05-11 = Thứ 7, 2024-05-12 = Chủ Nhật
+    it('trả về null nếu làm đủ giờ chuẩn (480p ngày thường)', () => {
+      expect(computeDeficitLeave('2024-05-06', 480, 0)).toBeNull();
+    });
+
+    it('trả về null nếu làm dư giờ', () => {
+      expect(computeDeficitLeave('2024-05-06', 540, 0)).toBeNull();
+    });
+
+    it('trả về null vào Chủ Nhật (không có định mức chuẩn)', () => {
+      expect(computeDeficitLeave('2024-05-12', 0, 0)).toBeNull();
+    });
+
+    it('phát hiện thiếu nửa ngày (240/480p) -> 0.5 ngày, mặc định nghỉ phép', () => {
+      const result = computeDeficitLeave('2024-05-06', 240, 0);
+      expect(result).toEqual({ ngayNghi: 0.5, loaiNghi: 'nghi_phep' });
+    });
+
+    it('cộng thời gian hỗ trợ vào tổng giờ làm khi tính thiếu', () => {
+      // 200p thực hiện + 40p hỗ trợ = 240p -> vẫn thiếu 0.5 ngày như trên
+      const result = computeDeficitLeave('2024-05-06', 200, 40);
+      expect(result).toEqual({ ngayNghi: 0.5, loaiNghi: 'nghi_phep' });
+    });
+
+    it('tôn trọng loại nghỉ do người dùng chọn (không lương)', () => {
+      const result = computeDeficitLeave('2024-05-06', 240, 0, 'nghi_khong_luong');
+      expect(result).toEqual({ ngayNghi: 0.5, loaiNghi: 'nghi_khong_luong' });
+    });
+
+    it('không làm gì cả (0 phút) trong ngày thường -> thiếu trọn 1 ngày', () => {
+      const result = computeDeficitLeave('2024-05-06', 0, 0);
+      expect(result).toEqual({ ngayNghi: 1, loaiNghi: 'nghi_phep' });
+    });
+
+    it('làm tròn sai số nhỏ (dưới 0.25 ngày ~ 120p) về 0 -> không tính thiếu', () => {
+      // Thiếu 60p (480-420) = 0.125 ngày -> làm tròn về 0
+      expect(computeDeficitLeave('2024-05-06', 420, 0)).toBeNull();
+    });
+  });
+
+  describe('computeCycleAttendance', () => {
+    it('làm đủ 1 ngày thường -> actualWorkdays = 1, không có nghỉ', () => {
+      const result = computeCycleAttendance([
+        { ngay: '2024-05-06', thoi_gian_thuc_hien: 480, thoi_gian_ho_tro: 0 },
+      ]);
+      expect(result.actualWorkdays).toBe(1);
+      expect(result.paidLeaveWorkdays).toBe(0);
+      expect(result.annualLeaveWorkdays).toBe(0);
+      expect(result.unpaidLeaveWorkdays).toBe(0);
+    });
+
+    it('làm nửa ngày không đánh dấu nghỉ -> tự động 0.5 nghỉ phép + 0.5 công thực tế', () => {
+      const result = computeCycleAttendance([
+        { ngay: '2024-05-06', thoi_gian_thuc_hien: 240, thoi_gian_ho_tro: 0 },
+      ]);
+      expect(result.actualWorkdays).toBe(0.5);
+      expect(result.annualLeaveWorkdays).toBe(0.5);
+      expect(result.paidLeaveWorkdays).toBe(0);
+      expect(result.unpaidLeaveWorkdays).toBe(0);
+    });
+
+    it('làm nửa ngày với deficit_loai_nghi = nghi_khong_luong -> trừ vào không lương', () => {
+      const result = computeCycleAttendance([
+        {
+          ngay: '2024-05-06', thoi_gian_thuc_hien: 240, thoi_gian_ho_tro: 0,
+          thong_ke_ngay: { deficit_loai_nghi: 'nghi_khong_luong' },
+        },
+      ]);
+      expect(result.actualWorkdays).toBe(0.5);
+      expect(result.unpaidLeaveWorkdays).toBe(0.5);
+      expect(result.annualLeaveWorkdays).toBe(0);
+    });
+
+    it('nghỉ nguyên ngày không lương (is_ngay_nghi) -> tính đúng vào unpaidLeaveWorkdays (bug cũ: không tính vào đâu cả)', () => {
+      const result = computeCycleAttendance([
+        {
+          ngay: '2024-05-06', thoi_gian_thuc_hien: 0, thoi_gian_ho_tro: 0,
+          thong_ke_ngay: { is_ngay_nghi: true, loai_nghi: 'nghi_khong_luong' },
+        },
+      ]);
+      expect(result.unpaidLeaveWorkdays).toBe(1);
+      expect(result.unpaidLeavePhysical).toBe(1);
+      expect(result.actualWorkdays).toBe(0);
+    });
+
+    it('Thứ 7 làm đủ (240p) -> actualWorkdays = 0.5, không nghỉ', () => {
+      const result = computeCycleAttendance([
+        { ngay: '2024-05-11', thoi_gian_thuc_hien: 240, thoi_gian_ho_tro: 0 },
+      ]);
+      expect(result.actualWorkdays).toBe(0.5);
+      expect(result.annualLeaveWorkdays).toBe(0);
+    });
+
+    it('Chủ Nhật làm việc -> toàn bộ tính vào OT ngày nghỉ, không có công chuẩn/nghỉ', () => {
+      const result = computeCycleAttendance([
+        { ngay: '2024-05-12', thoi_gian_thuc_hien: 240, thoi_gian_ho_tro: 0 },
+      ]);
+      expect(result.actualWorkdays).toBe(0);
+      expect(result.otRestMins).toBe(240);
+      expect(result.annualLeaveWorkdays).toBe(0);
+    });
+
+    it('tăng ca ngày thường vẫn được tính đúng khi làm đủ + dư giờ', () => {
+      const result = computeCycleAttendance([
+        { ngay: '2024-05-06', thoi_gian_thuc_hien: 540, thoi_gian_ho_tro: 0 }, // dư 60p
+      ]);
+      expect(result.actualWorkdays).toBe(1);
+      expect(result.otNormalMins).toBe(60);
     });
   });
 });

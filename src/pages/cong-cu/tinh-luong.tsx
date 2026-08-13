@@ -67,6 +67,7 @@ export default function SalaryCalculatorPage() {
   const [customStandardWorkdays, setCustomStandardWorkdays] = useState<string>('');
   const [customPaidLeaveDays, setCustomPaidLeaveDays] = useState<string>('');
   const [customAnnualLeaveDays, setCustomAnnualLeaveDays] = useState<string>('');
+  const [customUnpaidLeaveDays, setCustomUnpaidLeaveDays] = useState<string>('');
   const [customActualWorkdays, setCustomActualWorkdays] = useState<string>('');
   const [estimatedOtNormal, setEstimatedOtNormal] = useState<string>('');
   const [estimatedOtRest, setEstimatedOtRest] = useState<string>('');
@@ -105,6 +106,7 @@ export default function SalaryCalculatorPage() {
     setCustomMealDays('');
     setCustomPaidLeaveDays('');
     setCustomAnnualLeaveDays('');
+    setCustomUnpaidLeaveDays('');
     setCustomActualWorkdays('');
     setEstimatedOtNormal('');
     setEstimatedOtRest('');
@@ -133,8 +135,10 @@ export default function SalaryCalculatorPage() {
     autoOtWeeklyRestMins,
     dbPaidLeaveWorkdays,
     dbAnnualLeaveWorkdays,
+    dbUnpaidLeaveWorkdays,
     dbPaidLeavePhysical,
-    dbAnnualLeavePhysical
+    dbAnnualLeavePhysical,
+    dbUnpaidLeavePhysical
   } = useMemo(() => {
     const result = computeCycleAttendance((cycleRecords || []) as any[]);
     return {
@@ -143,17 +147,23 @@ export default function SalaryCalculatorPage() {
       autoOtWeeklyRestMins: result.otRestMins,
       dbPaidLeaveWorkdays: result.paidLeaveWorkdays,
       dbAnnualLeaveWorkdays: result.annualLeaveWorkdays,
+      dbUnpaidLeaveWorkdays: result.unpaidLeaveWorkdays,
       dbPaidLeavePhysical: result.paidLeavePhysical,
       dbAnnualLeavePhysical: result.annualLeavePhysical,
+      dbUnpaidLeavePhysical: result.unpaidLeavePhysical,
     };
   }, [cycleRecords]);
 
   const numPaidLeaveDays = customPaidLeaveDays !== '' ? (Number(customPaidLeaveDays) || 0) : dbPaidLeaveWorkdays;
   const numAnnualLeaveDays = customAnnualLeaveDays !== '' ? (Number(customAnnualLeaveDays) || 0) : dbAnnualLeaveWorkdays;
+  const numUnpaidLeaveDays = customUnpaidLeaveDays !== '' ? (Number(customUnpaidLeaveDays) || 0) : dbUnpaidLeaveWorkdays;
 
   const activeStandardWorkdays = customStandardWorkdays !== '' ? (Number(customStandardWorkdays) || 0) : baseStandardWorkdays;
   const numStandardWorkdays = activeStandardWorkdays || 26;
-  const calculatedActualWorkdays = Math.max(0, activeStandardWorkdays - numPaidLeaveDays - numAnnualLeaveDays);
+  // Nghỉ không lương KHÔNG được trả lương -> phải trừ khỏi ngày thực tế, nếu
+  // không sẽ bị tính nhầm thành ngày đi làm (lỗi cũ: nghỉ không lương không
+  // trừ vào đâu cả, coi như vẫn được trả đủ lương).
+  const calculatedActualWorkdays = Math.max(0, activeStandardWorkdays - numPaidLeaveDays - numAnnualLeaveDays - numUnpaidLeaveDays);
   const numActualWorkdays = customActualWorkdays !== '' ? (Number(customActualWorkdays) || 0) : calculatedActualWorkdays;
 
   // ─── Tính lương (dùng salary-logic + config từ DB) ────────────────────
@@ -179,8 +189,9 @@ export default function SalaryCalculatorPage() {
   // ─── Tính tiền cơm & phụ cấp ─────────────────────────────────────────
   const physicalPaidLeave = customPaidLeaveDays !== '' ? numPaidLeaveDays : dbPaidLeavePhysical;
   const physicalAnnualLeave = customAnnualLeaveDays !== '' ? numAnnualLeaveDays : dbAnnualLeavePhysical;
+  const physicalUnpaidLeave = customUnpaidLeaveDays !== '' ? numUnpaidLeaveDays : dbUnpaidLeavePhysical;
 
-  const calculatedMealDays = Math.max(0, baseMealDays - physicalPaidLeave - physicalAnnualLeave);
+  const calculatedMealDays = Math.max(0, baseMealDays - physicalPaidLeave - physicalAnnualLeave - physicalUnpaidLeave);
   const numMealDays = customMealDays !== '' ? (Number(customMealDays) || 0) : calculatedMealDays;
 
   const defaultMealAllowance = computeMealAllowance(numMealDays, config);
@@ -435,7 +446,7 @@ export default function SalaryCalculatorPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="paidLeaveDays" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Nghỉ hưởng lương</Label>
                     <Input
@@ -453,6 +464,17 @@ export default function SalaryCalculatorPage() {
                       id="annualLeaveDays"
                       value={customAnnualLeaveDays !== '' ? customAnnualLeaveDays : dbAnnualLeaveWorkdays.toString()}
                       onChange={(e) => setCustomAnnualLeaveDays(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="0"
+                      inputMode="decimal"
+                      className="h-12 rounded-2xl bg-black/20 border-white/10 font-bold text-foreground focus-visible:ring-amber-500/50 shadow-inner"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unpaidLeaveDays" className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider pl-1">Nghỉ không lương</Label>
+                    <Input
+                      id="unpaidLeaveDays"
+                      value={customUnpaidLeaveDays !== '' ? customUnpaidLeaveDays : dbUnpaidLeaveWorkdays.toString()}
+                      onChange={(e) => setCustomUnpaidLeaveDays(e.target.value.replace(/[^0-9.]/g, ''))}
                       placeholder="0"
                       inputMode="decimal"
                       className="h-12 rounded-2xl bg-black/20 border-white/10 font-bold text-foreground focus-visible:ring-amber-500/50 shadow-inner"
