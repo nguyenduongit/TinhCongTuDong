@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Target, TrendingUp, TrendingDown, CheckCircle2, Calendar, Palmtree, Zap, Star } from 'lucide-react';
 import { getCycleMonthFromDate, getCycleRange, calculateRequiredCongForCycle, getNowVNDateLocal } from '@/lib/date-utils';
 import { getWorkMinutesForDay, minutesToCong } from '@/lib/work-rules';
+import { computeDeficitLeave } from '@/lib/salary-logic';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -32,11 +33,20 @@ export function HomeProgressCard({ dashboardData, isLoading }: HomeProgressCardP
         const dStr = format(d, 'yyyy-MM-dd');
         const log = monthEntries.find((e: any) => e.ngay === dStr);
 
-        // Tính ngày nghỉ
-        if (log && (log.thong_ke_ngay as any)?.is_ngay_nghi) {
-          const dayOfWeek = getDay(d);
-          if (dayOfWeek >= 1 && dayOfWeek <= 5) ngayNghi += 1;
-          else if (dayOfWeek === 6) ngayNghi += 0.5;
+        // Tính ngày nghỉ: nghỉ nguyên ngày (đánh dấu thủ công) HOẶC phần thiếu
+        // giờ tự động phát hiện (làm chưa đủ nhưng chưa đánh dấu nghỉ) --
+        // dùng chung computeDeficitLeave với trang tính lương/card ngày để
+        // số liệu nhất quán ở mọi nơi trong app.
+        if (log) {
+          const tk = (log.thong_ke_ngay as any);
+          if (tk?.is_ngay_nghi) {
+            const dayOfWeek = getDay(d);
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) ngayNghi += 1;
+            else if (dayOfWeek === 6) ngayNghi += 0.5;
+          } else {
+            const deficit = computeDeficitLeave(dStr, log.thoi_gian_thuc_hien, log.thoi_gian_ho_tro || 0, tk?.deficit_loai_nghi);
+            if (deficit) ngayNghi += deficit.ngayNghi;
+          }
         }
 
         // Tính tăng ca: ngày nào có tổng phút > phút hành chính quy định
